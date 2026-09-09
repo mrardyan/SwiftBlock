@@ -47,7 +47,15 @@ Once installed, use the `iosgen` command globally from any folder.
 ```bash
 iosgen init MyApp
 ```
-Creates a new iOS project using the `BaseProject-SwiftUI` template with Tuist, SwiftLint, and SwiftFormat.
+Creates a new iOS project using the `BaseProject-SwiftUI` template with default bundle prefix (`io.ardyan`).
+
+#### Custom Bundle Prefix
+```bash
+iosgen init MyApp --bundle-prefix com.mycompany
+# or short form:
+iosgen init MyApp -b com.mycompany
+```
+Creates a project with bundle identifier `com.mycompany.MyApp`.
 
 ### Add a Module (Upcoming)
 
