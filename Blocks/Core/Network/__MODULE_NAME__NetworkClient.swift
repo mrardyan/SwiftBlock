@@ -1,21 +1,49 @@
 import Foundation
 
+public enum NetworkError: Error, LocalizedError, Equatable {
+    case invalidResponse(statusCode: Int)
+    case decodingFailed(String)
+    case transportError(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidResponse(let code):
+            return "Server responded with status code \(code)."
+        case .decodingFailed(let reason):
+            return "Failed to decode response: \(reason)."
+        case .transportError(let message):
+            return "Network transport error: \(message)."
+        }
+    }
+}
+
 public protocol __MODULE_NAME__NetworkClientProtocol {
-    func request<T: Decodable>(_ url: URL) async throws -> T
+    func send<T: Decodable>(_ request: HTTPRequest) async throws -> T
 }
 
 public final class __MODULE_NAME__NetworkClient: __MODULE_NAME__NetworkClientProtocol {
-    private let session: URLSession
+    private let transport: HTTPTransportProtocol
+    private let jsonDecoder: JSONDecoder
 
-    public init(session: URLSession = .shared) {
-        self.session = session
+    public init(
+        transport: HTTPTransportProtocol = URLSessionTransport(),
+        jsonDecoder: JSONDecoder = JSONDecoder()
+    ) {
+        self.transport = transport
+        self.jsonDecoder = jsonDecoder
     }
 
-    public func request<T: Decodable>(_ url: URL) async throws -> T {
-        let (data, response) = try await session.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
+    public func send<T: Decodable>(_ request: HTTPRequest) async throws -> T {
+        let (data, response) = try await transport.send(request)
+
+        guard (200...299).contains(response.statusCode) else {
+            throw NetworkError.invalidResponse(statusCode: response.statusCode)
         }
-        return try JSONDecoder().decode(T.self, from: data)
+
+        do {
+            return try jsonDecoder.decode(T.self, from: data)
+        } catch {
+            throw NetworkError.decodingFailed(error.localizedDescription)
+        }
     }
 }
