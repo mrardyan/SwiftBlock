@@ -10,7 +10,7 @@ public struct ModuleGeneratorOptions {
         type: ModuleType,
         moduleName: String,
         projectRootPath: String = FileManager.default.currentDirectoryPath,
-        modulesTemplatePath: String = "/usr/local/share/swiftblock/Templates/Modules"
+        modulesTemplatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
     ) {
         self.type = type
         self.moduleName = moduleName

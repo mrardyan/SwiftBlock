@@ -7,7 +7,7 @@ struct SwiftBlock: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "swiftblock",
         abstract: "Swift project and architecture module generator CLI",
-        subcommands: [Init.self, Add.self]
+        subcommands: [Init.self, New.self, Add.self]
     )
 }
 
@@ -24,27 +24,51 @@ struct Init: ParsableCommand {
     var bundlePrefix: String = "io.ardyan"
 
     @Option(name: [.customShort("t"), .long], help: "Custom project template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Templates/Projects/BaseProject-SwiftUI"
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
 
     func run() throws {
-        print("🛠️ Generating project: \(projectName)")
+        try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath)
+    }
+}
 
-        let options = ProjectGeneratorOptions(
-            projectName: projectName,
-            bundlePrefix: bundlePrefix,
-            templatePath: templatePath
-        )
+struct New: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "new",
+        abstract: "Create a new SwiftUI project (alias for 'init')"
+    )
 
-        let generator = ProjectGenerator()
+    @Argument(help: "Project name")
+    var projectName: String
 
-        do {
-            try generator.generateProject(options: options)
-            print("✅ Project created at \(options.outputPath)")
-            print("🔁 Placeholders replaced with \(projectName) (bundle prefix: \(bundlePrefix))")
-        } catch {
-            print("❌ \(error.localizedDescription)")
-            throw ExitCode.failure
-        }
+    @Option(name: [.customShort("b"), .long], help: "Bundle identifier prefix (default: io.ardyan)")
+    var bundlePrefix: String = "io.ardyan"
+
+    @Option(name: [.customShort("t"), .long], help: "Custom project template path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
+
+    func run() throws {
+        try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath)
+    }
+}
+
+private func executeInitProject(projectName: String, bundlePrefix: String, templatePath: String) throws {
+    print("🛠️ Generating project: \(projectName)")
+
+    let options = ProjectGeneratorOptions(
+        projectName: projectName,
+        bundlePrefix: bundlePrefix,
+        templatePath: templatePath
+    )
+
+    let generator = ProjectGenerator()
+
+    do {
+        try generator.generateProject(options: options)
+        print("✅ Project created at \(options.outputPath)")
+        print("🔁 Placeholders replaced with \(projectName) (bundle prefix: \(bundlePrefix))")
+    } catch {
+        print("❌ \(error.localizedDescription)")
+        throw ExitCode.failure
     }
 }
 
@@ -66,7 +90,7 @@ struct AddScene: ParsableCommand {
     var name: String
 
     @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Templates/Modules"
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
 
     func run() throws {
         try executeAddModule(type: .scene, moduleName: name, templatePath: templatePath)
@@ -83,7 +107,7 @@ struct AddUseCase: ParsableCommand {
     var name: String
 
     @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Templates/Modules"
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
 
     func run() throws {
         try executeAddModule(type: .usecase, moduleName: name, templatePath: templatePath)
@@ -100,7 +124,7 @@ struct AddRepository: ParsableCommand {
     var name: String
 
     @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Templates/Modules"
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
 
     func run() throws {
         try executeAddModule(type: .repository, moduleName: name, templatePath: templatePath)
@@ -117,7 +141,7 @@ struct AddService: ParsableCommand {
     var name: String
 
     @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Templates/Modules"
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
 
     func run() throws {
         try executeAddModule(type: .service, moduleName: name, templatePath: templatePath)

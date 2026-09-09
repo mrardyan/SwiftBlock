@@ -5,7 +5,7 @@ set -e
 CLI_NAME="swiftblock"
 BUILD_PATH=".build/release/$CLI_NAME"
 INSTALL_BIN="/usr/local/bin/$CLI_NAME"
-INSTALL_TEMPLATE="/usr/local/share/$CLI_NAME/Templates"
+INSTALL_BLOCKS="/usr/local/share/$CLI_NAME/Blocks"
 
 echo "📦 Building $CLI_NAME CLI..."
 swift build -c release
@@ -22,16 +22,16 @@ sudo mkdir -p "$(dirname "$INSTALL_BIN")"
 sudo cp "$BUILD_PATH" "$INSTALL_BIN"
 sudo chmod +x "$INSTALL_BIN"
 
-echo "🧹 Cleaning old templates at $INSTALL_TEMPLATE"
-sudo rm -rf "$INSTALL_TEMPLATE"
+echo "🧹 Cleaning old blocks at $INSTALL_BLOCKS"
+sudo rm -rf "$INSTALL_BLOCKS"
 
-echo "📁 Installing templates to $INSTALL_TEMPLATE"
-sudo mkdir -p "$INSTALL_TEMPLATE"
-sudo cp -R Templates/* "$INSTALL_TEMPLATE"
+echo "📁 Installing building blocks to $INSTALL_BLOCKS"
+sudo mkdir -p "$INSTALL_BLOCKS"
+sudo cp -R Blocks/* "$INSTALL_BLOCKS"
 
 echo "🔒 Setting permissions for $ACTUAL_USER"
-sudo chown -R "$ACTUAL_USER" "$INSTALL_TEMPLATE"
-sudo chmod -R u+rwX "$INSTALL_TEMPLATE"
+sudo chown -R "$ACTUAL_USER" "$INSTALL_BLOCKS"
+sudo chmod -R u+rwX "$INSTALL_BLOCKS"
 
 echo "✅ Installation complete!"
-echo "👉 You can now run '$CLI_NAME init YourProjectName' from anywhere."
+echo "👉 You can now run '$CLI_NAME new YourProjectName' from anywhere."

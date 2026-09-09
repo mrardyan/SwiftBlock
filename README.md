@@ -19,7 +19,7 @@
 
 ## Key Features
 
-- **Instant Scaffolding**: Generate complete SwiftUI-based Xcode projects with a single command.
+- **Instant Scaffolding**: Generate complete SwiftUI-based Xcode projects with `swiftblock new` or `swiftblock init`.
 - **Architecture Building Blocks**: Generate `scene`, `usecase`, `repository`, and `service` modules directly from your project root.
 - **Project Config (.swiftblock)**: Automatic JSON configuration for customizable directory paths per project.
 - **Tuist Integration**: Built-in support for Tuist project generation out of the box.
@@ -46,11 +46,11 @@ chmod +x Scripts/install.sh
 #### Initialize a New Project
 
 ```bash
-# Create a project with default bundle prefix (io.ardyan)
-swiftblock init MyApp
+# Create a project (using 'new' or 'init')
+swiftblock new MyApp
 
 # Create a project with custom organization bundle prefix
-swiftblock init MyApp --bundle-prefix com.mycompany
+swiftblock new MyApp --bundle-prefix com.mycompany
 
 cd MyApp
 make setup
@@ -81,8 +81,8 @@ swiftblock add service Network
 
 | Command | Option / Flag | Description | Default |
 | :--- | :--- | :--- | :--- |
-| `swiftblock init <Name>` | `-b, --bundle-prefix` | Set custom bundle identifier prefix | `io.ardyan` |
-| | `-t, --template-path` | Use custom template directory path | `/usr/local/share/swiftblock/Templates/Projects/BaseProject-SwiftUI` |
+| `swiftblock new <Name>` (or `init`) | `-b, --bundle-prefix` | Set custom bundle identifier prefix | `io.ardyan` |
+| | `-t, --template-path` | Use custom project block path | `/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI` |
 | `swiftblock add scene <Name>` | `-t, --template-path` | Generate MVVM Scene module | `App/Sources/Features/<Name>` |
 | `swiftblock add usecase <Name>` | `-t, --template-path` | Generate Domain UseCase module | `App/Sources/Domain/UseCases/<Name>` |
 | `swiftblock add repository <Name>` | `-t, --template-path` | Generate Data Repository module | `App/Sources/Data/Repositories/<Name>` |
@@ -110,13 +110,13 @@ Every generated project includes a `.swiftblock` configuration file at the proje
 
 ---
 
-## Building Block Templates
+## Building Blocks Structure
 
-Templates are stored at `/usr/local/share/swiftblock/Templates/`:
+Blocks are stored at `/usr/local/share/swiftblock/Blocks/`:
 
 ```text
-Templates/
-├── Projects/                     # Project Starter Templates
+Blocks/
+├── Projects/                     # Project Starter Blocks
 │   └── BaseProject-SwiftUI/
 │       ├── .swiftblock           # Project Config File
 │       ├── Project.swift         # Tuist Project Manifest
@@ -142,7 +142,7 @@ swift build -c release
 swift test
 
 # Test executable without global installation
-.build/release/swiftblock init SampleApp
+.build/release/swiftblock new SampleApp
 ```
 
 ---
