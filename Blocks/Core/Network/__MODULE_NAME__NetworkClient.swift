@@ -1,13 +1,13 @@
 import Foundation
 
 public enum NetworkError: Error, LocalizedError, Equatable {
-    case invalidResponse(statusCode: Int)
+    case invalidResponse(statusCode: Int, data: Data?)
     case decodingFailed(String)
     case transportError(String)
 
     public var errorDescription: String? {
         switch self {
-        case .invalidResponse(let code):
+        case .invalidResponse(let code, _):
             return "Server responded with status code \(code)."
         case .decodingFailed(let reason):
             return "Failed to decode response: \(reason)."
@@ -37,7 +37,7 @@ public final class __MODULE_NAME__NetworkClient: __MODULE_NAME__NetworkClientPro
         let (data, response) = try await transport.send(request)
 
         guard (200...299).contains(response.statusCode) else {
-            throw NetworkError.invalidResponse(statusCode: response.statusCode)
+            throw NetworkError.invalidResponse(statusCode: response.statusCode, data: data)
         }
 
         do {
