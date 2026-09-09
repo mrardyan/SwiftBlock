@@ -1,10 +1,17 @@
-# 🛠 SwiftBlock
+<p align="center">
+  <img src="Docs/Assets/SwiftBlock.svg" width="120" height="120" alt="SwiftBlock Logo">
+  <h1 align="center">SwiftBlock</h1>
+  <p align="center">
+    <strong>Production-ready iOS project generator and scaffolding CLI.</strong>
+  </p>
+  <p align="center">
+    <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.10-orange.svg?style=flat-square" alt="Swift 5.10"></a>
+    <a href="https://developer.apple.com"><img src="https://img.shields.io/badge/Platform-macOS%2012.0%2B-blue.svg?style=flat-square" alt="Platform macOS"></a>
+    <a href="LICENSE"><img src="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License MIT"></a>
+  </p>
+</p>
 
-> Production-ready iOS project generator and scaffolding CLI.
-
-[![Swift 5.10](https://img.shields.io/badge/Swift-5.10-orange.svg?style=flat-square)](https://swift.org)
-[![Platform macOS](https://img.shields.io/badge/Platform-macOS%2012.0%2B-blue.svg?style=flat-square)](https://developer.apple.com)
-[![License MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+---
 
 **SwiftBlock** is a command-line tool designed to instantly scaffold clean, modern SwiftUI Xcode projects pre-configured with industry-standard developer tooling.
 
