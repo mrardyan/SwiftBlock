@@ -1,37 +1,58 @@
 import Foundation
 import OSLog
 
-public enum LogLevel: String, CaseIterable {
+public enum LogLevel: String, CaseIterable, Comparable {
     case debug = "DEBUG"
     case info = "INFO"
     case warning = "WARNING"
     case error = "ERROR"
     case fault = "FAULT"
+
+    public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
+        let order: [LogLevel] = [.debug, .info, .warning, .error, .fault]
+        guard let lhsIndex = order.firstIndex(of: lhs),
+              let rhsIndex = order.firstIndex(of: rhs) else { return false }
+        return lhsIndex < rhsIndex
+    }
+
+    public var emoji: String {
+        switch self {
+        case .debug: return "🐛"
+        case .info: return "ℹ️"
+        case .warning: return "⚠️"
+        case .error: return "❌"
+        case .fault: return "💥"
+        }
+    }
 }
 
 public protocol __MODULE_NAME__Logger {
-    func debug(_ message: String, file: String, line: Int, function: String)
-    func info(_ message: String, file: String, line: Int, function: String)
-    func warning(_ message: String, file: String, line: Int, function: String)
-    func error(_ message: String, file: String, line: Int, function: String)
-    func fault(_ message: String, file: String, line: Int, function: String)
+    func log(_ level: LogLevel, _ message: String, file: String, line: Int, function: String)
 }
 
 public extension __MODULE_NAME__Logger {
+    func log(_ level: LogLevel, _ message: String, file: String = #file, line: Int = #line, function: String = #function) {
+        log(level, message, file: file, line: line, function: function)
+    }
+
     func debug(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        debug(message, file: file, line: line, function: function)
+        log(.debug, message, file: file, line: line, function: function)
     }
+
     func info(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        info(message, file: file, line: line, function: function)
+        log(.info, message, file: file, line: line, function: function)
     }
+
     func warning(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        warning(message, file: file, line: line, function: function)
+        log(.warning, message, file: file, line: line, function: function)
     }
+
     func error(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        error(message, file: file, line: line, function: function)
+        log(.error, message, file: file, line: line, function: function)
     }
+
     func fault(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        fault(message, file: file, line: line, function: function)
+        log(.fault, message, file: file, line: line, function: function)
     }
 }
 
@@ -42,28 +63,21 @@ public final class Default__MODULE_NAME__Logger: __MODULE_NAME__Logger {
         self.logger = Logger(subsystem: subsystem, category: category)
     }
 
-    public func debug(_ message: String, file: String, line: Int, function: String) {
+    public func log(_ level: LogLevel, _ message: String, file: String, line: Int, function: String) {
         let fileName = URL(fileURLWithPath: file).lastPathComponent
-        logger.debug("🐛 [\(fileName):\(line) \(function)] \(message, privacy: .public)")
-    }
+        let formattedMessage = "\(level.emoji) [\(fileName):\(line) \(function)] \(message)"
 
-    public func info(_ message: String, file: String, line: Int, function: String) {
-        let fileName = URL(fileURLWithPath: file).lastPathComponent
-        logger.info("ℹ️ [\(fileName):\(line) \(function)] \(message, privacy: .public)")
-    }
-
-    public func warning(_ message: String, file: String, line: Int, function: String) {
-        let fileName = URL(fileURLWithPath: file).lastPathComponent
-        logger.warning("⚠️ [\(fileName):\(line) \(function)] \(message, privacy: .public)")
-    }
-
-    public func error(_ message: String, file: String, line: Int, function: String) {
-        let fileName = URL(fileURLWithPath: file).lastPathComponent
-        logger.error("❌ [\(fileName):\(line) \(function)] \(message, privacy: .public)")
-    }
-
-    public func fault(_ message: String, file: String, line: Int, function: String) {
-        let fileName = URL(fileURLWithPath: file).lastPathComponent
-        logger.fault("💥 [\(fileName):\(line) \(function)] \(message, privacy: .public)")
+        switch level {
+        case .debug:
+            logger.debug("\(formattedMessage, privacy: .public)")
+        case .info:
+            logger.info("\(formattedMessage, privacy: .public)")
+        case .warning:
+            logger.warning("\(formattedMessage, privacy: .public)")
+        case .error:
+            logger.error("\(formattedMessage, privacy: .public)")
+        case .fault:
+            logger.fault("\(formattedMessage, privacy: .public)")
+        }
     }
 }
