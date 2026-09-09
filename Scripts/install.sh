@@ -2,7 +2,7 @@
 
 set -e
 
-CLI_NAME="iosgen"
+CLI_NAME="swiftblock"
 BUILD_PATH=".build/release/$CLI_NAME"
 INSTALL_BIN="/usr/local/bin/$CLI_NAME"
 INSTALL_TEMPLATE="/usr/local/share/$CLI_NAME/Templates"

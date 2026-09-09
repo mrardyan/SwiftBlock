@@ -1,4 +1,4 @@
-# 🛠 iosgen — iOS Project Generator CLI
+# 🛠 swiftblock — iOS Project Generator CLI
 
 A Swift-based command-line tool to quickly scaffold iOS Xcode projects and modules using templates. Built with [`ArgumentParser`](https://github.com/apple/swift-argument-parser) and installable globally.
 
@@ -8,9 +8,9 @@ A Swift-based command-line tool to quickly scaffold iOS Xcode projects and modul
 
 - Generate full SwiftUI-based Xcode projects with a single command
 - Add new feature modules using templates (planned)
-- Replace placeholders in files (e.g. `__PROJECT_NAME__`)
+- Replace placeholders in files (e.g. `__PROJECT_NAME__`, `__BUNDLE_PREFIX__`)
 - CLI-based, installable globally on any macOS machine
-- Static template path (`/usr/local/share/iosgen/Templates`)
+- Static template path (`/usr/local/share/swiftblock/Templates`)
 - Supports Tuist, SwiftLint, and SwiftFormat in generated projects
 
 ---
@@ -20,16 +20,16 @@ A Swift-based command-line tool to quickly scaffold iOS Xcode projects and modul
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/mrardyan/iosgen.git
-cd iosgen
+git clone https://github.com/mrardyan/swiftblock.git
+cd swiftblock
 ```
 
 ### 2. Install the CLI Globally
 
 This script will:
 - Build the CLI with Swift
-- Copy the binary to `/usr/local/bin`
-- Copy templates to `/usr/local/share/iosgen/Templates`
+- Copy the binary to `/usr/local/bin/swiftblock`
+- Copy templates to `/usr/local/share/swiftblock/Templates`
 
 ```bash
 chmod +x Scripts/install.sh
@@ -40,27 +40,27 @@ chmod +x Scripts/install.sh
 
 ## 🧪 Usage
 
-Once installed, use the `iosgen` command globally from any folder.
+Once installed, use the `swiftblock` command globally from any folder.
 
 ### Generate a New Project
 
 ```bash
-iosgen init MyApp
+swiftblock init MyApp
 ```
 Creates a new iOS project using the `BaseProject-SwiftUI` template with default bundle prefix (`io.ardyan`).
 
 #### Custom Bundle Prefix
 ```bash
-iosgen init MyApp --bundle-prefix com.mycompany
+swiftblock init MyApp --bundle-prefix com.mycompany
 # or short form:
-iosgen init MyApp -b com.mycompany
+swiftblock init MyApp -b com.mycompany
 ```
 Creates a project with bundle identifier `com.mycompany.MyApp`.
 
 ### Add a Module (Upcoming)
 
 ```bash
-iosgen add-module Home
+swiftblock add-module Home
 ```
 *Note: This feature is planned — contribute if you'd like to help!*
 
@@ -71,7 +71,7 @@ iosgen add-module Home
 Templates should be placed inside:
 
 ```
-/usr/local/share/iosgen/Templates/
+/usr/local/share/swiftblock/Templates/
 ```
 
 **Example structure:**
@@ -89,7 +89,7 @@ Templates/
     └── .swiftformat
 ```
 
-Use placeholders like `__PROJECT_NAME__` in template files. They will be replaced automatically during generation.
+Use placeholders like `__PROJECT_NAME__` and `__BUNDLE_PREFIX__` in template files. They will be replaced automatically during generation.
 
 ---
 
@@ -104,7 +104,13 @@ swift build -c release
 To test without installing:
 
 ```bash
-.build/release/iosgen init MyApp
+.build/release/swiftblock init MyApp
+```
+
+To run unit tests:
+
+```bash
+swift test
 ```
 
 ---
@@ -113,13 +119,13 @@ To test without installing:
 
 To distribute via Homebrew:
 
-1. Create a new tap repository: `homebrew-iosgen`
+1. Create a new tap repository: `homebrew-swiftblock`
 2. Add a formula referencing your latest GitHub release
 
 Users can install via:
 
 ```bash
-brew install mrardyan/iosgen/iosgen
+brew install mrardyan/swiftblock/swiftblock
 ```
 
 ---

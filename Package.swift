@@ -4,31 +4,30 @@
 import PackageDescription
 
 let package = Package(
-    name: "iosgen",
+    name: "swiftblock",
     platforms: [.macOS(.v12)],
     products: [
-        .executable(name: "iosgen", targets: ["iosgen"]),
-        .library(name: "IOSGenCore", targets: ["IOSGenCore"])
+        .executable(name: "swiftblock", targets: ["swiftblock"]),
+        .library(name: "SwiftBlockCore", targets: ["SwiftBlockCore"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0")
     ],
     targets: [
         .target(
-            name: "IOSGenCore",
+            name: "SwiftBlockCore",
             dependencies: []
         ),
         .executableTarget(
-            name: "iosgen",
+            name: "swiftblock",
             dependencies: [
-                "IOSGenCore",
+                "SwiftBlockCore",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ]
         ),
         .testTarget(
-            name: "IOSGenTests",
-            dependencies: ["IOSGenCore"]
+            name: "SwiftBlockTests",
+            dependencies: ["SwiftBlockCore"]
         )
     ]
 )
-

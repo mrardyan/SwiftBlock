@@ -1,12 +1,12 @@
 import ArgumentParser
 import Foundation
-import IOSGenCore
+import SwiftBlockCore
 
 @main
-struct IOSGen: ParsableCommand {
+struct SwiftBlock: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "iosgen",
-        abstract: "iOS project generator CLI",
+        commandName: "swiftblock",
+        abstract: "Swift project generator CLI",
         subcommands: [Init.self]
     )
 }
@@ -24,7 +24,7 @@ struct Init: ParsableCommand {
     var bundlePrefix: String = "io.ardyan"
 
     @Option(name: [.customShort("t"), .long], help: "Custom template path")
-    var templatePath: String = "/usr/local/share/iosgen/Templates/BaseProject-SwiftUI"
+    var templatePath: String = "/usr/local/share/swiftblock/Templates/BaseProject-SwiftUI"
 
     func run() throws {
         print("🛠️ Generating project: \(projectName)")

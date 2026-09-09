@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import IOSGenCore
+@testable import SwiftBlockCore
 
 struct ProjectGeneratorTests {
 
