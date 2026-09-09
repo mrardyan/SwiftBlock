@@ -3,6 +3,7 @@ import Foundation
 public protocol __MODULE_NAME__Analytics {
     func track(_ event: AnalyticsEvent)
     func track(_ event: AnalyticsEvent, to targetProviders: [AnalyticsProviderIdentifier])
+    func track(_ event: AnalyticsEvent, to targetProvider: AnalyticsProviderIdentifier)
     func setUserId(_ userId: String?)
     func setUserProperty(key: String, value: String?)
     func addProvider(_ provider: AnalyticsProvider)
@@ -35,6 +36,10 @@ public final class Default__MODULE_NAME__Analytics: __MODULE_NAME__Analytics {
         for target in targetProviders {
             providers[target]?.track(event)
         }
+    }
+
+    public func track(_ event: AnalyticsEvent, to targetProvider: AnalyticsProviderIdentifier) {
+        providers[targetProvider]?.track(event)
     }
 
     public func setUserId(_ userId: String?) {
