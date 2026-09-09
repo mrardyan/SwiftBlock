@@ -10,6 +10,8 @@
 	<string>__PROJECT_NAME__ file template to use case module</string>
 	<key>Summary</key>
 	<string>__PROJECT_NAME__ file template to use case module</string>
+	<key>Title</key>
+	<string>Use Case</string>
 	<key>SortOrder</key>
 	<integer>1</integer>
 	<key>Platforms</key>
