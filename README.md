@@ -1,148 +1,100 @@
-# 🛠 SwiftBlock — iOS Project Generator CLI
+# 🛠 SwiftBlock
 
-**SwiftBlock** is a Swift-based command-line tool to quickly scaffold iOS Xcode projects and modules using templates. Built with [`ArgumentParser`](https://github.com/apple/swift-argument-parser) and installable globally.
+> Production-ready iOS project generator and scaffolding CLI.
 
----
+[![Swift 5.10](https://img.shields.io/badge/Swift-5.10-orange.svg?style=flat-square)](https://swift.org)
+[![Platform macOS](https://img.shields.io/badge/Platform-macOS%2012.0%2B-blue.svg?style=flat-square)](https://developer.apple.com)
+[![License MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
 
-## ✨ Features
-
-- Generate full SwiftUI-based Xcode projects with a single command
-- Add new feature modules using templates (planned)
-- Replace placeholders in files (e.g. `__PROJECT_NAME__`, `__BUNDLE_PREFIX__`)
-- CLI-based, installable globally on any macOS machine
-- Static template path (`/usr/local/share/swiftblock/Templates`)
-- Supports Tuist, SwiftLint, and SwiftFormat in generated projects
+**SwiftBlock** is a command-line tool designed to instantly scaffold clean, modern SwiftUI Xcode projects pre-configured with industry-standard developer tooling.
 
 ---
 
-## 🚀 Getting Started
+## ✨ Key Features
 
-### 1. Clone the Repository
+- ⚡ **Instant Scaffolding**: Generate complete SwiftUI-based Xcode projects with a single command.
+- 🏗️ **Tuist Integration**: Built-in support for Tuist project generation out of the box.
+- 🧹 **Pre-configured Code Quality**: Automatic setup for SwiftLint, SwiftFormat, and pre-commit hooks.
+- 🏷️ **Dynamic Bundle Identifiers**: Support for custom organization prefixes (`--bundle-prefix`).
+- 📁 **Extensible Templates**: Static and customizable Xcode template support.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Installation
+
+Install SwiftBlock globally on your macOS system:
 
 ```bash
 git clone https://github.com/mrardyan/swiftblock.git
 cd swiftblock
-```
-
-### 2. Install SwiftBlock Globally
-
-This script will:
-- Build the CLI with Swift
-- Copy the binary to `/usr/local/bin/swiftblock`
-- Copy templates to `/usr/local/share/swiftblock/Templates`
-
-```bash
 chmod +x Scripts/install.sh
 ./Scripts/install.sh
 ```
 
----
+### 2. Usage
 
-## 🧪 Usage
-
-Once installed, use the `swiftblock` command globally from any folder.
-
-### Generate a New Project
+Generate a new iOS project anywhere on your Mac:
 
 ```bash
+# Standard initialization
 swiftblock init MyApp
-```
-Creates a new iOS project using the `BaseProject-SwiftUI` template with default bundle prefix (`io.ardyan`).
 
-#### Custom Bundle Prefix
-```bash
+# Custom bundle identifier (e.g. com.mycompany.MyApp)
 swiftblock init MyApp --bundle-prefix com.mycompany
-# or short form:
-swiftblock init MyApp -b com.mycompany
 ```
-Creates a project with bundle identifier `com.mycompany.MyApp`.
-
-### Add a Module (Upcoming)
-
-```bash
-swiftblock add-module Home
-```
-*Note: This feature is planned — contribute if you'd like to help!*
 
 ---
 
-## 📁 Template Location
+## 📖 Command Reference
 
-Templates should be placed inside:
+| Command | Option / Flag | Description | Default |
+| :--- | :--- | :--- | :--- |
+| `swiftblock init <Name>` | `-b, --bundle-prefix` | Set custom bundle identifier prefix | `io.ardyan` |
+| | `-t, --template-path` | Use custom template directory path | `/usr/local/share/swiftblock/Templates/BaseProject-SwiftUI` |
+| | `-h, --help` | Show command usage and help | |
 
-```
-/usr/local/share/swiftblock/Templates/
-```
+---
 
-**Example structure:**
-```
+## 📁 Template Structure
+
+Templates are stored at: `/usr/local/share/swiftblock/Templates/`
+
+```text
 Templates/
 └── BaseProject-SwiftUI/
-    ├── Project.swift
+    ├── Project.swift         # Tuist Project Manifest
     ├── App/
-    │   ├── AppDelegate.swift
-    │   ├── ContentView.swift
-    │   └── Info.plist
-    ├── Tests/
-    │   └── AppTests.swift
-    ├── .swiftlint.yml
-    └── .swiftformat
+    │   ├── Sources/          # App Delegate, Main SwiftUI App & Views
+    │   ├── Resources/        # Assets & Plist resources
+    │   └── Tests/            # Unit Test Targets
+    ├── Scripts/              # Setup scripts & Xcode file templates
+    ├── .swiftlint.yml        # SwiftLint Configuration
+    └── .swiftformat          # SwiftFormat Configuration
 ```
 
-Use placeholders like `__PROJECT_NAME__` and `__BUNDLE_PREFIX__` in template files. They will be replaced automatically during generation.
+Available placeholders:
+- `__PROJECT_NAME__`: Replaced with your project name (e.g. `MyApp`).
+- `__BUNDLE_PREFIX__`: Replaced with your organization prefix (e.g. `com.mycompany`).
 
 ---
 
-## 🔧 Development
-
-To build locally:
+## 🛠 Local Development & Testing
 
 ```bash
+# Build release binary locally
 swift build -c release
-```
 
-To test without installing:
-
-```bash
-.build/release/swiftblock init MyApp
-```
-
-To run unit tests:
-
-```bash
+# Run unit test suite (Swift Testing framework)
 swift test
+
+# Test executable without global installation
+.build/release/swiftblock init SampleApp
 ```
-
----
-
-## 📦 Distribute via Homebrew (optional)
-
-To distribute via Homebrew:
-
-1. Create a new tap repository: `homebrew-swiftblock`
-2. Add a formula referencing your latest GitHub release
-
-Users can install via:
-
-```bash
-brew install mrardyan/swiftblock/swiftblock
-```
-
----
-
-## 🙌 Contribution
-
-Feel free to open PRs or issues. Ideas for future:
-- Add `add-module` command
-- Support MVVM or Clean Architecture templates
-- Interactive mode
 
 ---
 
 ## 📚 License
 
-MIT License
-
----
-
-Need help? Feel free to open an issue!
+Distributed under the MIT License.
