@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-public final class KeychainStorage: __MODULE_NAME__Storage {
+public final class Keychain__MODULE_NAME__Storage: __MODULE_NAME__Storage {
     private let service: String
 
     public init(service: String = Bundle.main.bundleIdentifier ?? "com.example") {
