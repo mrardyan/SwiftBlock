@@ -1,11 +1,11 @@
 import Foundation
 
-public protocol AnalyticsEventProtocol {
+public protocol AnalyticsEvent {
     var name: String { get }
     var parameters: [String: Any]? { get }
 }
 
-public struct AnalyticsEvent: AnalyticsEventProtocol {
+public struct DefaultAnalyticsEvent: AnalyticsEvent {
     public let name: String
     public let parameters: [String: Any]?
 

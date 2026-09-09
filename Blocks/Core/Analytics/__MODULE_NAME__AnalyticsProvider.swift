@@ -1,15 +1,15 @@
 import Foundation
 
-public protocol AnalyticsProviderProtocol {
-    func track(_ event: AnalyticsEventProtocol)
+public protocol AnalyticsProvider {
+    func track(_ event: AnalyticsEvent)
     func setUserId(_ userId: String?)
     func setUserProperty(key: String, value: String?)
 }
 
-public final class ConsoleAnalyticsProvider: AnalyticsProviderProtocol {
+public final class ConsoleAnalyticsProvider: AnalyticsProvider {
     public init() {}
 
-    public func track(_ event: AnalyticsEventProtocol) {
+    public func track(_ event: AnalyticsEvent) {
         #if DEBUG
         let paramsString = event.parameters?.description ?? "[:]"
         print("📊 [Analytics Event] '\(event.name)' | params: \(paramsString)")

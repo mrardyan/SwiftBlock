@@ -1,13 +1,13 @@
 import Foundation
 import OSLog
 
-public protocol __MODULE_NAME__LoggerProtocol {
+public protocol __MODULE_NAME__Logger {
     func debug(_ message: String)
     func info(_ message: String)
     func error(_ message: String)
 }
 
-public final class __MODULE_NAME__Logger: __MODULE_NAME__LoggerProtocol {
+public final class Default__MODULE_NAME__Logger: __MODULE_NAME__Logger {
     private let logger: Logger
 
     public init(subsystem: String = Bundle.main.bundleIdentifier ?? "com.example", category: String = "App") {

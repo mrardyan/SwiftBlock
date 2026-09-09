@@ -17,16 +17,16 @@ public enum NetworkError: Error, LocalizedError, Equatable {
     }
 }
 
-public protocol __MODULE_NAME__NetworkClientProtocol {
+public protocol __MODULE_NAME__NetworkClient {
     func send<T: Decodable>(_ request: HTTPRequest) async throws -> T
 }
 
-public final class __MODULE_NAME__NetworkClient: __MODULE_NAME__NetworkClientProtocol {
-    private let transport: HTTPTransportProtocol
+public final class Default__MODULE_NAME__NetworkClient: __MODULE_NAME__NetworkClient {
+    private let transport: HTTPTransport
     private let jsonDecoder: JSONDecoder
 
     public init(
-        transport: HTTPTransportProtocol = URLSessionTransport(),
+        transport: HTTPTransport = URLSessionTransport(),
         jsonDecoder: JSONDecoder = JSONDecoder()
     ) {
         self.transport = transport

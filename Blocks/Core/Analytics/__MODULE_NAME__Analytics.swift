@@ -1,24 +1,24 @@
 import Foundation
 
-public protocol __MODULE_NAME__AnalyticsProtocol {
-    func track(_ event: AnalyticsEventProtocol)
+public protocol __MODULE_NAME__Analytics {
+    func track(_ event: AnalyticsEvent)
     func setUserId(_ userId: String?)
     func setUserProperty(key: String, value: String?)
-    func addProvider(_ provider: AnalyticsProviderProtocol)
+    func addProvider(_ provider: AnalyticsProvider)
 }
 
-public final class __MODULE_NAME__Analytics: __MODULE_NAME__AnalyticsProtocol {
-    private var providers: [AnalyticsProviderProtocol]
+public final class Default__MODULE_NAME__Analytics: __MODULE_NAME__Analytics {
+    private var providers: [AnalyticsProvider]
 
-    public init(providers: [AnalyticsProviderProtocol] = [ConsoleAnalyticsProvider()]) {
+    public init(providers: [AnalyticsProvider] = [ConsoleAnalyticsProvider()]) {
         self.providers = providers
     }
 
-    public func addProvider(_ provider: AnalyticsProviderProtocol) {
+    public func addProvider(_ provider: AnalyticsProvider) {
         providers.append(provider)
     }
 
-    public func track(_ event: AnalyticsEventProtocol) {
+    public func track(_ event: AnalyticsEvent) {
         for provider in providers {
             provider.track(event)
         }

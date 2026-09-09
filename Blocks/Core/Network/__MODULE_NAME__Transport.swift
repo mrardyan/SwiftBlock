@@ -44,11 +44,11 @@ public struct HTTPRequest {
     }
 }
 
-public protocol HTTPTransportProtocol {
+public protocol HTTPTransport {
     func send(_ request: HTTPRequest) async throws -> (Data, HTTPURLResponse)
 }
 
-public final class URLSessionTransport: HTTPTransportProtocol {
+public final class URLSessionTransport: HTTPTransport {
     private let session: URLSession
 
     public init(session: URLSession = .shared) {
