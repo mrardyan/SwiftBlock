@@ -1,15 +1,38 @@
 import Foundation
 
 public protocol __MODULE_NAME__AnalyticsProtocol {
-    func logEvent(name: String, parameters: [String: Any]?)
+    func logEvent(_ event: AnalyticsEventProtocol)
+    func setUserId(_ userId: String?)
+    func setUserProperty(key: String, value: String?)
+    func addProvider(_ provider: AnalyticsProviderProtocol)
 }
 
 public final class __MODULE_NAME__Analytics: __MODULE_NAME__AnalyticsProtocol {
-    public init() {}
+    private var providers: [AnalyticsProviderProtocol]
 
-    public func logEvent(name: String, parameters: [String: Any]? = nil) {
-        #if DEBUG
-        print("📊 [Analytics Event] \(name) | params: \(parameters ?? [:])")
-        #endif
+    public init(providers: [AnalyticsProviderProtocol] = [ConsoleAnalyticsProvider()]) {
+        self.providers = providers
+    }
+
+    public func addProvider(_ provider: AnalyticsProviderProtocol) {
+        providers.append(provider)
+    }
+
+    public func logEvent(_ event: AnalyticsEventProtocol) {
+        for provider in providers {
+            provider.logEvent(event)
+        }
+    }
+
+    public func setUserId(_ userId: String?) {
+        for provider in providers {
+            provider.setUserId(userId)
+        }
+    }
+
+    public func setUserProperty(key: String, value: String?) {
+        for provider in providers {
+            provider.setUserProperty(key: key, value: value)
+        }
     }
 }
