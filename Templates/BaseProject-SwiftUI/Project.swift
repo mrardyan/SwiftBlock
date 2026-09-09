@@ -7,7 +7,7 @@ let project = Project(
             name: "__PROJECT_NAME__",
             destinations: .iOS,
             product: .app,
-            bundleId: "io.ardyan.__PROJECT_NAME__",
+            bundleId: "__BUNDLE_PREFIX__.__PROJECT_NAME__",
             infoPlist: .extendingDefault(
                 with: [
                     "UILaunchScreen": [
@@ -41,7 +41,7 @@ fi
             name: "__PROJECT_NAME__Tests",
             destinations: .iOS,
             product: .unitTests,
-            bundleId: "io.ardyan.__PROJECT_NAME__Tests",
+            bundleId: "__BUNDLE_PREFIX__.__PROJECT_NAME__Tests",
             infoPlist: .default,
             sources: ["App/Tests/**"],
             resources: [],
