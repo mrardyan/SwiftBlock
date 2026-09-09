@@ -230,5 +230,46 @@ struct ModuleGeneratorTests {
         let content = try String(contentsOfFile: expectedComponentPath, encoding: .utf8)
         #expect(content == "struct ProfileHeader {}")
     }
+
+    @Test func generateNewModuleTypes() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let config = SwiftBlockConfig(projectName: "TestApp")
+        let configData = try JSONEncoder().encode(config)
+        try configData.write(to: tempDir.appendingPathComponent(".swiftblock"))
+
+        let mockModulesURL = tempDir.appendingPathComponent("MockModules")
+
+        let types: [(ModuleType, String)] = [
+            (.entity, "Entity"),
+            (.coordinator, "Coordinator"),
+            (.storage, "Storage"),
+            (.component, "Component")
+        ]
+
+        for (type, folderName) in types {
+            let folderURL = mockModulesURL.appendingPathComponent(folderName)
+            try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
+            let fileURL = folderURL.appendingPathComponent("__MODULE_NAME__Test.swift")
+            try "// \(type.rawValue)".write(to: fileURL, atomically: true, encoding: .utf8)
+
+            let options = ModuleGeneratorOptions(
+                type: type,
+                moduleName: "Sample",
+                projectRootPath: tempDir.path,
+                modulesTemplatePath: mockModulesURL.path
+            )
+
+            let generator = ModuleGenerator()
+            let generatedPath = try generator.generateModule(options: options)
+            #expect(FileManager.default.fileExists(atPath: "\(generatedPath)/SampleTest.swift"))
+        }
+    }
 }
+
 

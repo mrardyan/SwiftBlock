@@ -100,7 +100,11 @@ public class InteractiveWizard {
             "Scene (MVVM View + ViewModel + State)",
             "UseCase (Domain Protocol + Implementation)",
             "Repository (Data Protocol + Implementation)",
-            "Service (API Service Protocol + Implementation)"
+            "Service (API Service Protocol + Implementation)",
+            "Entity (Domain Entity / DTO Model)",
+            "Coordinator (Navigation Flow Routing)",
+            "Storage (Local Data Persistence Storage)",
+            "Component (Reusable UI Component)"
         ]
 
         let selectedIndex = promptChoice(title: "Select Module Block Type:", options: typeTitles, readLine: readLine)

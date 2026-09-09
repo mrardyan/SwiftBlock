@@ -10,17 +10,29 @@ public struct SwiftBlockConfig: Codable {
         public var usecase: String
         public var repository: String
         public var service: String
+        public var entity: String
+        public var coordinator: String
+        public var storage: String
+        public var component: String
 
         public init(
             scene: String = "App/Sources/Features",
             usecase: String = "App/Sources/Domain/UseCases",
             repository: String = "App/Sources/Data/Repositories",
-            service: String = "App/Sources/Data/Services"
+            service: String = "App/Sources/Data/Services",
+            entity: String = "App/Sources/Domain/Entities",
+            coordinator: String = "App/Sources/Presentation/Coordinators",
+            storage: String = "App/Sources/Data/Storage",
+            component: String = "App/Sources/Presentation/Components"
         ) {
             self.scene = scene
             self.usecase = usecase
             self.repository = repository
             self.service = service
+            self.entity = entity
+            self.coordinator = coordinator
+            self.storage = storage
+            self.component = component
         }
 
         public func path(for type: ModuleType) -> String {
@@ -29,6 +41,10 @@ public struct SwiftBlockConfig: Codable {
             case .usecase: return usecase
             case .repository: return repository
             case .service: return service
+            case .entity: return entity
+            case .coordinator: return coordinator
+            case .storage: return storage
+            case .component: return component
             }
         }
     }
@@ -69,4 +85,9 @@ public enum ModuleType: String, CaseIterable {
     case usecase
     case repository
     case service
+    case entity
+    case coordinator
+    case storage
+    case component
 }
+

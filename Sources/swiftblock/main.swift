@@ -101,7 +101,16 @@ struct Add: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "add",
         abstract: "Add a new architecture module block to current project",
-        subcommands: [AddScene.self, AddUseCase.self, AddRepository.self, AddService.self]
+        subcommands: [
+            AddScene.self,
+            AddUseCase.self,
+            AddRepository.self,
+            AddService.self,
+            AddEntity.self,
+            AddCoordinator.self,
+            AddStorage.self,
+            AddComponent.self
+        ]
     )
 
     @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
@@ -197,6 +206,87 @@ struct AddService: ParsableCommand {
         try executeAddModule(type: .service, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
     }
 }
+
+struct AddEntity: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "entity",
+        abstract: "Add a new Domain Entity / DTO Model"
+    )
+
+    @Argument(help: "Entity module name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
+
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .entity, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
+struct AddCoordinator: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "coordinator",
+        abstract: "Add a new Navigation Coordinator (MVVM-C Flow Router)"
+    )
+
+    @Argument(help: "Coordinator module name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
+
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .coordinator, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
+struct AddStorage: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "storage",
+        abstract: "Add a new Local Persistence Storage Block"
+    )
+
+    @Argument(help: "Storage module name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
+
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .storage, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
+struct AddComponent: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "component",
+        abstract: "Add a new Reusable UI Component Block"
+    )
+
+    @Argument(help: "Component module name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
+
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .component, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
 
 private func executeAddModule(type: ModuleType, moduleName: String, templatePath: String, isDryRun: Bool) throws {
     let options = ModuleGeneratorOptions(
