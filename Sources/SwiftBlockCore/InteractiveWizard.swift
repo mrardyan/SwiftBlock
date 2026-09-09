@@ -3,7 +3,11 @@ import Foundation
 public class InteractiveWizard {
     public init() {}
 
-    public static func prompt(message: String, defaultValue: String? = nil) -> String {
+    public static func prompt(
+        message: String,
+        defaultValue: String? = nil,
+        readLine: () -> String? = { Swift.readLine() }
+    ) -> String {
         if let defaultValue = defaultValue, !defaultValue.isEmpty {
             print("\(message) [default: \(defaultValue)]: ", terminator: "")
         } else {
@@ -17,7 +21,11 @@ public class InteractiveWizard {
         return input
     }
 
-    public static func promptChoice(title: String, options: [String]) -> Int {
+    public static func promptChoice(
+        title: String,
+        options: [String],
+        readLine: () -> String? = { Swift.readLine() }
+    ) -> Int {
         print("\n\(title)")
         for (index, option) in options.enumerated() {
             print("  \(index + 1)) \(option)")
@@ -35,7 +43,11 @@ public class InteractiveWizard {
         }
     }
 
-    public static func promptConfirm(message: String, defaultYes: Bool = true) -> Bool {
+    public static func promptConfirm(
+        message: String,
+        defaultYes: Bool = true,
+        readLine: () -> String? = { Swift.readLine() }
+    ) -> Bool {
         let suffix = defaultYes ? "[Y/n]" : "[y/N]"
         print("\(message) \(suffix): ", terminator: "")
         fflush(stdout)
@@ -46,21 +58,24 @@ public class InteractiveWizard {
         return input.hasPrefix("y")
     }
 
-    public static func runProjectWizard(defaultTemplatePath: String) throws -> ProjectGeneratorOptions {
+    public static func runProjectWizard(
+        defaultTemplatePath: String,
+        readLine: () -> String? = { Swift.readLine() }
+    ) throws -> ProjectGeneratorOptions {
         print("\n🪄 SwiftBlock Project Scaffolding Wizard")
         print("────────────────────────────────────────")
 
         var projectName = ""
         while projectName.isEmpty {
-            projectName = prompt(message: "Enter Project Name (e.g. MyApp)")
+            projectName = prompt(message: "Enter Project Name (e.g. MyApp)", readLine: readLine)
             if projectName.isEmpty {
                 print("⚠️ Project name cannot be empty.")
             }
         }
 
-        let bundlePrefix = prompt(message: "Enter Bundle Identifier Prefix", defaultValue: "com.example")
+        let bundlePrefix = prompt(message: "Enter Bundle Identifier Prefix", defaultValue: "com.example", readLine: readLine)
 
-        let confirm = promptConfirm(message: "Create project '\(projectName)' with bundle prefix '\(bundlePrefix)'?")
+        let confirm = promptConfirm(message: "Create project '\(projectName)' with bundle prefix '\(bundlePrefix)'?", readLine: readLine)
         guard confirm else {
             print("❌ Project creation cancelled.")
             throw InteractiveWizardError.cancelled
@@ -73,7 +88,10 @@ public class InteractiveWizard {
         )
     }
 
-    public static func runModuleWizard(defaultTemplatePath: String) throws -> ModuleGeneratorOptions {
+    public static func runModuleWizard(
+        defaultTemplatePath: String,
+        readLine: () -> String? = { Swift.readLine() }
+    ) throws -> ModuleGeneratorOptions {
         print("\n🪄 SwiftBlock Architecture Module Wizard")
         print("────────────────────────────────────────")
 
@@ -85,12 +103,12 @@ public class InteractiveWizard {
             "Service (API Service Protocol + Implementation)"
         ]
 
-        let selectedIndex = promptChoice(title: "Select Module Block Type:", options: typeTitles)
+        let selectedIndex = promptChoice(title: "Select Module Block Type:", options: typeTitles, readLine: readLine)
         let selectedType = types[selectedIndex]
 
         var moduleName = ""
         while moduleName.isEmpty {
-            moduleName = prompt(message: "Enter Module Name (e.g. Home)")
+            moduleName = prompt(message: "Enter Module Name (e.g. Home)", readLine: readLine)
             if moduleName.isEmpty {
                 print("⚠️ Module name cannot be empty.")
             }
@@ -104,7 +122,7 @@ public class InteractiveWizard {
     }
 }
 
-public enum InteractiveWizardError: Error, LocalizedError {
+public enum InteractiveWizardError: Error, LocalizedError, Equatable {
     case cancelled
 
     public var errorDescription: String? {
@@ -114,3 +132,4 @@ public enum InteractiveWizardError: Error, LocalizedError {
         }
     }
 }
+
