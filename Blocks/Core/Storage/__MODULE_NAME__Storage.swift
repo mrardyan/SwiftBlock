@@ -6,7 +6,7 @@ public protocol __MODULE_NAME__Storage {
     func remove(forKey key: String)
 }
 
-public final class Default__MODULE_NAME__Storage: __MODULE_NAME__Storage {
+public final class UserDefaultsStorage: __MODULE_NAME__Storage {
     private let userDefaults: UserDefaults
 
     public init(userDefaults: UserDefaults = .standard) {
