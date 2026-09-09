@@ -9,7 +9,7 @@ public struct ProjectGeneratorOptions {
     public init(
         projectName: String,
         bundlePrefix: String = "io.ardyan",
-        templatePath: String = "/usr/local/share/swiftblock/Templates/BaseProject-SwiftUI",
+        templatePath: String = "/usr/local/share/swiftblock/Templates/Projects/BaseProject-SwiftUI",
         outputPath: String? = nil
     ) {
         self.projectName = projectName
@@ -61,7 +61,7 @@ public class ProjectGenerator {
         let enumerator = fileManager.enumerator(atPath: folderPath)
 
         let allowedExtensions = ["swift", "xcodeproj", "pbxproj", "plist", "md", "yaml", "yml", "txt", "sh"]
-        let allowedExactFilenames = [".swiftformat", ".gitignore", ".editorconfig", "Makefile"]
+        let allowedExactFilenames = [".swiftformat", ".gitignore", ".editorconfig", "Makefile", ".swiftblock"]
 
         while let file = enumerator?.nextObject() as? String {
             let filePath = "\(folderPath)/\(file)"

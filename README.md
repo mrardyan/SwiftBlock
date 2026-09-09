@@ -13,17 +13,18 @@
 
 ---
 
-**SwiftBlock** is a command-line tool designed to instantly scaffold clean, modern SwiftUI Xcode projects pre-configured with industry-standard developer tooling.
+**SwiftBlock** is a command-line tool designed to instantly scaffold clean, modern SwiftUI Xcode projects and architecture building blocks pre-configured with industry-standard developer tooling.
 
 ---
 
 ## Key Features
 
 - **Instant Scaffolding**: Generate complete SwiftUI-based Xcode projects with a single command.
+- **Architecture Building Blocks**: Generate `scene`, `usecase`, `repository`, and `service` modules directly from your project root.
+- **Project Config (.swiftblock)**: Automatic JSON configuration for customizable directory paths per project.
 - **Tuist Integration**: Built-in support for Tuist project generation out of the box.
 - **Pre-configured Code Quality**: Automatic setup for SwiftLint, SwiftFormat, and pre-commit hooks.
 - **Dynamic Bundle Identifiers**: Support for custom organization prefixes (`--bundle-prefix`).
-- **Extensible Templates**: Static and customizable Xcode template support.
 
 ---
 
@@ -42,14 +43,36 @@ chmod +x Scripts/install.sh
 
 ### 2. Usage
 
-Generate a new iOS project anywhere on your Mac:
+#### Initialize a New Project
 
 ```bash
-# Standard initialization
+# Create a project with default bundle prefix (io.ardyan)
 swiftblock init MyApp
 
-# Custom bundle identifier (e.g. com.mycompany.MyApp)
+# Create a project with custom organization bundle prefix
 swiftblock init MyApp --bundle-prefix com.mycompany
+
+cd MyApp
+make setup
+make generate
+```
+
+#### Add Modular Building Blocks
+
+Run these commands from your project root:
+
+```bash
+# Add a new MVVM Scene (View + ViewModel + State)
+swiftblock add scene Home
+
+# Add a new Domain UseCase
+swiftblock add usecase Authenticate
+
+# Add a new Data Repository
+swiftblock add repository User
+
+# Add a new API Service
+swiftblock add service Network
 ```
 
 ---
@@ -59,31 +82,53 @@ swiftblock init MyApp --bundle-prefix com.mycompany
 | Command | Option / Flag | Description | Default |
 | :--- | :--- | :--- | :--- |
 | `swiftblock init <Name>` | `-b, --bundle-prefix` | Set custom bundle identifier prefix | `io.ardyan` |
-| | `-t, --template-path` | Use custom template directory path | `/usr/local/share/swiftblock/Templates/BaseProject-SwiftUI` |
+| | `-t, --template-path` | Use custom template directory path | `/usr/local/share/swiftblock/Templates/Projects/BaseProject-SwiftUI` |
+| `swiftblock add scene <Name>` | `-t, --template-path` | Generate MVVM Scene module | `App/Sources/Features/<Name>` |
+| `swiftblock add usecase <Name>` | `-t, --template-path` | Generate Domain UseCase module | `App/Sources/Domain/UseCases/<Name>` |
+| `swiftblock add repository <Name>` | `-t, --template-path` | Generate Data Repository module | `App/Sources/Data/Repositories/<Name>` |
+| `swiftblock add service <Name>` | `-t, --template-path` | Generate API Service module | `App/Sources/Data/Services/<Name>` |
 | | `-h, --help` | Show command usage and help | |
 
 ---
 
-## Template Structure
+## Project Configuration (.swiftblock)
 
-Templates are stored at: `/usr/local/share/swiftblock/Templates/`
+Every generated project includes a `.swiftblock` configuration file at the project root:
+
+```json
+{
+  "projectName": "MyApp",
+  "bundlePrefix": "io.ardyan",
+  "paths": {
+    "scene": "App/Sources/Features",
+    "usecase": "App/Sources/Domain/UseCases",
+    "repository": "App/Sources/Data/Repositories",
+    "service": "App/Sources/Data/Services"
+  }
+}
+```
+
+---
+
+## Building Block Templates
+
+Templates are stored at `/usr/local/share/swiftblock/Templates/`:
 
 ```text
 Templates/
-└── BaseProject-SwiftUI/
-    ├── Project.swift         # Tuist Project Manifest
-    ├── App/
-    │   ├── Sources/          # App Delegate, Main SwiftUI App & Views
-    │   ├── Resources/        # Assets & Plist resources
-    │   └── Tests/            # Unit Test Targets
-    ├── Scripts/              # Setup scripts & Xcode file templates
-    ├── .swiftlint.yml        # SwiftLint Configuration
-    └── .swiftformat          # SwiftFormat Configuration
+├── Projects/                     # Project Starter Templates
+│   └── BaseProject-SwiftUI/
+│       ├── .swiftblock           # Project Config File
+│       ├── Project.swift         # Tuist Project Manifest
+│       ├── Makefile              # Makefile Automation
+│       └── App/                  # Source Directories
+│
+└── Modules/                      # Architecture Building Block Templates
+    ├── Scene/                    # MVVM Scene (View + ViewModel + State)
+    ├── UseCase/                  # Domain UseCase (Protocol + Default Impl)
+    ├── Repository/               # Data Repository (Protocol + Default Impl)
+    └── Service/                  # API Service (Protocol + Default Impl)
 ```
-
-Available placeholders:
-- `__PROJECT_NAME__`: Replaced with your project name (e.g. `MyApp`).
-- `__BUNDLE_PREFIX__`: Replaced with your organization prefix (e.g. `com.mycompany`).
 
 ---
 

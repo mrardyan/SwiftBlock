@@ -1,0 +1,10 @@
+{
+  "projectName": "__PROJECT_NAME__",
+  "bundlePrefix": "__BUNDLE_PREFIX__",
+  "paths": {
+    "scene": "App/Sources/Features",
+    "usecase": "App/Sources/Domain/UseCases",
+    "repository": "App/Sources/Data/Repositories",
+    "service": "App/Sources/Data/Services"
+  }
+}
