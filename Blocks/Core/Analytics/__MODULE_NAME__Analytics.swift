@@ -1,7 +1,7 @@
 import Foundation
 
 public protocol __MODULE_NAME__AnalyticsProtocol {
-    func logEvent(_ event: AnalyticsEventProtocol)
+    func track(_ event: AnalyticsEventProtocol)
     func setUserId(_ userId: String?)
     func setUserProperty(key: String, value: String?)
     func addProvider(_ provider: AnalyticsProviderProtocol)
@@ -18,9 +18,9 @@ public final class __MODULE_NAME__Analytics: __MODULE_NAME__AnalyticsProtocol {
         providers.append(provider)
     }
 
-    public func logEvent(_ event: AnalyticsEventProtocol) {
+    public func track(_ event: AnalyticsEventProtocol) {
         for provider in providers {
-            provider.logEvent(event)
+            provider.track(event)
         }
     }
 
