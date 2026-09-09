@@ -130,4 +130,36 @@ struct ProjectGeneratorTests {
         let generatedContent = try String(contentsOf: outputURL.appendingPathComponent("Main.swift"), encoding: .utf8)
         #expect(generatedContent == "struct GeneratedAppApp {}")
     }
+
+    @Test func projectGeneratorErrorDescriptions() {
+        let err1 = ProjectGeneratorError.templateNotFound("/path/to/template")
+        #expect(err1.errorDescription == "Template not found at /path/to/template")
+
+        let err2 = ProjectGeneratorError.generationFailed("Disk full")
+        #expect(err2.errorDescription == "Failed to generate project: Disk full")
+    }
+
+    @Test func replacePlaceholdersIgnoresUnsupportedFiles() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let binFile = tempDir.appendingPathComponent("image.png")
+        let rawBytes = Data([0x89, 0x50, 0x4E, 0x47])
+        try rawBytes.write(to: binFile)
+
+        let generator = ProjectGenerator()
+        try generator.replacePlaceholders(
+            in: tempDir.path,
+            projectName: "MyAwesomeApp",
+            bundlePrefix: "com.example"
+        )
+
+        let contentAfter = try Data(contentsOf: binFile)
+        #expect(contentAfter == rawBytes)
+    }
 }
+

@@ -119,4 +119,116 @@ struct ModuleGeneratorTests {
             try generator.generateModule(options: options)
         }
     }
+
+    @Test func moduleGeneratorErrorDescriptions() {
+        let err1 = ModuleGeneratorError.templateNotFound("/path/1")
+        #expect(err1.errorDescription == "Module template not found at /path/1")
+
+        let err2 = ModuleGeneratorError.moduleAlreadyExists("/path/2")
+        #expect(err2.errorDescription == "Module already exists at /path/2")
+
+        let err3 = ModuleGeneratorError.generationFailed("Failed")
+        #expect(err3.errorDescription == "Failed to generate module: Failed")
+
+        let configErr = SwiftBlockConfigError.configNotFound("/path/3")
+        #expect(configErr.errorDescription == "Not a valid SwiftBlock project root (.swiftblock not found at /path/3)")
+    }
+
+    @Test func moduleTemplateNotFoundThrows() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let config = SwiftBlockConfig(projectName: "TestApp")
+        let configData = try JSONEncoder().encode(config)
+        try configData.write(to: tempDir.appendingPathComponent(".swiftblock"))
+
+        let mockModulesURL = tempDir.appendingPathComponent("EmptyModules")
+        try FileManager.default.createDirectory(at: mockModulesURL, withIntermediateDirectories: true)
+
+        let options = ModuleGeneratorOptions(
+            type: .repository,
+            moduleName: "User",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: mockModulesURL.path
+        )
+
+        let generator = ModuleGenerator()
+        #expect(throws: ModuleGeneratorError.self) {
+            try generator.generateModule(options: options)
+        }
+    }
+
+    @Test func moduleAlreadyExistsThrows() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let config = SwiftBlockConfig(projectName: "TestApp")
+        let configData = try JSONEncoder().encode(config)
+        try configData.write(to: tempDir.appendingPathComponent(".swiftblock"))
+
+        let mockModulesURL = tempDir.appendingPathComponent("MockModules")
+        let mockServiceURL = mockModulesURL.appendingPathComponent("Service")
+        try FileManager.default.createDirectory(at: mockServiceURL, withIntermediateDirectories: true)
+
+        // Pre-create the module destination folder
+        let existingModuleDir = tempDir.appendingPathComponent("App/Sources/Data/Services/Network")
+        try FileManager.default.createDirectory(at: existingModuleDir, withIntermediateDirectories: true)
+
+        let options = ModuleGeneratorOptions(
+            type: .service,
+            moduleName: "Network",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: mockModulesURL.path
+        )
+
+        let generator = ModuleGenerator()
+        #expect(throws: ModuleGeneratorError.self) {
+            try generator.generateModule(options: options)
+        }
+    }
+
+    @Test func generateModuleWithNestedDirectories() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let config = SwiftBlockConfig(projectName: "TestApp")
+        let configData = try JSONEncoder().encode(config)
+        try configData.write(to: tempDir.appendingPathComponent(".swiftblock"))
+
+        let mockModulesURL = tempDir.appendingPathComponent("MockModules")
+        let mockSceneURL = mockModulesURL.appendingPathComponent("Scene")
+        let subDirURL = mockSceneURL.appendingPathComponent("Components")
+        try FileManager.default.createDirectory(at: subDirURL, withIntermediateDirectories: true)
+
+        let componentFile = subDirURL.appendingPathComponent("__MODULE_NAME__Header.swift")
+        try "struct __MODULE_NAME__Header {}".write(to: componentFile, atomically: true, encoding: .utf8)
+
+        let options = ModuleGeneratorOptions(
+            type: .scene,
+            moduleName: "Profile",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: mockModulesURL.path
+        )
+
+        let generator = ModuleGenerator()
+        let generatedPath = try generator.generateModule(options: options)
+
+        let expectedComponentPath = "\(generatedPath)/Components/ProfileHeader.swift"
+        #expect(FileManager.default.fileExists(atPath: expectedComponentPath))
+        let content = try String(contentsOfFile: expectedComponentPath, encoding: .utf8)
+        #expect(content == "struct ProfileHeader {}")
+    }
 }
+
