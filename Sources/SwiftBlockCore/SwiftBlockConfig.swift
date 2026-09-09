@@ -12,8 +12,11 @@ public struct SwiftBlockConfig: Codable {
         public var service: String
         public var entity: String
         public var coordinator: String
-        public var storage: String
         public var component: String
+        public var storage: String
+        public var network: String
+        public var logger: String
+        public var analytics: String
 
         public init(
             scene: String = "App/Sources/Features",
@@ -22,8 +25,11 @@ public struct SwiftBlockConfig: Codable {
             service: String = "App/Sources/Data/Services",
             entity: String = "App/Sources/Domain/Entities",
             coordinator: String = "App/Sources/Presentation/Coordinators",
-            storage: String = "App/Sources/Data/Storage",
-            component: String = "App/Sources/Presentation/Components"
+            component: String = "App/Sources/Presentation/Components",
+            storage: String = "App/Sources/Core/Storage",
+            network: String = "App/Sources/Core/Network",
+            logger: String = "App/Sources/Core/Logger",
+            analytics: String = "App/Sources/Core/Analytics"
         ) {
             self.scene = scene
             self.usecase = usecase
@@ -31,8 +37,11 @@ public struct SwiftBlockConfig: Codable {
             self.service = service
             self.entity = entity
             self.coordinator = coordinator
-            self.storage = storage
             self.component = component
+            self.storage = storage
+            self.network = network
+            self.logger = logger
+            self.analytics = analytics
         }
 
         public func path(for type: ModuleType) -> String {
@@ -43,8 +52,11 @@ public struct SwiftBlockConfig: Codable {
             case .service: return service
             case .entity: return entity
             case .coordinator: return coordinator
-            case .storage: return storage
             case .component: return component
+            case .storage: return storage
+            case .network: return network
+            case .logger: return logger
+            case .analytics: return analytics
             }
         }
     }
@@ -80,14 +92,32 @@ public enum SwiftBlockConfigError: Error, LocalizedError {
     }
 }
 
-public enum ModuleType: String, CaseIterable {
+public enum ModuleCategory: String, Codable {
+    case feature
+    case core
+}
+
+public enum ModuleType: String, CaseIterable, Codable {
     case scene
     case usecase
     case repository
     case service
     case entity
     case coordinator
-    case storage
     case component
+    case storage
+    case network
+    case logger
+    case analytics
+
+    public var category: ModuleCategory {
+        switch self {
+        case .scene, .usecase, .repository, .service, .entity, .coordinator, .component:
+            return .feature
+        case .storage, .network, .logger, .analytics:
+            return .core
+        }
+    }
 }
+
 

@@ -73,9 +73,21 @@ struct InteractiveWizardTests {
         #expect(options.modulesTemplatePath == "/tmp/modules")
     }
 
+    @Test func runCoreWizardSuccess() throws {
+        var inputs = ["1", "", "UserStorage"] // Choice 1 = Storage
+        let options = try InteractiveWizard.runCoreWizard(defaultTemplatePath: "/tmp/core", readLine: {
+            inputs.isEmpty ? nil : inputs.removeFirst()
+        })
+
+        #expect(options.type == .storage)
+        #expect(options.moduleName == "UserStorage")
+        #expect(options.modulesTemplatePath == "/tmp/core")
+    }
+
     @Test func errorDescription() {
         let err = InteractiveWizardError.cancelled
         #expect(err.errorDescription == "Operation cancelled by user.")
     }
 }
+
 

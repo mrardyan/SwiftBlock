@@ -11,13 +11,18 @@ public struct ModuleGeneratorOptions {
         type: ModuleType,
         moduleName: String,
         projectRootPath: String = FileManager.default.currentDirectoryPath,
-        modulesTemplatePath: String = "/usr/local/share/swiftblock/Blocks/Modules",
+        modulesTemplatePath: String? = nil,
         isDryRun: Bool = false
     ) {
         self.type = type
         self.moduleName = moduleName
         self.projectRootPath = projectRootPath
-        self.modulesTemplatePath = modulesTemplatePath
+        if let templatePath = modulesTemplatePath, !templatePath.isEmpty {
+            self.modulesTemplatePath = templatePath
+        } else {
+            let subFolder = type.category == .core ? "Core" : "Modules"
+            self.modulesTemplatePath = "/usr/local/share/swiftblock/Blocks/\(subFolder)"
+        }
         self.isDryRun = isDryRun
     }
 }

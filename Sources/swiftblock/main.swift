@@ -7,7 +7,7 @@ struct SwiftBlock: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "swiftblock",
         abstract: "Swift project and architecture module generator CLI",
-        subcommands: [Init.self, New.self, Add.self]
+        subcommands: [Init.self, New.self, Add.self, CoreCommand.self]
     )
 }
 
@@ -100,7 +100,7 @@ private func executeWithOptions(options: ProjectGeneratorOptions) throws {
 struct Add: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "add",
-        abstract: "Add a new architecture module block to current project",
+        abstract: "Add a feature architecture block to current project",
         subcommands: [
             AddScene.self,
             AddUseCase.self,
@@ -108,7 +108,6 @@ struct Add: ParsableCommand {
             AddService.self,
             AddEntity.self,
             AddCoordinator.self,
-            AddStorage.self,
             AddComponent.self
         ]
     )
@@ -247,26 +246,6 @@ struct AddCoordinator: ParsableCommand {
     }
 }
 
-struct AddStorage: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "storage",
-        abstract: "Add a new Local Persistence Storage Block"
-    )
-
-    @Argument(help: "Storage module name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .storage, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
 struct AddComponent: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "component",
@@ -287,6 +266,111 @@ struct AddComponent: ParsableCommand {
     }
 }
 
+struct CoreCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "core",
+        abstract: "Add a core foundation block to current project (Storage, Network, Logger, Analytics)",
+        subcommands: [
+            CoreStorage.self,
+            CoreNetwork.self,
+            CoreLogger.self,
+            CoreAnalytics.self
+        ]
+    )
+
+    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
+
+    @Flag(name: .long, help: "Simulate block generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        let options = try InteractiveWizard.runCoreWizard(defaultTemplatePath: templatePath)
+        var finalOptions = options
+        finalOptions.isDryRun = dryRun
+        try executeAddModuleWithOptions(options: finalOptions)
+    }
+}
+
+struct CoreStorage: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "storage",
+        abstract: "Add a new Local Persistence Storage Block"
+    )
+
+    @Argument(help: "Storage block name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
+
+    @Flag(name: .long, help: "Simulate block generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .storage, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
+struct CoreNetwork: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "network",
+        abstract: "Add a new Network Client / HTTP Engine Block"
+    )
+
+    @Argument(help: "Network block name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
+
+    @Flag(name: .long, help: "Simulate block generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .network, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
+struct CoreLogger: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "logger",
+        abstract: "Add a new Unified Logger Block"
+    )
+
+    @Argument(help: "Logger block name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
+
+    @Flag(name: .long, help: "Simulate block generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .logger, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
+struct CoreAnalytics: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "analytics",
+        abstract: "Add a new Event Analytics Engine Block"
+    )
+
+    @Argument(help: "Analytics block name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
+
+    @Flag(name: .long, help: "Simulate block generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .analytics, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
 
 private func executeAddModule(type: ModuleType, moduleName: String, templatePath: String, isDryRun: Bool) throws {
     let options = ModuleGeneratorOptions(
@@ -299,16 +383,17 @@ private func executeAddModule(type: ModuleType, moduleName: String, templatePath
 }
 
 private func executeAddModuleWithOptions(options: ModuleGeneratorOptions) throws {
-    print("🧩 Adding \(options.type.rawValue) module: \(options.moduleName)")
+    print("🧩 Adding \(options.type.rawValue) block: \(options.moduleName)")
     let generator = ModuleGenerator()
 
     do {
         let generatedPath = try generator.generateModule(options: options)
         if !options.isDryRun {
-            print("✅ Generated \(options.type.rawValue) module '\(options.moduleName)' at \(generatedPath)")
+            print("✅ Generated \(options.type.rawValue) block '\(options.moduleName)' at \(generatedPath)")
         }
     } catch {
         print("❌ \(error.localizedDescription)")
         throw ExitCode.failure
     }
 }
+

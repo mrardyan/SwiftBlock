@@ -89,13 +89,13 @@ public class InteractiveWizard {
     }
 
     public static func runModuleWizard(
-        defaultTemplatePath: String,
+        defaultTemplatePath: String = "/usr/local/share/swiftblock/Blocks/Modules",
         readLine: () -> String? = { Swift.readLine() }
     ) throws -> ModuleGeneratorOptions {
-        print("\n🪄 SwiftBlock Architecture Module Wizard")
-        print("────────────────────────────────────────")
+        print("\n🪄 SwiftBlock Feature Module Block Wizard")
+        print("──────────────────────────────────────────")
 
-        let types = ModuleType.allCases
+        let types: [ModuleType] = [.scene, .usecase, .repository, .service, .entity, .coordinator, .component]
         let typeTitles = [
             "Scene (MVVM View + ViewModel + State)",
             "UseCase (Domain Protocol + Implementation)",
@@ -103,11 +103,10 @@ public class InteractiveWizard {
             "Service (API Service Protocol + Implementation)",
             "Entity (Domain Entity / DTO Model)",
             "Coordinator (Navigation Flow Routing)",
-            "Storage (Local Data Persistence Storage)",
             "Component (Reusable UI Component)"
         ]
 
-        let selectedIndex = promptChoice(title: "Select Module Block Type:", options: typeTitles, readLine: readLine)
+        let selectedIndex = promptChoice(title: "Select Feature Block Type:", options: typeTitles, readLine: readLine)
         let selectedType = types[selectedIndex]
 
         var moduleName = ""
@@ -115,6 +114,39 @@ public class InteractiveWizard {
             moduleName = prompt(message: "Enter Module Name (e.g. Home)", readLine: readLine)
             if moduleName.isEmpty {
                 print("⚠️ Module name cannot be empty.")
+            }
+        }
+
+        return ModuleGeneratorOptions(
+            type: selectedType,
+            moduleName: moduleName,
+            modulesTemplatePath: defaultTemplatePath
+        )
+    }
+
+    public static func runCoreWizard(
+        defaultTemplatePath: String = "/usr/local/share/swiftblock/Blocks/Core",
+        readLine: () -> String? = { Swift.readLine() }
+    ) throws -> ModuleGeneratorOptions {
+        print("\n🪄 SwiftBlock Core Foundation Block Wizard")
+        print("───────────────────────────────────────────")
+
+        let types: [ModuleType] = [.storage, .network, .logger, .analytics]
+        let typeTitles = [
+            "Storage (Local Persistence Storage Engine)",
+            "Network (Network Client / HTTP Request Engine)",
+            "Logger (Unified OSLog / Crash Logger Engine)",
+            "Analytics (Event Analytics & Metrics Engine)"
+        ]
+
+        let selectedIndex = promptChoice(title: "Select Core Block Type:", options: typeTitles, readLine: readLine)
+        let selectedType = types[selectedIndex]
+
+        var moduleName = ""
+        while moduleName.isEmpty {
+            moduleName = prompt(message: "Enter Core Block Name (e.g. AppStorage)", readLine: readLine)
+            if moduleName.isEmpty {
+                print("⚠️ Block name cannot be empty.")
             }
         }
 

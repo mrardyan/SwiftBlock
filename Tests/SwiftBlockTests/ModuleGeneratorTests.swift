@@ -248,8 +248,11 @@ struct ModuleGeneratorTests {
         let types: [(ModuleType, String)] = [
             (.entity, "Entity"),
             (.coordinator, "Coordinator"),
+            (.component, "Component"),
             (.storage, "Storage"),
-            (.component, "Component")
+            (.network, "Network"),
+            (.logger, "Logger"),
+            (.analytics, "Analytics")
         ]
 
         for (type, folderName) in types {
@@ -270,6 +273,15 @@ struct ModuleGeneratorTests {
             #expect(FileManager.default.fileExists(atPath: "\(generatedPath)/SampleTest.swift"))
         }
     }
+
+    @Test func defaultModuleGeneratorOptionsTemplatePaths() {
+        let featureOpt = ModuleGeneratorOptions(type: .scene, moduleName: "Test")
+        #expect(featureOpt.modulesTemplatePath == "/usr/local/share/swiftblock/Blocks/Modules")
+
+        let coreOpt = ModuleGeneratorOptions(type: .network, moduleName: "Test")
+        #expect(coreOpt.modulesTemplatePath == "/usr/local/share/swiftblock/Blocks/Core")
+    }
 }
+
 
 
