@@ -34,6 +34,54 @@ struct ProjectGeneratorTests {
         #expect(!updatedContent.contains("__BUNDLE_PREFIX__"))
     }
 
+    @Test func folderNamePlaceholderReplacement() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let subFolder = tempDir.appendingPathComponent("__PROJECT_NAME__Tests")
+        try FileManager.default.createDirectory(at: subFolder, withIntermediateDirectories: true)
+        let sampleFile = subFolder.appendingPathComponent("__PROJECT_NAME__Tests.swift")
+        try "class __PROJECT_NAME__Tests {}".write(to: sampleFile, atomically: true, encoding: .utf8)
+
+        let generator = ProjectGenerator()
+        try generator.renamePaths(in: tempDir.path, projectName: "FooApp", bundlePrefix: "com.foo")
+
+        let expectedSubFolder = tempDir.appendingPathComponent("FooAppTests")
+        let expectedFile = expectedSubFolder.appendingPathComponent("FooAppTests.swift")
+
+        #expect(FileManager.default.fileExists(atPath: expectedSubFolder.path))
+        #expect(FileManager.default.fileExists(atPath: expectedFile.path))
+    }
+
+    @Test func dryRunModeDoesNotWriteToDisk() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let mockTemplateURL = tempDir.appendingPathComponent("MockTemplate")
+        try FileManager.default.createDirectory(at: mockTemplateURL, withIntermediateDirectories: true)
+
+        let outputURL = tempDir.appendingPathComponent("DryRunApp")
+        let options = ProjectGeneratorOptions(
+            projectName: "DryRunApp",
+            templatePath: mockTemplateURL.path,
+            outputPath: outputURL.path,
+            isDryRun: true
+        )
+
+        let generator = ProjectGenerator()
+        try generator.generateProject(options: options)
+
+        #expect(!FileManager.default.fileExists(atPath: outputURL.path))
+    }
+
     @Test func templateNotFoundThrowsError() {
         let generator = ProjectGenerator()
         let tempDir = FileManager.default.temporaryDirectory
@@ -58,7 +106,6 @@ struct ProjectGeneratorTests {
             try? FileManager.default.removeItem(at: tempDir)
         }
 
-        // Create mock template folder
         let mockTemplateURL = tempDir.appendingPathComponent("MockTemplate")
         try FileManager.default.createDirectory(at: mockTemplateURL, withIntermediateDirectories: true)
 

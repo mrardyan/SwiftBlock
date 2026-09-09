@@ -26,8 +26,11 @@ struct Init: ParsableCommand {
     @Option(name: [.customShort("t"), .long], help: "Custom project template path")
     var templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
 
+    @Flag(name: .long, help: "Simulate project generation without writing to disk")
+    var dryRun: Bool = false
+
     func run() throws {
-        try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath)
+        try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, isDryRun: dryRun)
     }
 }
 
@@ -46,26 +49,32 @@ struct New: ParsableCommand {
     @Option(name: [.customShort("t"), .long], help: "Custom project template path")
     var templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
 
+    @Flag(name: .long, help: "Simulate project generation without writing to disk")
+    var dryRun: Bool = false
+
     func run() throws {
-        try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath)
+        try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, isDryRun: dryRun)
     }
 }
 
-private func executeInitProject(projectName: String, bundlePrefix: String, templatePath: String) throws {
+private func executeInitProject(projectName: String, bundlePrefix: String, templatePath: String, isDryRun: Bool) throws {
     print("🛠️ Generating project: \(projectName)")
 
     let options = ProjectGeneratorOptions(
         projectName: projectName,
         bundlePrefix: bundlePrefix,
-        templatePath: templatePath
+        templatePath: templatePath,
+        isDryRun: isDryRun
     )
 
     let generator = ProjectGenerator()
 
     do {
         try generator.generateProject(options: options)
-        print("✅ Project created at \(options.outputPath)")
-        print("🔁 Placeholders replaced with \(projectName) (bundle prefix: \(bundlePrefix))")
+        if !isDryRun {
+            print("✅ Project created at \(options.outputPath)")
+            print("🔁 Placeholders replaced with \(projectName) (bundle prefix: \(bundlePrefix))")
+        }
     } catch {
         print("❌ \(error.localizedDescription)")
         throw ExitCode.failure
@@ -92,8 +101,11 @@ struct AddScene: ParsableCommand {
     @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
     var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
 
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
     func run() throws {
-        try executeAddModule(type: .scene, moduleName: name, templatePath: templatePath)
+        try executeAddModule(type: .scene, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
     }
 }
 
@@ -109,8 +121,11 @@ struct AddUseCase: ParsableCommand {
     @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
     var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
 
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
     func run() throws {
-        try executeAddModule(type: .usecase, moduleName: name, templatePath: templatePath)
+        try executeAddModule(type: .usecase, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
     }
 }
 
@@ -126,8 +141,11 @@ struct AddRepository: ParsableCommand {
     @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
     var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
 
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
     func run() throws {
-        try executeAddModule(type: .repository, moduleName: name, templatePath: templatePath)
+        try executeAddModule(type: .repository, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
     }
 }
 
@@ -143,25 +161,31 @@ struct AddService: ParsableCommand {
     @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
     var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
 
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
     func run() throws {
-        try executeAddModule(type: .service, moduleName: name, templatePath: templatePath)
+        try executeAddModule(type: .service, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
     }
 }
 
-private func executeAddModule(type: ModuleType, moduleName: String, templatePath: String) throws {
+private func executeAddModule(type: ModuleType, moduleName: String, templatePath: String, isDryRun: Bool) throws {
     print("🧩 Adding \(type.rawValue) module: \(moduleName)")
 
     let options = ModuleGeneratorOptions(
         type: type,
         moduleName: moduleName,
-        modulesTemplatePath: templatePath
+        modulesTemplatePath: templatePath,
+        isDryRun: isDryRun
     )
 
     let generator = ModuleGenerator()
 
     do {
         let generatedPath = try generator.generateModule(options: options)
-        print("✅ Generated \(type.rawValue) module '\(moduleName)' at \(generatedPath)")
+        if !isDryRun {
+            print("✅ Generated \(type.rawValue) module '\(moduleName)' at \(generatedPath)")
+        }
     } catch {
         print("❌ \(error.localizedDescription)")
         throw ExitCode.failure

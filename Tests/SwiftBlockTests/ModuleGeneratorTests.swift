@@ -74,6 +74,36 @@ struct ModuleGeneratorTests {
         #expect(FileManager.default.fileExists(atPath: expectedPath))
     }
 
+    @Test func moduleDryRunModeDoesNotWriteToDisk() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let config = SwiftBlockConfig(projectName: "TestApp")
+        let configData = try JSONEncoder().encode(config)
+        try configData.write(to: tempDir.appendingPathComponent(".swiftblock"))
+
+        let mockModulesURL = tempDir.appendingPathComponent("MockModules")
+        let mockSceneURL = mockModulesURL.appendingPathComponent("Scene")
+        try FileManager.default.createDirectory(at: mockSceneURL, withIntermediateDirectories: true)
+
+        let options = ModuleGeneratorOptions(
+            type: .scene,
+            moduleName: "DryRunHome",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: mockModulesURL.path,
+            isDryRun: true
+        )
+
+        let generator = ModuleGenerator()
+        let generatedPath = try generator.generateModule(options: options)
+
+        #expect(!FileManager.default.fileExists(atPath: generatedPath))
+    }
+
     @Test func moduleGenerationFailsWithoutConfig() {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

@@ -21,6 +21,7 @@
 
 - **Instant Scaffolding**: Generate complete SwiftUI-based Xcode projects with `swiftblock new` or `swiftblock init`.
 - **Architecture Building Blocks**: Generate `scene`, `usecase`, `repository`, and `service` modules directly from your project root.
+- **Simulation Mode (--dry-run)**: Test project and module generation without writing to disk.
 - **Project Config (.swiftblock)**: Automatic JSON configuration for customizable directory paths per project.
 - **Tuist Integration**: Built-in support for Tuist project generation out of the box.
 - **Pre-configured Code Quality**: Automatic setup for SwiftLint, SwiftFormat, and pre-commit hooks.
@@ -32,7 +33,13 @@
 
 ### 1. Installation
 
-Install SwiftBlock globally on your macOS system:
+#### Via Homebrew (Recommended)
+
+```bash
+brew install mrardyan/tap/swiftblock
+```
+
+#### Via Shell Script
 
 ```bash
 git clone https://github.com/mrardyan/swiftblock.git
@@ -51,6 +58,9 @@ swiftblock new MyApp
 
 # Create a project with custom organization bundle prefix
 swiftblock new MyApp --bundle-prefix com.mycompany
+
+# Simulate creation without writing to disk
+swiftblock new MyApp --dry-run
 
 cd MyApp
 make setup
@@ -73,6 +83,9 @@ swiftblock add repository User
 
 # Add a new API Service
 swiftblock add service Network
+
+# Simulate module generation
+swiftblock add scene Home --dry-run
 ```
 
 ---
@@ -83,10 +96,12 @@ swiftblock add service Network
 | :--- | :--- | :--- | :--- |
 | `swiftblock new <Name>` (or `init`) | `-b, --bundle-prefix` | Set custom bundle identifier prefix | `io.ardyan` |
 | | `-t, --template-path` | Use custom project block path | `/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI` |
+| | `--dry-run` | Simulate generation without writing to disk | `false` |
 | `swiftblock add scene <Name>` | `-t, --template-path` | Generate MVVM Scene module | `App/Sources/Features/<Name>` |
 | `swiftblock add usecase <Name>` | `-t, --template-path` | Generate Domain UseCase module | `App/Sources/Domain/UseCases/<Name>` |
 | `swiftblock add repository <Name>` | `-t, --template-path` | Generate Data Repository module | `App/Sources/Data/Repositories/<Name>` |
 | `swiftblock add service <Name>` | `-t, --template-path` | Generate API Service module | `App/Sources/Data/Services/<Name>` |
+| | `--dry-run` | Simulate module generation | `false` |
 | | `-h, --help` | Show command usage and help | |
 
 ---

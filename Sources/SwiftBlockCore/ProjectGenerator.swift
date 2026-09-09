@@ -5,17 +5,20 @@ public struct ProjectGeneratorOptions {
     public var bundlePrefix: String
     public var templatePath: String
     public var outputPath: String
+    public var isDryRun: Bool
 
     public init(
         projectName: String,
         bundlePrefix: String = "io.ardyan",
         templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI",
-        outputPath: String? = nil
+        outputPath: String? = nil,
+        isDryRun: Bool = false
     ) {
         self.projectName = projectName
         self.bundlePrefix = bundlePrefix
         self.templatePath = templatePath
         self.outputPath = outputPath ?? "\(FileManager.default.currentDirectoryPath)/\(projectName)"
+        self.isDryRun = isDryRun
     }
 }
 
@@ -45,9 +48,17 @@ public class ProjectGenerator {
             throw ProjectGeneratorError.templateNotFound(options.templatePath)
         }
 
+        if options.isDryRun {
+            print("🔍 [DRY RUN] Would copy project block from: \(options.templatePath)")
+            print("🔍 [DRY RUN] Would create project directory: \(options.outputPath)")
+            print("🔍 [DRY RUN] Would replace placeholders for project: '\(options.projectName)' and bundle prefix: '\(options.bundlePrefix)'")
+            return
+        }
+
         do {
             try fileManager.copyItem(atPath: options.templatePath, toPath: options.outputPath)
             try replacePlaceholders(in: options.outputPath, projectName: options.projectName, bundlePrefix: options.bundlePrefix)
+            try renamePaths(in: options.outputPath, projectName: options.projectName, bundlePrefix: options.bundlePrefix)
         } catch {
             // Clean up partially copied project folder if generation failed
             if fileManager.fileExists(atPath: options.outputPath) {
@@ -60,7 +71,7 @@ public class ProjectGenerator {
     public func replacePlaceholders(in folderPath: String, projectName: String, bundlePrefix: String) throws {
         let enumerator = fileManager.enumerator(atPath: folderPath)
 
-        let allowedExtensions = ["swift", "xcodeproj", "pbxproj", "plist", "md", "yaml", "yml", "txt", "sh"]
+        let allowedExtensions = ["swift", "xcodeproj", "pbxproj", "plist", "md", "yaml", "yml", "txt", "sh", "json"]
         let allowedExactFilenames = [".swiftformat", ".gitignore", ".editorconfig", "Makefile", ".swiftblock"]
 
         while let file = enumerator?.nextObject() as? String {
@@ -79,6 +90,38 @@ public class ProjectGenerator {
                 content = content.replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
                 content = content.replacingOccurrences(of: "__BUNDLE_PREFIX__", with: bundlePrefix)
                 try content.write(toFile: filePath, atomically: true, encoding: .utf8)
+            }
+        }
+    }
+
+    public func renamePaths(in folderPath: String, projectName: String, bundlePrefix: String) throws {
+        let rootURL = URL(fileURLWithPath: folderPath)
+        guard let enumerator = fileManager.enumerator(
+            at: rootURL,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return }
+
+        var itemsToRename: [URL] = []
+
+        for case let fileURL as URL in enumerator {
+            let name = fileURL.lastPathComponent
+            if name.contains("__PROJECT_NAME__") || name.contains("__BUNDLE_PREFIX__") {
+                itemsToRename.append(fileURL)
+            }
+        }
+
+        itemsToRename.sort { $0.path.count > $1.path.count }
+
+        for url in itemsToRename {
+            let oldName = url.lastPathComponent
+            let newName = oldName
+                .replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
+                .replacingOccurrences(of: "__BUNDLE_PREFIX__", with: bundlePrefix)
+
+            let destinationURL = url.deletingLastPathComponent().appendingPathComponent(newName)
+            if fileManager.fileExists(atPath: url.path) {
+                try fileManager.moveItem(at: url, to: destinationURL)
             }
         }
     }

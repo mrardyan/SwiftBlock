@@ -5,17 +5,20 @@ public struct ModuleGeneratorOptions {
     public var moduleName: String
     public var projectRootPath: String
     public var modulesTemplatePath: String
+    public var isDryRun: Bool
 
     public init(
         type: ModuleType,
         moduleName: String,
         projectRootPath: String = FileManager.default.currentDirectoryPath,
-        modulesTemplatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
+        modulesTemplatePath: String = "/usr/local/share/swiftblock/Blocks/Modules",
+        isDryRun: Bool = false
     ) {
         self.type = type
         self.moduleName = moduleName
         self.projectRootPath = projectRootPath
         self.modulesTemplatePath = modulesTemplatePath
+        self.isDryRun = isDryRun
     }
 }
 
@@ -57,6 +60,12 @@ public class ModuleGenerator {
             throw ModuleGeneratorError.moduleAlreadyExists(destinationFolderPath)
         }
 
+        if options.isDryRun {
+            print("🔍 [DRY RUN] Would load module block from: \(templateTypeFolderPath)")
+            print("🔍 [DRY RUN] Would generate \(options.type.rawValue) module '\(options.moduleName)' at: \(destinationFolderPath)")
+            return destinationFolderPath
+        }
+
         try fileManager.createDirectory(atPath: destinationFolderPath, withIntermediateDirectories: true)
 
         do {
@@ -85,7 +94,9 @@ public class ModuleGenerator {
 
         while let item = enumerator?.nextObject() as? String {
             let itemSourcePath = "\(sourcePath)/\(item)"
-            let itemRelativePath = item.replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
+            let itemRelativePath = item
+                .replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
+                .replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
             let itemTargetPath = "\(targetPath)/\(itemRelativePath)"
 
             var isDir: ObjCBool = false
