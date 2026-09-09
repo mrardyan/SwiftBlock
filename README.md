@@ -1,6 +1,6 @@
-# 🛠 swiftblock — iOS Project Generator CLI
+# 🛠 SwiftBlock — iOS Project Generator CLI
 
-A Swift-based command-line tool to quickly scaffold iOS Xcode projects and modules using templates. Built with [`ArgumentParser`](https://github.com/apple/swift-argument-parser) and installable globally.
+**SwiftBlock** is a Swift-based command-line tool to quickly scaffold iOS Xcode projects and modules using templates. Built with [`ArgumentParser`](https://github.com/apple/swift-argument-parser) and installable globally.
 
 ---
 
@@ -24,7 +24,7 @@ git clone https://github.com/mrardyan/swiftblock.git
 cd swiftblock
 ```
 
-### 2. Install the CLI Globally
+### 2. Install SwiftBlock Globally
 
 This script will:
 - Build the CLI with Swift
