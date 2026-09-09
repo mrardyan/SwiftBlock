@@ -16,47 +16,47 @@ add_command_shell_profile () {
 
     if [ -f ~/.zshrc ]; then
         # check if command init has been set up or hasn't
-        if grep -q "$COMMAND" $HOME'/.zshrc'; then
+        if grep -q "$COMMAND" "$HOME/.zshrc"; then
             echo "✅ $COMMAND_NAME has been set up for zsh"
         else
             echo "✅ Set up $COMMAND_NAME for zsh"
             echo "" >> ~/.zshrc
-            echo $COMMAND >> ~/.zshrc
+            echo "$COMMAND" >> ~/.zshrc
         fi
     
     elif [ -f ~/.zprofile ]; then
         # check if command init has been set up or hasn't
-        if grep -q "$COMMAND" $HOME'/.zprofile'; then
+        if grep -q "$COMMAND" "$HOME/.zprofile"; then
             echo "✅ $COMMAND_NAME has been set up for zshell"
         else
             echo "✅ Set up $COMMAND_NAME for zshell"
             echo "" >> ~/.zprofile
-            echo $COMMAND >> ~/.zprofile
+            echo "$COMMAND" >> ~/.zprofile
         fi
         
     elif [ -f  ~/.bash_profile ]; then
         # check if command init has been set up or hasn't
-        if grep -q "$COMMAND" $HOME'/.bash_profile'; then
+        if grep -q "$COMMAND" "$HOME/.bash_profile"; then
             echo "✅ $COMMAND_NAME has been set up for bash"
         else
             echo "✅ Set up $COMMAND_NAME for bash"
             echo "" >> ~/.bash_profile
-            echo $COMMAND >> ~/.bash_profile
+            echo "$COMMAND" >> ~/.bash_profile
         fi
 
         # because every mac used bash as default, will also create zshrc file to accomodate the possibility of using zsh
         touch ~/.zshrc
-        echo $COMMAND >> ~/.zshrc
+        echo "$COMMAND" >> ~/.zshrc
     else
         # initiate zshrc for first time
-        if [ ! -f "`which zsh`" ]; then
+        if [ -x "$(which zsh 2>/dev/null)" ]; then
             touch ~/.zshrc
-            echo $COMMAND >> ~/.zshrc
+            echo "$COMMAND" >> ~/.zshrc
             echo "✅ Set up $COMMAND_NAME for zsh"
         # initiate bash_profile for first time
-        elif [ ! -f "`which bash`" ]; then
+        elif [ -x "$(which bash 2>/dev/null)" ]; then
             touch ~/.bash_profile
-            echo $COMMAND >> ~/.bash_profile
+            echo "$COMMAND" >> ~/.bash_profile
             echo "✅ Set up $COMMAND_NAME for bash"
         # unidentified shell
         else

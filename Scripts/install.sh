@@ -15,7 +15,10 @@ if [ ! -f "$BUILD_PATH" ]; then
   exit 1
 fi
 
+ACTUAL_USER="${SUDO_USER:-$(whoami)}"
+
 echo "📥 Installing binary to $INSTALL_BIN"
+sudo mkdir -p "$(dirname "$INSTALL_BIN")"
 sudo cp "$BUILD_PATH" "$INSTALL_BIN"
 sudo chmod +x "$INSTALL_BIN"
 
@@ -26,8 +29,8 @@ echo "📁 Installing templates to $INSTALL_TEMPLATE"
 sudo mkdir -p "$INSTALL_TEMPLATE"
 sudo cp -R Templates/* "$INSTALL_TEMPLATE"
 
-echo "🔒 Setting permissions"
-sudo chown -R $(whoami) "$INSTALL_TEMPLATE"
+echo "🔒 Setting permissions for $ACTUAL_USER"
+sudo chown -R "$ACTUAL_USER" "$INSTALL_TEMPLATE"
 sudo chmod -R u+rwX "$INSTALL_TEMPLATE"
 
 echo "✅ Installation complete!"
