@@ -9,7 +9,7 @@ public struct ProjectGeneratorOptions {
 
     public init(
         projectName: String,
-        bundlePrefix: String = "io.ardyan",
+        bundlePrefix: String = "com.example",
         templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI",
         outputPath: String? = nil,
         isDryRun: Bool = false

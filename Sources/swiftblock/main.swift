@@ -17,11 +17,11 @@ struct Init: ParsableCommand {
         abstract: "Initialize a new SwiftUI project using Tuist, SwiftLint, SwiftFormat, and Makefile"
     )
 
-    @Argument(help: "Project name")
-    var projectName: String
+    @Argument(help: "Project name (optional, triggers wizard if omitted)")
+    var projectName: String?
 
-    @Option(name: [.customShort("b"), .long], help: "Bundle identifier prefix (default: io.ardyan)")
-    var bundlePrefix: String = "io.ardyan"
+    @Option(name: [.customShort("b"), .long], help: "Bundle identifier prefix (default: com.example)")
+    var bundlePrefix: String = "com.example"
 
     @Option(name: [.customShort("t"), .long], help: "Custom project template path")
     var templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
@@ -30,7 +30,14 @@ struct Init: ParsableCommand {
     var dryRun: Bool = false
 
     func run() throws {
-        try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, isDryRun: dryRun)
+        if let projectName = projectName, !projectName.isEmpty {
+            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, isDryRun: dryRun)
+        } else {
+            let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: templatePath)
+            var finalOptions = options
+            finalOptions.isDryRun = dryRun
+            try executeWithOptions(options: finalOptions)
+        }
     }
 }
 
@@ -40,11 +47,11 @@ struct New: ParsableCommand {
         abstract: "Create a new SwiftUI project (alias for 'init')"
     )
 
-    @Argument(help: "Project name")
-    var projectName: String
+    @Argument(help: "Project name (optional, triggers wizard if omitted)")
+    var projectName: String?
 
-    @Option(name: [.customShort("b"), .long], help: "Bundle identifier prefix (default: io.ardyan)")
-    var bundlePrefix: String = "io.ardyan"
+    @Option(name: [.customShort("b"), .long], help: "Bundle identifier prefix (default: com.example)")
+    var bundlePrefix: String = "com.example"
 
     @Option(name: [.customShort("t"), .long], help: "Custom project template path")
     var templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
@@ -53,27 +60,36 @@ struct New: ParsableCommand {
     var dryRun: Bool = false
 
     func run() throws {
-        try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, isDryRun: dryRun)
+        if let projectName = projectName, !projectName.isEmpty {
+            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, isDryRun: dryRun)
+        } else {
+            let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: templatePath)
+            var finalOptions = options
+            finalOptions.isDryRun = dryRun
+            try executeWithOptions(options: finalOptions)
+        }
     }
 }
 
 private func executeInitProject(projectName: String, bundlePrefix: String, templatePath: String, isDryRun: Bool) throws {
-    print("🛠️ Generating project: \(projectName)")
-
     let options = ProjectGeneratorOptions(
         projectName: projectName,
         bundlePrefix: bundlePrefix,
         templatePath: templatePath,
         isDryRun: isDryRun
     )
+    try executeWithOptions(options: options)
+}
 
+private func executeWithOptions(options: ProjectGeneratorOptions) throws {
+    print("🛠️ Generating project: \(options.projectName)")
     let generator = ProjectGenerator()
 
     do {
         try generator.generateProject(options: options)
-        if !isDryRun {
+        if !options.isDryRun {
             print("✅ Project created at \(options.outputPath)")
-            print("🔁 Placeholders replaced with \(projectName) (bundle prefix: \(bundlePrefix))")
+            print("🔁 Placeholders replaced with \(options.projectName) (bundle prefix: \(options.bundlePrefix))")
         }
     } catch {
         print("❌ \(error.localizedDescription)")
@@ -87,6 +103,19 @@ struct Add: ParsableCommand {
         abstract: "Add a new architecture module block to current project",
         subcommands: [AddScene.self, AddUseCase.self, AddRepository.self, AddService.self]
     )
+
+    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
+
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        let options = try InteractiveWizard.runModuleWizard(defaultTemplatePath: templatePath)
+        var finalOptions = options
+        finalOptions.isDryRun = dryRun
+        try executeAddModuleWithOptions(options: finalOptions)
+    }
 }
 
 struct AddScene: ParsableCommand {
@@ -170,21 +199,23 @@ struct AddService: ParsableCommand {
 }
 
 private func executeAddModule(type: ModuleType, moduleName: String, templatePath: String, isDryRun: Bool) throws {
-    print("🧩 Adding \(type.rawValue) module: \(moduleName)")
-
     let options = ModuleGeneratorOptions(
         type: type,
         moduleName: moduleName,
         modulesTemplatePath: templatePath,
         isDryRun: isDryRun
     )
+    try executeAddModuleWithOptions(options: options)
+}
 
+private func executeAddModuleWithOptions(options: ModuleGeneratorOptions) throws {
+    print("🧩 Adding \(options.type.rawValue) module: \(options.moduleName)")
     let generator = ModuleGenerator()
 
     do {
         let generatedPath = try generator.generateModule(options: options)
-        if !isDryRun {
-            print("✅ Generated \(type.rawValue) module '\(moduleName)' at \(generatedPath)")
+        if !options.isDryRun {
+            print("✅ Generated \(options.type.rawValue) module '\(options.moduleName)' at \(generatedPath)")
         }
     } catch {
         print("❌ \(error.localizedDescription)")

@@ -35,7 +35,7 @@ public struct SwiftBlockConfig: Codable {
 
     public init(
         projectName: String,
-        bundlePrefix: String = "io.ardyan",
+        bundlePrefix: String = "com.example",
         paths: ModulePaths = ModulePaths()
     ) {
         self.projectName = projectName

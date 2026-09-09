@@ -20,6 +20,7 @@
 ## Key Features
 
 - **Instant Scaffolding**: Generate complete SwiftUI-based Xcode projects with `swiftblock new` or `swiftblock init`.
+- **Interactive Wizard Mode**: Step-by-step CLI prompts when arguments are omitted.
 - **Architecture Building Blocks**: Generate `scene`, `usecase`, `repository`, and `service` modules directly from your project root.
 - **Simulation Mode (--dry-run)**: Test project and module generation without writing to disk.
 - **Project Config (.swiftblock)**: Automatic JSON configuration for customizable directory paths per project.
@@ -50,10 +51,22 @@ chmod +x Scripts/install.sh
 
 ### 2. Usage
 
-#### Initialize a New Project
+#### Interactive Wizard Mode
+
+Run commands without arguments to launch the interactive step-by-step wizard:
 
 ```bash
-# Create a project (using 'new' or 'init')
+# Launch interactive project creation wizard
+swiftblock new
+
+# Launch interactive architecture module wizard
+swiftblock add
+```
+
+#### Command Line Initialization
+
+```bash
+# Create a project with default bundle prefix (com.example)
 swiftblock new MyApp
 
 # Create a project with custom organization bundle prefix
@@ -94,7 +107,7 @@ swiftblock add scene Home --dry-run
 
 | Command | Option / Flag | Description | Default |
 | :--- | :--- | :--- | :--- |
-| `swiftblock new <Name>` (or `init`) | `-b, --bundle-prefix` | Set custom bundle identifier prefix | `io.ardyan` |
+| `swiftblock new <Name>` (or `init`) | `-b, --bundle-prefix` | Set custom bundle identifier prefix | `com.example` |
 | | `-t, --template-path` | Use custom project block path | `/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI` |
 | | `--dry-run` | Simulate generation without writing to disk | `false` |
 | `swiftblock add scene <Name>` | `-t, --template-path` | Generate MVVM Scene module | `App/Sources/Features/<Name>` |
@@ -113,7 +126,7 @@ Every generated project includes a `.swiftblock` configuration file at the proje
 ```json
 {
   "projectName": "MyApp",
-  "bundlePrefix": "io.ardyan",
+  "bundlePrefix": "com.example",
   "paths": {
     "scene": "App/Sources/Features",
     "usecase": "App/Sources/Domain/UseCases",
