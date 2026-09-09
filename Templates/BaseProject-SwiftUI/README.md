@@ -5,40 +5,38 @@
 <!-- Add __PROJECT_NAME__ features here -->
 
 ## Requirements
-<!-- Add __PROJECT_NAME__ requirements here -->
+- macOS 12.0+
+- Xcode 15.0+
+- Homebrew
 
 ## Getting Started
 
-To set up the project, run the following script:
+To set up the project and install all required dependencies (Tuist, SwiftLint, SwiftFormat, pre-commit hooks, and Xcode file templates), run:
 
 ```bash
-sh ./Scripts/setup.sh
+make setup
 ```
 
-This will install all necessary dependencies and configure the environment to start building the project using Tuist.
-
-## Tuist Commands
-To learn more about Tuist and its commands, visit the [Tuist Quick Start Guide](https://docs.tuist.io/guides/quick-start/install-tuist).
-
-### Generate the Xcode Project
-To generate the Xcode project, you can use Tuist's `generate` command. This will create the necessary `.xcodeproj` file based on the project's `Tuist` configuration.
+Once setup is complete, generate the Xcode project workspace:
 
 ```bash
-tuist generate
+make generate
 ```
 
-### Edit the Project Configuration
-If you need to modify the Tuist project configuration (for example, to change dependencies, targets, or settings), you can use the edit command to open the project configuration in Xcode.
+## Available Commands (Makefile)
 
-```bash
-tuist edit
-```
-
-This command opens the Tuist project as an Xcode project, allowing you to easily edit the configuration.
+| Command | Description |
+| :--- | :--- |
+| `make setup` | Run setup script to install tools & pre-commit hooks |
+| `make generate` | Generate Xcode workspace using Tuist |
+| `make lint` | Run SwiftLint code analysis |
+| `make format` | Run SwiftFormat code formatter |
+| `make test` | Run unit tests using Tuist |
+| `make clean` | Clean Tuist cache and build artifacts |
+| `make edit` | Open Tuist configuration in Xcode |
 
 ## Project Structure
-- **App**: Contains the main source code for the application.
-  This is where all the development for the app is done.
-- **Tuist**: Contains configuration files for Tuist. Managed by Tuist.
-- **Scripts**: Contains build scripts for setup and other configurations.
-- **.XcodeFileTemplates**: Contains custom Xcode file templates for generating project files.
+- **App**: Contains main app sources (`Sources/`), resources (`Resources/`), and unit tests (`Tests/`).
+- **Tuist**: Tuist configuration directory.
+- **Scripts**: Project setup and configuration scripts.
+- **.XcodeFileTemplates**: Custom Xcode file templates.

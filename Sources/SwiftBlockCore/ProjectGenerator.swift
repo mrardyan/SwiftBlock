@@ -61,7 +61,7 @@ public class ProjectGenerator {
         let enumerator = fileManager.enumerator(atPath: folderPath)
 
         let allowedExtensions = ["swift", "xcodeproj", "pbxproj", "plist", "md", "yaml", "yml", "txt", "sh"]
-        let allowedExactFilenames = [".swiftformat", ".gitignore", ".editorconfig"]
+        let allowedExactFilenames = [".swiftformat", ".gitignore", ".editorconfig", "Makefile"]
 
         while let file = enumerator?.nextObject() as? String {
             let filePath = "\(folderPath)/\(file)"
