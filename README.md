@@ -7,7 +7,7 @@
   <p align="center">
     <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.10-orange.svg?style=flat-square" alt="Swift 5.10"></a>
     <a href="https://developer.apple.com"><img src="https://img.shields.io/badge/Platform-macOS%2012.0%2B-blue.svg?style=flat-square" alt="Platform macOS"></a>
-    <a href="LICENSE"><img src="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License MIT"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License MIT"></a>
   </p>
 </p>
 
@@ -17,17 +17,17 @@
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-- ⚡ **Instant Scaffolding**: Generate complete SwiftUI-based Xcode projects with a single command.
-- 🏗️ **Tuist Integration**: Built-in support for Tuist project generation out of the box.
-- 🧹 **Pre-configured Code Quality**: Automatic setup for SwiftLint, SwiftFormat, and pre-commit hooks.
-- 🏷️ **Dynamic Bundle Identifiers**: Support for custom organization prefixes (`--bundle-prefix`).
-- 📁 **Extensible Templates**: Static and customizable Xcode template support.
+- **Instant Scaffolding**: Generate complete SwiftUI-based Xcode projects with a single command.
+- **Tuist Integration**: Built-in support for Tuist project generation out of the box.
+- **Pre-configured Code Quality**: Automatic setup for SwiftLint, SwiftFormat, and pre-commit hooks.
+- **Dynamic Bundle Identifiers**: Support for custom organization prefixes (`--bundle-prefix`).
+- **Extensible Templates**: Static and customizable Xcode template support.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Installation
 
@@ -54,7 +54,7 @@ swiftblock init MyApp --bundle-prefix com.mycompany
 
 ---
 
-## 📖 Command Reference
+## Command Reference
 
 | Command | Option / Flag | Description | Default |
 | :--- | :--- | :--- | :--- |
@@ -64,7 +64,7 @@ swiftblock init MyApp --bundle-prefix com.mycompany
 
 ---
 
-## 📁 Template Structure
+## Template Structure
 
 Templates are stored at: `/usr/local/share/swiftblock/Templates/`
 
@@ -87,7 +87,7 @@ Available placeholders:
 
 ---
 
-## 🛠 Local Development & Testing
+## Local Development & Testing
 
 ```bash
 # Build release binary locally
@@ -102,6 +102,6 @@ swift test
 
 ---
 
-## 📚 License
+## License
 
 Distributed under the MIT License.
