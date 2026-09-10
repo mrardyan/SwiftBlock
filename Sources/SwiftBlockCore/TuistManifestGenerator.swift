@@ -51,9 +51,15 @@ fi
 """
         var targetSettings = ""
         var projectSettings = ""
+        var optionsBlock = ""
         var schemesBlock = ""
 
         if config.coreBlocks.contains(.config) {
+            optionsBlock = """
+    options: .options(
+        automaticSchemesOptions: .disabled
+    ),
+"""
             infoPlistProps += """
                     "APP_ENVIRONMENT": "$(APP_ENVIRONMENT)",
                     "BASE_URL": "$(BASE_URL)",
@@ -84,21 +90,21 @@ fi
             name: "\(config.projectName)-Dev",
             shared: true,
             buildAction: .buildAction(targets: ["\(config.projectName)"]),
-            testAction: .targets(["\(config.projectName)Tests"]),
+            testAction: .targets(["\(config.projectName)Tests"], configuration: "Development"),
             runAction: .runAction(configuration: "Development")
         ),
         .scheme(
             name: "\(config.projectName)-Staging",
             shared: true,
             buildAction: .buildAction(targets: ["\(config.projectName)"]),
-            testAction: .targets(["\(config.projectName)Tests"]),
+            testAction: .targets(["\(config.projectName)Tests"], configuration: "Staging"),
             runAction: .runAction(configuration: "Staging")
         ),
         .scheme(
             name: "\(config.projectName)-Prod",
             shared: true,
             buildAction: .buildAction(targets: ["\(config.projectName)"]),
-            testAction: .targets(["\(config.projectName)Tests"]),
+            testAction: .targets(["\(config.projectName)Tests"], configuration: "Production"),
             runAction: .runAction(configuration: "Production")
         ),
     ],
@@ -110,7 +116,7 @@ import ProjectDescription
 
 let project = Project(
     name: "\(config.projectName)",\(packagesString)
-\(projectSettings)
+\(optionsBlock)\(projectSettings)
     targets: [
         .target(
             name: "\(config.projectName)",
@@ -136,7 +142,8 @@ let project = Project(
             infoPlist: .default,
             sources: ["App/Tests/**"],
             resources: [],
-            dependencies: [.target(name: "\(config.projectName)")]
+            dependencies: [.target(name: "\(config.projectName)")],
+            \(targetSettings)
         ),
     ],
 \(schemesBlock)
