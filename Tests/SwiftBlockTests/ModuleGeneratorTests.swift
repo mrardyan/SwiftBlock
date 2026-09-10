@@ -281,4 +281,53 @@ struct ModuleGeneratorTests {
         let coreOpt = ModuleGeneratorOptions(type: .network, moduleName: "Test")
         #expect(coreOpt.modulesTemplatePath == "/usr/local/share/swiftblock/Blocks/Core")
     }
+
+    @Test func testComposableUnitTestsGenerationForCoreAndFeatureBlocks() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let config = SwiftBlockConfig(projectName: "TestApp")
+        let configData = try JSONEncoder().encode(config)
+        try configData.write(to: tempDir.appendingPathComponent(".swiftblock"))
+
+        let mockCoreURL = tempDir.appendingPathComponent("MockCore")
+        let mockStorageURL = mockCoreURL.appendingPathComponent("Storage")
+        try FileManager.default.createDirectory(at: mockStorageURL, withIntermediateDirectories: true)
+        try "// Source".write(to: mockStorageURL.appendingPathComponent("__MODULE_NAME__.swift"), atomically: true, encoding: .utf8)
+        try "// Test".write(to: mockStorageURL.appendingPathComponent("__MODULE_NAME__Tests.swift"), atomically: true, encoding: .utf8)
+
+        let coreOptions = ModuleGeneratorOptions(
+            type: .storage,
+            moduleName: "AppStorage",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: mockCoreURL.path
+        )
+
+        let generator = ModuleGenerator()
+        let corePath = try generator.generateModule(options: coreOptions)
+
+        #expect(FileManager.default.fileExists(atPath: "\(corePath)/AppStorage.swift"))
+        #expect(FileManager.default.fileExists(atPath: "\(tempDir.path)/App/Tests/Core/storage/AppStorageTests.swift"))
+
+        let mockModulesURL = tempDir.appendingPathComponent("MockModules")
+        let mockSceneURL = mockModulesURL.appendingPathComponent("Scene")
+        try FileManager.default.createDirectory(at: mockSceneURL, withIntermediateDirectories: true)
+        try "// Source".write(to: mockSceneURL.appendingPathComponent("__MODULE_NAME__View.swift"), atomically: true, encoding: .utf8)
+        try "// Test".write(to: mockSceneURL.appendingPathComponent("__MODULE_NAME__Tests.swift"), atomically: true, encoding: .utf8)
+
+        let featureOptions = ModuleGeneratorOptions(
+            type: .scene,
+            moduleName: "Profile",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: mockModulesURL.path
+        )
+
+        let featurePath = try generator.generateModule(options: featureOptions)
+        #expect(FileManager.default.fileExists(atPath: "\(featurePath)/ProfileView.swift"))
+        #expect(FileManager.default.fileExists(atPath: "\(tempDir.path)/App/Tests/Features/profile/scene/ProfileTests.swift"))
+    }
 }

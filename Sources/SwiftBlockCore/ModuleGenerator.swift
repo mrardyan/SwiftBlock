@@ -93,7 +93,9 @@ public class ModuleGenerator {
                 from: templateTypeFolderPath,
                 to: destinationFolderPath,
                 moduleName: options.moduleName,
-                projectName: config.projectName
+                projectName: config.projectName,
+                projectRootPath: options.projectRootPath,
+                moduleType: options.type
             )
             return destinationFolderPath
         } catch {
@@ -108,7 +110,9 @@ public class ModuleGenerator {
         from sourcePath: String,
         to targetPath: String,
         moduleName: String,
-        projectName: String
+        projectName: String,
+        projectRootPath: String,
+        moduleType: ModuleType
     ) throws {
         let enumerator = fileManager.enumerator(atPath: sourcePath)
 
@@ -122,7 +126,17 @@ public class ModuleGenerator {
             let itemRelativePath = item
                 .replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
                 .replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
-            let itemTargetPath = "\(targetPath)/\(itemRelativePath)"
+
+            let itemTargetPath: String
+            if itemRelativePath.hasSuffix("Tests.swift") {
+                if moduleType.category == .core {
+                    itemTargetPath = "\(projectRootPath)/App/Tests/Core/\(moduleType.rawValue.lowercased())/\(itemRelativePath)"
+                } else {
+                    itemTargetPath = "\(projectRootPath)/App/Tests/Features/\(moduleName.lowercased())/\(moduleType.rawValue.lowercased())/\(itemRelativePath)"
+                }
+            } else {
+                itemTargetPath = "\(targetPath)/\(itemRelativePath)"
+            }
 
             var isDir: ObjCBool = false
             if fileManager.fileExists(atPath: itemSourcePath, isDirectory: &isDir) {
