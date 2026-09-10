@@ -154,22 +154,5 @@ else
     brew install swiftformat
 fi
 
-# Xcode Templates
-mkdir -p ~/Library/Developer/Xcode/Templates/File\ Templates
-
-SCRIPT_FILE=$(readlink -f "$0")
-SCRIPT_PATH=$(dirname "$SCRIPT_FILE")
-SOURCE_PATH="$SCRIPT_PATH/../"
-TEMPLATES_PATH="${SOURCE_PATH}/.XcodeFileTemplates"
-
-TARGET_PATH=~/Library/Developer/Xcode/Templates/File\ Templates/__PROJECT_NAME__
-
-if [ -d "$TARGET_PATH" ]; then
-    echo '✅ Xcode templates has been added'
-else
-    ln -s "$TEMPLATES_PATH" "$TARGET_PATH"
-    echo '✅ Xcode templates been added'
-fi
-
 # Ends
 echo '🎉 Done!'

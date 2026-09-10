@@ -39,4 +39,3 @@ make generate
 - **App**: Contains main app sources (`Sources/`), resources (`Resources/`), and unit tests (`Tests/`).
 - **Tuist**: Tuist configuration directory.
 - **Scripts**: Project setup and configuration scripts.
-- **.XcodeFileTemplates**: Custom Xcode file templates.
