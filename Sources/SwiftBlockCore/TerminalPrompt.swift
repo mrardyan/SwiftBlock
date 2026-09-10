@@ -142,7 +142,7 @@ public class TerminalPrompt {
 
             for (idx, option) in options.enumerated() {
                 let isSelected = idx == selectedIndex
-                let prefix = isSelected ? "│  \(ANSIColor.cyanText("❯")) " : "│    "
+                let prefix = isSelected ? "│    \(ANSIColor.cyanText("❯")) " : "│      "
                 let lineText: String
                 
                 if isSelected {
@@ -300,7 +300,7 @@ public class TerminalPrompt {
             for (idx, option) in stateOptions.enumerated() {
                 let isCursorHere = idx == highlightedIndex
                 let checkbox = option.isSelected ? ANSIColor.greenText("[✔]") : ANSIColor.dimText("[ ]")
-                let cursorPrefix = isCursorHere ? "│  \(ANSIColor.cyanText("❯")) " : "│    "
+                let cursorPrefix = isCursorHere ? "│    \(ANSIColor.cyanText("❯")) " : "│      "
 
                 let lineText: String
                 let titleText = isCursorHere ? ANSIColor.boldText(ANSIColor.cyanText(option.title)) : option.title
@@ -556,9 +556,9 @@ public class TerminalPrompt {
         print("\n\(title)")
         for (index, option) in options.enumerated() {
             if let sub = option.subtitle, !sub.isEmpty {
-                print("  \(index + 1)) \(option.title) (\(sub))")
+                print("    \(index + 1)) \(option.title) (\(sub))")
             } else {
-                print("  \(index + 1)) \(option.title)")
+                print("    \(index + 1)) \(option.title)")
             }
         }
         
