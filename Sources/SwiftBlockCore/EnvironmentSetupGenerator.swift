@@ -42,7 +42,7 @@ public class EnvironmentSetupGenerator {
     }
 
     private func generateMakefile(in projectPath: String, config: SwiftBlockConfig, versions: DependencyVersionRegistry) throws {
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate" : "xcodegen generate"
+        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
         var targets: [String] = []
         var helpLines: [String] = [
             "  make setup             Setup environment (install tools, hooks & generate project)",
@@ -188,7 +188,7 @@ fi
 """)
         }
 
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate" : "xcodegen generate"
+        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
         setupSteps.append("""
 echo "◆ Generating project..."
 \(generateCmd)

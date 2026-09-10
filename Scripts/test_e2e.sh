@@ -29,7 +29,13 @@ log_success "Compiled executable at: $SWIFTBLOCK_BIN"
 
 # 2. Setup Temporary Test Environment
 export TEST_DIR=$(mktemp -d -t swiftblock_e2e_XXXXXX)
-trap 'rm -rf "$TEST_DIR"' EXIT
+cleanup_e2e() {
+    if pgrep -x "Xcode" > /dev/null; then
+        osascript -e 'tell application "Xcode" to close every workspace document' 2>/dev/null || true
+    fi
+    rm -rf "$TEST_DIR"
+}
+trap cleanup_e2e EXIT
 
 log_info "Step 2: Testing in temporary workspace: $TEST_DIR"
 cd "$TEST_DIR"
