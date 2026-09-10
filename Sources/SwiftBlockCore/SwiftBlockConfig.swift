@@ -5,79 +5,49 @@ public struct SwiftBlockConfig: Codable {
     public var bundlePrefix: String
     public var paths: ModulePaths
 
-    public struct ModulePaths: Codable {
-        public var scene: String
-        public var usecase: String
-        public var repository: String
-        public var service: String
-        public var entity: String
-        public var coordinator: String
-        public var component: String
-        public var mapper: String
-        public var validator: String
-        public var storage: String
-        public var network: String
-        public var logger: String
-        public var analytics: String
-        public var config: String
-        public var auth: String
-        public var featureflag: String
+    public struct ModulePaths: Codable, Equatable {
+        private var customPaths: [String: String]
 
-        public init(
-            scene: String = BlockRegistry.spec(for: .scene)?.defaultOutputPath ?? "App/Sources/Features",
-            usecase: String = BlockRegistry.spec(for: .usecase)?.defaultOutputPath ?? "App/Sources/Domain/UseCases",
-            repository: String = BlockRegistry.spec(for: .repository)?.defaultOutputPath ?? "App/Sources/Data/Repositories",
-            service: String = BlockRegistry.spec(for: .service)?.defaultOutputPath ?? "App/Sources/Data/Services",
-            entity: String = BlockRegistry.spec(for: .entity)?.defaultOutputPath ?? "App/Sources/Domain/Entities",
-            coordinator: String = BlockRegistry.spec(for: .coordinator)?.defaultOutputPath ?? "App/Sources/Presentation/Coordinators",
-            component: String = BlockRegistry.spec(for: .component)?.defaultOutputPath ?? "App/Sources/Presentation/Components",
-            mapper: String = BlockRegistry.spec(for: .mapper)?.defaultOutputPath ?? "App/Sources/Domain/Mappers",
-            validator: String = BlockRegistry.spec(for: .validator)?.defaultOutputPath ?? "App/Sources/Presentation/Validators",
-            storage: String = BlockRegistry.spec(for: .storage)?.defaultOutputPath ?? "App/Sources/Core/Storage",
-            network: String = BlockRegistry.spec(for: .network)?.defaultOutputPath ?? "App/Sources/Core/Network",
-            logger: String = BlockRegistry.spec(for: .logger)?.defaultOutputPath ?? "App/Sources/Core/Logger",
-            analytics: String = BlockRegistry.spec(for: .analytics)?.defaultOutputPath ?? "App/Sources/Core/Analytics",
-            config: String = BlockRegistry.spec(for: .config)?.defaultOutputPath ?? "App/Sources/Core/Config",
-            auth: String = BlockRegistry.spec(for: .auth)?.defaultOutputPath ?? "App/Sources/Core/Auth",
-            featureflag: String = BlockRegistry.spec(for: .featureflag)?.defaultOutputPath ?? "App/Sources/Core/FeatureFlag"
-        ) {
-            self.scene = scene
-            self.usecase = usecase
-            self.repository = repository
-            self.service = service
-            self.entity = entity
-            self.coordinator = coordinator
-            self.component = component
-            self.mapper = mapper
-            self.validator = validator
-            self.storage = storage
-            self.network = network
-            self.logger = logger
-            self.analytics = analytics
-            self.config = config
-            self.auth = auth
-            self.featureflag = featureflag
+        public init(customPaths: [String: String] = [:]) {
+            self.customPaths = customPaths
+        }
+
+        public init(from decoder: Decoder) throws {
+            if let singleContainer = try? decoder.singleValueContainer(),
+               let dict = try? singleContainer.decode([String: String].self) {
+                self.customPaths = dict
+            } else if let container = try? decoder.container(keyedBy: DynamicCodingKeys.self) {
+                var dict: [String: String] = [:]
+                for key in container.allKeys {
+                    if let val = try? container.decode(String.self, forKey: key) {
+                        dict[key.stringValue] = val
+                    }
+                }
+                self.customPaths = dict
+            } else {
+                self.customPaths = [:]
+            }
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(customPaths)
         }
 
         public func path(for type: ModuleType) -> String {
-            switch type {
-            case .scene: return scene
-            case .usecase: return usecase
-            case .repository: return repository
-            case .service: return service
-            case .entity: return entity
-            case .coordinator: return coordinator
-            case .component: return component
-            case .mapper: return mapper
-            case .validator: return validator
-            case .storage: return storage
-            case .network: return network
-            case .logger: return logger
-            case .analytics: return analytics
-            case .config: return config
-            case .auth: return auth
-            case .featureflag: return featureflag
+            if let custom = customPaths[type.rawValue] {
+                return custom
             }
+            return BlockRegistry.spec(for: type)?.defaultOutputPath ?? "App/Sources/\(type.rawValue.capitalized)"
+        }
+
+        public mutating func setPath(_ path: String, for type: ModuleType) {
+            customPaths[type.rawValue] = path
+        }
+
+        public subscript(type: ModuleType) -> String {
+            get { path(for: type) }
+            set { setPath(newValue, for: type) }
         }
     }
 
@@ -98,6 +68,21 @@ public struct SwiftBlockConfig: Codable {
         }
         let data = try Data(contentsOf: URL(fileURLWithPath: configFilePath))
         return try JSONDecoder().decode(SwiftBlockConfig.self, from: data)
+    }
+}
+
+private struct DynamicCodingKeys: CodingKey {
+    var stringValue: String
+    var intValue: Int?
+
+    init?(stringValue: String) {
+        self.stringValue = stringValue
+        self.intValue = nil
+    }
+
+    init?(intValue: Int) {
+        self.stringValue = String(intValue)
+        self.intValue = intValue
     }
 }
 
@@ -136,14 +121,6 @@ public enum ModuleType: String, CaseIterable, Codable {
     case featureflag
 
     public var category: ModuleCategory {
-        switch self {
-        case .scene, .usecase, .repository, .service, .entity, .coordinator, .component, .mapper, .validator:
-            return .feature
-        case .storage, .network, .logger, .analytics, .config, .auth, .featureflag:
-            return .core
-        }
+        BlockRegistry.spec(for: self)?.category ?? .feature
     }
 }
-
-
-
