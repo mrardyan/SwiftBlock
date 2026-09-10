@@ -15,4 +15,3 @@ extension __MODULE_NAME__ViewModel {
         case onAppear
     }
 }
-

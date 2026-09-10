@@ -19,4 +19,3 @@ final class __MODULE_NAME__ViewModel: ObservableObject {
         }
     }
 }
-

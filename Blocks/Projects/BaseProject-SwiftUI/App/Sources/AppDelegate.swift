@@ -24,5 +24,3 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return sceneConfig
     }
 }
-
-

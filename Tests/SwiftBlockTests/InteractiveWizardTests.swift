@@ -95,5 +95,3 @@ struct InteractiveWizardTests {
         #expect(cleanInput == "MyCompanyApp")
     }
 }
-
-

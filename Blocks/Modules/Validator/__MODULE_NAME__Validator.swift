@@ -32,4 +32,3 @@ public struct __MODULE_NAME__Validator: __MODULE_NAME__Validating {
         return .valid
     }
 }
-

@@ -25,4 +25,3 @@ public struct __MODULE_NAME__Component: View {
 #Preview {
     __MODULE_NAME__Component(title: "Sample __MODULE_NAME__")
 }
-

@@ -10,4 +10,3 @@ public final class Default__MODULE_NAME__Repository: __MODULE_NAME__Repository {
         // Implementation logic here
     }
 }
-

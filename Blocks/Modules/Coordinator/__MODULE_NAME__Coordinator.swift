@@ -29,4 +29,3 @@ public final class Default__MODULE_NAME__Coordinator: ObservableObject, __MODULE
         isPresented = false
     }
 }
-

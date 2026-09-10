@@ -55,4 +55,3 @@ public final class __MODULE_NAME__: Authenticatable {
         delegate?.sessionStateDidChange(.unauthenticated)
     }
 }
-

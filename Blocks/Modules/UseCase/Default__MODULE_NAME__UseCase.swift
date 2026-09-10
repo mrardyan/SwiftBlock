@@ -10,4 +10,3 @@ public final class Default__MODULE_NAME__UseCase: __MODULE_NAME__UseCase {
         // Implementation logic here
     }
 }
-

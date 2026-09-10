@@ -97,4 +97,3 @@ public final class __MODULE_NAME__: Logging {
         }
     }
 }
-

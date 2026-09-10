@@ -554,4 +554,3 @@ private func executeAddModuleWithOptions(options: ModuleGeneratorOptions) throws
         throw ExitCode.failure
     }
 }
-

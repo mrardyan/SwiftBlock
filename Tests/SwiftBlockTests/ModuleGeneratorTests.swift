@@ -282,6 +282,3 @@ struct ModuleGeneratorTests {
         #expect(coreOpt.modulesTemplatePath == "/usr/local/share/swiftblock/Blocks/Core")
     }
 }
-
-
-

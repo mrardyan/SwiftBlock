@@ -48,4 +48,3 @@ public struct __MODULE_NAME__Mapper<DTO, Entity>: __MODULE_NAME__Mapping {
         toDTOTransform(entity)
     }
 }
-

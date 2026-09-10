@@ -14,4 +14,3 @@ public struct __MODULE_NAME__Entity: Identifiable, Codable, Equatable {
         self.name = name
     }
 }
-

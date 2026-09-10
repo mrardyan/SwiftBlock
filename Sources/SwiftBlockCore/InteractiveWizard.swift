@@ -414,5 +414,3 @@ public enum InteractiveWizardError: Error, LocalizedError, Equatable {
         }
     }
 }
-
-

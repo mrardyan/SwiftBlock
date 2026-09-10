@@ -22,4 +22,3 @@ struct __MODULE_NAME__View: View {
 #Preview {
     __MODULE_NAME__View()
 }
-

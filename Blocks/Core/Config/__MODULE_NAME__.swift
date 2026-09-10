@@ -83,4 +83,3 @@ public final class __MODULE_NAME__: Configuring {
         return (object as? String)?.replacingOccurrences(of: "\\", with: "")
     }
 }
-

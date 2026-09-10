@@ -51,4 +51,3 @@ public struct DefaultAnalyticsEvent: AnalyticsEvent {
         self.targetProviders = targetProviders
     }
 }
-

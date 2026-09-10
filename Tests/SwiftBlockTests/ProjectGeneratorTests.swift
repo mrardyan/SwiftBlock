@@ -231,5 +231,3 @@ struct ProjectGeneratorTests {
         }
     }
 }
-
-

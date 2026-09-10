@@ -5,4 +5,3 @@ public protocol __MODULE_NAME__Repository {
     /// Fetches domain data models asynchronously.
     func fetch() async throws
 }
-
