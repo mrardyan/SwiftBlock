@@ -34,8 +34,11 @@ public class InteractiveWizard {
         while true {
             print("Choice [1-\(options.count)]: ", terminator: "")
             fflush(stdout)
-            if let input = readLine()?.trimmingCharacters(in: .whitespacesAndNewlines),
-               let choice = Int(input),
+            guard let line = readLine() else {
+                return 0
+            }
+            let input = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let choice = Int(input),
                choice >= 1 && choice <= options.count {
                 return choice - 1
             }

@@ -43,7 +43,7 @@ struct InteractiveWizardTests {
     }
 
     @Test func runProjectWizardSuccess() throws {
-        var inputs = ["", "AwesomeApp", "com.mycompany", "y"]
+        var inputs = ["", "AwesomeApp", "com.mycompany", "1", "1", "1", "y"]
         let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
@@ -54,7 +54,7 @@ struct InteractiveWizardTests {
     }
 
     @Test func runProjectWizardCancelled() {
-        var inputs = ["AwesomeApp", "com.mycompany", "n"]
+        var inputs = ["AwesomeApp", "com.mycompany", "1", "1", "1", "n"]
         #expect(throws: InteractiveWizardError.cancelled) {
             try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
                 inputs.isEmpty ? nil : inputs.removeFirst()

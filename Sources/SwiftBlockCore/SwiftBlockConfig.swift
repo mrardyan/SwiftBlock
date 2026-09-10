@@ -33,6 +33,30 @@ public struct SwiftBlockConfig: Codable, Equatable {
     public var overrides: [String: String]
     public var paths: ModulePaths
 
+    enum CodingKeys: String, CodingKey {
+        case projectName
+        case bundlePrefix
+        case packaging
+        case organization
+        case pathTemplates
+        case overrides
+        case paths
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.projectName = try container.decode(String.self, forKey: .projectName)
+        self.bundlePrefix = (try? container.decode(String.self, forKey: .bundlePrefix)) ?? "com.example"
+        self.packaging = (try? container.decode(PackagingConfig.self, forKey: .packaging)) ?? PackagingConfig()
+        self.organization = (try? container.decode(String.self, forKey: .organization)) ?? "business-first"
+        self.pathTemplates = (try? container.decode([String: String].self, forKey: .pathTemplates)) ?? [
+            "feature": "App/Sources/Features/{module}/{block}",
+            "core": "Packages/Core/Sources/{block}"
+        ]
+        self.overrides = (try? container.decode([String: String].self, forKey: .overrides)) ?? [:]
+        self.paths = (try? container.decode(ModulePaths.self, forKey: .paths)) ?? ModulePaths()
+    }
+
     public struct ModulePaths: Codable, Equatable {
         private var customPaths: [String: String]
 

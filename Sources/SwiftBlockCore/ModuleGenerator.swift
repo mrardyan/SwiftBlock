@@ -64,11 +64,14 @@ public class ModuleGenerator {
 
         var templateTypeFolderPath = "\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)"
         if !fileManager.fileExists(atPath: templateTypeFolderPath) {
-            templateTypeFolderPath = options.modulesTemplatePath
+            let lastComponent = (options.modulesTemplatePath as NSString).lastPathComponent.lowercased()
+            if lastComponent == options.type.rawValue.lowercased() {
+                templateTypeFolderPath = options.modulesTemplatePath
+            }
         }
 
         guard fileManager.fileExists(atPath: templateTypeFolderPath) else {
-            throw ModuleGeneratorError.templateNotFound(templateTypeFolderPath)
+            throw ModuleGeneratorError.templateNotFound("\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)")
         }
 
         if fileManager.fileExists(atPath: destinationFolderPath) {

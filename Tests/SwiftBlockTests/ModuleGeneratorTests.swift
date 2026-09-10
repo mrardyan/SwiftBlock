@@ -179,7 +179,7 @@ struct ModuleGeneratorTests {
         try FileManager.default.createDirectory(at: mockServiceURL, withIntermediateDirectories: true)
 
         // Pre-create the module destination folder
-        let existingModuleDir = tempDir.appendingPathComponent("App/Sources/Data/Services/Network")
+        let existingModuleDir = tempDir.appendingPathComponent("App/Sources/Features/Network/Service")
         try FileManager.default.createDirectory(at: existingModuleDir, withIntermediateDirectories: true)
 
         let options = ModuleGeneratorOptions(
