@@ -7,7 +7,7 @@ struct SwiftBlock: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "swiftblock",
         abstract: "Swift project and architecture module generator CLI",
-        subcommands: [Init.self, New.self, Add.self, CoreCommand.self]
+        subcommands: [Init.self, New.self, Add.self, CoreCommand.self, BlueprintCommand.self]
     )
 }
 
@@ -163,12 +163,26 @@ struct Add: ParsableCommand {
 
     func run() throws {
         if let block = block, let name = name {
+            let config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
+            let normalizedBlock = block.lowercased()
             if let spec = BlockRegistry.spec(forCommand: block) {
                 try executeAddModule(type: spec.type, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-            } else if let type = ModuleType(rawValue: block.lowercased()) {
+            } else if let type = ModuleType(rawValue: normalizedBlock) {
                 try executeAddModule(type: type, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+            } else if config.blueprints[normalizedBlock] != nil {
+                let engine = BlueprintEngine()
+                let result = try engine.executeBlueprint(
+                    name: normalizedBlock,
+                    moduleName: name,
+                    config: config,
+                    templatePath: templatePath,
+                    isDryRun: dryRun
+                )
+                if !dryRun {
+                    print("✔ Generated \(result.blueprintName) blueprint module '\(result.moduleName)' with blocks: \(result.generatedBlocks.map { $0.rawValue }.joined(separator: ", "))")
+                }
             } else {
-                print("❌ Block type '\(block)' not found.")
+                print("❌ Block type or blueprint '\(block)' not found.")
                 throw ExitCode.failure
             }
         } else {
@@ -552,5 +566,127 @@ private func executeAddModuleWithOptions(options: ModuleGeneratorOptions) throws
     } catch {
         print("✖ \(error.localizedDescription)")
         throw ExitCode.failure
+    }
+}
+
+struct BlueprintCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "blueprint",
+        abstract: "Manage and execute composable architecture blueprints",
+        subcommands: [
+            BlueprintCreate.self,
+            BlueprintList.self,
+            BlueprintRemove.self,
+            BlueprintRun.self
+        ],
+        defaultSubcommand: BlueprintList.self
+    )
+}
+
+struct BlueprintCreate: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "create",
+        abstract: "Interactively design a new architecture blueprint and save it to .swiftblock",
+        aliases: ["new", "design", "add"]
+    )
+
+    @Argument(help: "Blueprint name (optional, triggers interactive wizard if omitted)")
+    var name: String?
+
+    @Option(name: .long, help: "Comma-separated list of block types (e.g. scene,usecase,repository)")
+    var blocks: String?
+
+    func run() throws {
+        var config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
+
+        if let name = name, let blocksStr = blocks {
+            let blockList = blocksStr.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            config.blueprints[name.lowercased()] = blockList
+            try config.save()
+            print("✔ Blueprint '\(name.lowercased())' saved to .swiftblock with blocks: \(blockList.joined(separator: ", "))")
+        } else {
+            let result = try InteractiveWizard.runBlueprintCreateWizard()
+            config.blueprints[result.name] = result.blocks
+            try config.save()
+            print("✔ Blueprint '\(result.name)' saved to .swiftblock with blocks: \(result.blocks.joined(separator: ", "))")
+        }
+    }
+}
+
+struct BlueprintList: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "list",
+        abstract: "List all architecture blueprints defined in .swiftblock"
+    )
+
+    func run() throws {
+        let config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
+        print("┌  \(ANSIColor.boldText("Architecture Blueprints"))")
+        print("│")
+        if config.blueprints.isEmpty {
+            print("│  (No blueprints configured)")
+        } else {
+            for (name, composedBlocks) in config.blueprints.sorted(by: { $0.key < $1.key }) {
+                print("│  • \(ANSIColor.boldText(name)): \(ANSIColor.cyanText(composedBlocks.joined(separator: ", ")))")
+            }
+        }
+    }
+}
+
+struct BlueprintRemove: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "remove",
+        abstract: "Remove a custom blueprint from .swiftblock",
+        aliases: ["rm", "delete"]
+    )
+
+    @Argument(help: "Blueprint name to remove")
+    var name: String
+
+    func run() throws {
+        var config = try SwiftBlockConfig.load()
+        let key = name.lowercased()
+        guard config.blueprints[key] != nil else {
+            print("❌ Blueprint '\(name)' not found in .swiftblock.")
+            throw ExitCode.failure
+        }
+        config.blueprints.removeValue(forKey: key)
+        try config.save()
+        print("✔ Blueprint '\(key)' removed from .swiftblock.")
+    }
+}
+
+struct BlueprintRun: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "run",
+        abstract: "Execute a blueprint to generate a module",
+        aliases: ["generate"]
+    )
+
+    @Argument(help: "Blueprint name")
+    var blueprintName: String
+
+    @Argument(help: "Module name")
+    var moduleName: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom templates path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
+
+    @Flag(name: .long, help: "Simulate block generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        let config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
+        let engine = BlueprintEngine()
+        let result = try engine.executeBlueprint(
+            name: blueprintName,
+            moduleName: moduleName,
+            config: config,
+            templatePath: templatePath,
+            isDryRun: dryRun
+        )
+        if !dryRun {
+            print("✔ Generated \(result.blueprintName) blueprint module '\(result.moduleName)' with blocks: \(result.generatedBlocks.map { $0.rawValue }.joined(separator: ", "))")
+        }
     }
 }

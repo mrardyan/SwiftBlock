@@ -84,6 +84,16 @@ struct InteractiveWizardTests {
         #expect(options.modulesTemplatePath == "/tmp/core")
     }
 
+    @Test func runBlueprintCreateWizardSuccess() throws {
+        var inputs = ["", "my_custom_blueprint", "a"] // a = toggle all blocks
+        let result = try InteractiveWizard.runBlueprintCreateWizard(readLine: {
+            inputs.isEmpty ? nil : inputs.removeFirst()
+        })
+
+        #expect(result.name == "my_custom_blueprint")
+        #expect(!result.blocks.isEmpty)
+    }
+
     @Test func errorDescription() {
         let err = InteractiveWizardError.cancelled
         #expect(err.errorDescription == "Operation cancelled by user.")

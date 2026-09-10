@@ -411,6 +411,39 @@ public class InteractiveWizard {
             modulesTemplatePath: defaultTemplatePath
         )
     }
+
+    public static func runBlueprintCreateWizard(
+        projectPath: String = FileManager.default.currentDirectoryPath,
+        readLine: () -> String? = { InteractiveWizard.readLine() }
+    ) throws -> (name: String, blocks: [String]) {
+        print("┌  \(ANSIColor.boldText("Design Architecture Blueprint"))")
+        print("│")
+
+        var blueprintName = ""
+        while blueprintName.isEmpty {
+            blueprintName = prompt(message: "Enter Blueprint Name", readLine: readLine).lowercased()
+            if blueprintName.isEmpty {
+                print("  \(ANSIColor.yellowText("⚠️"))  Blueprint name cannot be empty.")
+            }
+        }
+
+        let featureBlocks = BlockRegistry.featureBlocks
+        let blockOptions = featureBlocks.map {
+            TerminalPrompt.MultiChoiceOption(id: $0.commandName, title: $0.title, subtitle: $0.description, isSelected: true)
+        }
+
+        let selectedBlockIds = TerminalPrompt.selectMultiChoice(title: "Select composed blocks for '\(blueprintName)'", options: blockOptions, readLineFallback: readLine)
+        guard !selectedBlockIds.isEmpty else {
+            print("└  \(ANSIColor.redText("✖ Blueprint creation cancelled (no blocks selected)."))")
+            throw InteractiveWizardError.cancelled
+        }
+
+        if selectedBlockIds.contains("scene") && selectedBlockIds.contains("repository") && !selectedBlockIds.contains("usecase") {
+            print("  \(ANSIColor.dimText("ℹ Note: ViewModel will access Repository directly without a UseCase layer."))")
+        }
+
+        return (name: blueprintName, blocks: selectedBlockIds)
+    }
 }
 
 public enum InteractiveWizardError: Error, LocalizedError, Equatable {

@@ -25,6 +25,12 @@ public struct PackagingConfig: Codable, Equatable {
 }
 
 public struct SwiftBlockConfig: Codable, Equatable {
+    public static let defaultBlueprints: [String: [String]] = [
+        "feature": ["scene", "usecase", "repository", "mapper"],
+        "simple": ["scene", "service"],
+        "data": ["repository", "service", "entity"]
+    ]
+
     public var projectName: String
     public var bundlePrefix: String
     public var packaging: PackagingConfig
@@ -38,6 +44,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
     public var pathTemplates: [String: String]
     public var overrides: [String: String]
     public var paths: ModulePaths
+    public var blueprints: [String: [String]]
 
     enum CodingKeys: String, CodingKey {
         case projectName
@@ -53,6 +60,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         case pathTemplates
         case overrides
         case paths
+        case blueprints
     }
 
     public init(from decoder: Decoder) throws {
@@ -74,6 +82,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         ]
         self.overrides = (try? container.decode([String: String].self, forKey: .overrides)) ?? [:]
         self.paths = (try? container.decode(ModulePaths.self, forKey: .paths)) ?? ModulePaths()
+        self.blueprints = (try? container.decode([String: [String]].self, forKey: .blueprints)) ?? SwiftBlockConfig.defaultBlueprints
     }
 
     public struct ModulePaths: Codable, Equatable {
@@ -138,7 +147,8 @@ public struct SwiftBlockConfig: Codable, Equatable {
             "core": "Packages/Core/Sources/Core/{block}"
         ],
         overrides: [String: String] = [:],
-        paths: ModulePaths = ModulePaths()
+        paths: ModulePaths = ModulePaths(),
+        blueprints: [String: [String]] = SwiftBlockConfig.defaultBlueprints
     ) {
         self.projectName = projectName
         self.bundlePrefix = bundlePrefix
@@ -153,6 +163,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         self.pathTemplates = pathTemplates
         self.overrides = overrides
         self.paths = paths
+        self.blueprints = blueprints
     }
 
     public func resolveOutputPath(for type: ModuleType, moduleName: String) -> String {
@@ -186,6 +197,18 @@ public struct SwiftBlockConfig: Codable, Equatable {
         let data = try Data(contentsOf: URL(fileURLWithPath: configFilePath))
         return try JSONDecoder().decode(SwiftBlockConfig.self, from: data)
     }
+
+    public func save(to directoryPath: String = FileManager.default.currentDirectoryPath) throws {
+        let configFilePath = "\(directoryPath)/.swiftblock"
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(self)
+        guard var jsonString = String(data: data, encoding: .utf8) else {
+            throw SwiftBlockConfigError.encodingFailed
+        }
+        jsonString = jsonString.trimmingCharacters(in: .newlines) + "\n"
+        try jsonString.write(toFile: configFilePath, atomically: true, encoding: .utf8)
+    }
 }
 
 private struct DynamicCodingKeys: CodingKey {
@@ -205,11 +228,14 @@ private struct DynamicCodingKeys: CodingKey {
 
 public enum SwiftBlockConfigError: Error, LocalizedError {
     case configNotFound(String)
+    case encodingFailed
 
     public var errorDescription: String? {
         switch self {
         case .configNotFound(let path):
             return "Not a valid SwiftBlock project root (.swiftblock not found at \(path))"
+        case .encodingFailed:
+            return "Failed to encode SwiftBlock configuration to JSON."
         }
     }
 }
