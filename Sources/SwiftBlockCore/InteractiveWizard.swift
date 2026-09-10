@@ -289,7 +289,16 @@ public class InteractiveWizard {
             TerminalPrompt.MultiChoiceOption(id: "featureflag", title: "FeatureFlag", subtitle: "Remote feature flags & toggles", isSelected: false)
         ]
         let selectedCoreBlockIds = TerminalPrompt.selectMultiChoice(title: "Select Core Foundation Modules to include", options: coreBlockOptions, readLineFallback: readLine)
-        let selectedCoreBlocks = selectedCoreBlockIds.compactMap { ModuleType(rawValue: $0) }
+        var selectedCoreBlocks = selectedCoreBlockIds.compactMap { ModuleType(rawValue: $0) }
+
+        let multiEnvConfirm = promptConfirm(message: "Setup Multi-Environment Configurations (.xcconfig & Schemes)?", defaultYes: true, readLine: readLine)
+        if multiEnvConfirm {
+            if !selectedCoreBlocks.contains(.config) {
+                selectedCoreBlocks.append(.config)
+            }
+        } else {
+            selectedCoreBlocks.removeAll { $0 == .config }
+        }
 
         print("│")
         print("◇  \(ANSIColor.boldText("CI/CD Pipeline & Git Repository"))")
