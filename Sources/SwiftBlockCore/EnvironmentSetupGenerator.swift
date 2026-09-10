@@ -142,7 +142,7 @@ help:
 
         var requiredToolChecks: [(binary: String, brewFormula: String)] = []
         if config.generatorTool == .tuist {
-            requiredToolChecks.append(("tuist", "tuist/tuist/tuist"))
+            requiredToolChecks.append(("tuist", "tuist"))
         } else {
             requiredToolChecks.append(("xcodegen", "xcodegen"))
         }
@@ -153,7 +153,7 @@ help:
         if config.guardrails.gitleaks { requiredToolChecks.append(("gitleaks", "gitleaks")) }
         if config.guardrails.precommit { requiredToolChecks.append(("pre-commit", "pre-commit")) }
         if config.guardrails.swiftgen { requiredToolChecks.append(("swiftgen", "swiftgen")) }
-        if config.guardrails.licenseplist { requiredToolChecks.append(("license-plist", "license-plist")) }
+        if config.guardrails.licenseplist { requiredToolChecks.append(("license-plist", "licenseplist")) }
 
         let checkStatements = requiredToolChecks.map { item in
             "which \(item.binary) > /dev/null 2>&1 || MISSING_TOOLS=\"$MISSING_TOOLS \(item.brewFormula)\""
@@ -165,7 +165,7 @@ if which mise > /dev/null 2>&1; then
     if [ -z "$GITHUB_TOKEN" ] && which gh > /dev/null 2>&1; then
         export GITHUB_TOKEN=$(gh auth token 2>/dev/null || true)
     fi
-    mise install || true
+    mise install 2>/dev/null || true
 fi
 
 MISSING_TOOLS=""
