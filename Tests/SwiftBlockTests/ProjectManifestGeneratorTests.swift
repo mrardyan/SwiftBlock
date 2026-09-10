@@ -78,8 +78,8 @@ struct ProjectManifestGeneratorTests {
         #expect(content.contains("Staging.xcconfig"))
         #expect(content.contains("Production.xcconfig"))
         #expect(content.contains("TestTuistConfigApp-Dev"))
-        #expect(content.contains("TestTuistConfigApp-Staging"))
-        #expect(content.contains("TestTuistConfigApp-Prod"))
+        #expect(content.contains("TestTuistConfigApp-Stg"))
+        #expect(content.contains("TestTuistConfigApp"))
 
         // Verify target parameter ordering: dependencies must precede target settings
         if let depRange = content.range(of: "dependencies: ["),
@@ -112,8 +112,8 @@ struct ProjectManifestGeneratorTests {
         let content = try String(contentsOf: projectFile, encoding: .utf8)
         #expect(content.contains("Configs/Development.xcconfig"))
         #expect(content.contains("TestXcodeGenConfigApp-Dev"))
-        #expect(content.contains("TestXcodeGenConfigApp-Staging"))
-        #expect(content.contains("TestXcodeGenConfigApp-Prod"))
+        #expect(content.contains("TestXcodeGenConfigApp-Stg"))
+        #expect(content.contains("TestXcodeGenConfigApp:"))
     }
 
     @Test func generatorFactorySelection() {

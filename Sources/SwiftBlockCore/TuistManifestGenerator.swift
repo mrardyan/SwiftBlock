@@ -94,14 +94,14 @@ fi
             runAction: .runAction(configuration: "Development")
         ),
         .scheme(
-            name: "\(config.projectName)-Staging",
+            name: "\(config.projectName)-Stg",
             shared: true,
             buildAction: .buildAction(targets: ["\(config.projectName)"]),
             testAction: .targets(["\(config.projectName)Tests"], configuration: "Staging"),
             runAction: .runAction(configuration: "Staging")
         ),
         .scheme(
-            name: "\(config.projectName)-Prod",
+            name: "\(config.projectName)",
             shared: true,
             buildAction: .buildAction(targets: ["\(config.projectName)"]),
             testAction: .targets(["\(config.projectName)Tests"], configuration: "Production"),
@@ -115,8 +115,9 @@ fi
 import ProjectDescription
 
 let project = Project(
-    name: "\(config.projectName)",\(packagesString)
-\(optionsBlock)\(projectSettings)
+    name: "\(config.projectName)",
+\(optionsBlock)\(packagesString)
+\(projectSettings)
     targets: [
         .target(
             name: "\(config.projectName)",
