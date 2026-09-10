@@ -108,7 +108,9 @@ struct Add: ParsableCommand {
             AddService.self,
             AddEntity.self,
             AddCoordinator.self,
-            AddComponent.self
+            AddComponent.self,
+            AddMapper.self,
+            AddValidator.self
         ]
     )
 
@@ -266,15 +268,58 @@ struct AddComponent: ParsableCommand {
     }
 }
 
+struct AddMapper: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "mapper",
+        abstract: "Add a new Data Mapper / DTO Transformer Block"
+    )
+
+    @Argument(help: "Mapper module name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
+
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .mapper, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
+struct AddValidator: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "validator",
+        abstract: "Add a new Form Input Field Validator Block"
+    )
+
+    @Argument(help: "Validator module name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
+
+    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .validator, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
 struct CoreCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "core",
-        abstract: "Add a core foundation block to current project (Storage, Network, Logger, Analytics)",
+        abstract: "Add a core foundation block to current project (Storage, Network, Logger, Analytics, Config, Auth, FeatureFlag)",
         subcommands: [
             CoreStorage.self,
             CoreNetwork.self,
             CoreLogger.self,
-            CoreAnalytics.self
+            CoreAnalytics.self,
+            CoreConfig.self,
+            CoreAuth.self,
+            CoreFeatureFlag.self
         ]
     )
 
@@ -371,6 +416,67 @@ struct CoreAnalytics: ParsableCommand {
         try executeAddModule(type: .analytics, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
     }
 }
+
+struct CoreConfig: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "config",
+        abstract: "Add a new Environment Config & Feature Flags Block"
+    )
+
+    @Argument(help: "Config block name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
+
+    @Flag(name: .long, help: "Simulate block generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .config, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
+struct CoreAuth: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "auth",
+        abstract: "Add a new User Session & Token State Manager Block"
+    )
+
+    @Argument(help: "Auth block name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
+
+    @Flag(name: .long, help: "Simulate block generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .auth, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
+struct CoreFeatureFlag: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "featureflag",
+        abstract: "Add a new Feature Flags & Remote Toggles Engine Block"
+    )
+
+    @Argument(help: "FeatureFlag block name")
+    var name: String
+
+    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
+
+    @Flag(name: .long, help: "Simulate block generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        try executeAddModule(type: .featureflag, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+    }
+}
+
 
 private func executeAddModule(type: ModuleType, moduleName: String, templatePath: String, isDryRun: Bool) throws {
     let options = ModuleGeneratorOptions(

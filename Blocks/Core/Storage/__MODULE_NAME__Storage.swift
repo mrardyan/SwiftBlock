@@ -1,12 +1,12 @@
 import Foundation
 
-public protocol __MODULE_NAME__Storage {
+public protocol __MODULE_NAME__Storable {
     func save<T: Codable>(_ item: T, forKey key: String) throws
     func load<T: Codable>(forKey key: String, as type: T.Type) throws -> T?
     func remove(forKey key: String)
 }
 
-public final class Default__MODULE_NAME__Storage: __MODULE_NAME__Storage {
+public final class Default__MODULE_NAME__Storage: __MODULE_NAME__Storable {
     private let userDefaults: UserDefaults
 
     public init(userDefaults: UserDefaults = .standard) {

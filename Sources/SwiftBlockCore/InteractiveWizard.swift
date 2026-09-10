@@ -95,7 +95,7 @@ public class InteractiveWizard {
         print("\n🪄 SwiftBlock Feature Module Block Wizard")
         print("──────────────────────────────────────────")
 
-        let types: [ModuleType] = [.scene, .usecase, .repository, .service, .entity, .coordinator, .component]
+        let types: [ModuleType] = [.scene, .usecase, .repository, .service, .entity, .coordinator, .component, .mapper, .validator]
         let typeTitles = [
             "Scene (MVVM View + ViewModel + State)",
             "UseCase (Domain Protocol + Implementation)",
@@ -103,7 +103,9 @@ public class InteractiveWizard {
             "Service (API Service Protocol + Implementation)",
             "Entity (Domain Entity / DTO Model)",
             "Coordinator (Navigation Flow Routing)",
-            "Component (Reusable UI Component)"
+            "Component (Reusable UI Component)",
+            "Mapper (DTO to Domain Entity Transformer)",
+            "Validator (Form Input Field Validator)"
         ]
 
         let selectedIndex = promptChoice(title: "Select Feature Block Type:", options: typeTitles, readLine: readLine)
@@ -131,12 +133,15 @@ public class InteractiveWizard {
         print("\n🪄 SwiftBlock Core Foundation Block Wizard")
         print("───────────────────────────────────────────")
 
-        let types: [ModuleType] = [.storage, .network, .logger, .analytics]
+        let types: [ModuleType] = [.storage, .network, .logger, .analytics, .config, .auth, .featureflag]
         let typeTitles = [
             "Storage (Local Persistence Storage Engine)",
             "Network (Network Client / HTTP Request Engine)",
             "Logger (Unified OSLog / Crash Logger Engine)",
-            "Analytics (Event Analytics & Metrics Engine)"
+            "Analytics (Event Analytics & Metrics Engine)",
+            "Config (Environment Config & Feature Flags)",
+            "Auth (User Session & Token State Manager)",
+            "FeatureFlag (Feature Flags & Remote Toggles Engine)"
         ]
 
         let selectedIndex = promptChoice(title: "Select Core Block Type:", options: typeTitles, readLine: readLine)

@@ -13,10 +13,15 @@ public struct SwiftBlockConfig: Codable {
         public var entity: String
         public var coordinator: String
         public var component: String
+        public var mapper: String
+        public var validator: String
         public var storage: String
         public var network: String
         public var logger: String
         public var analytics: String
+        public var config: String
+        public var auth: String
+        public var featureflag: String
 
         public init(
             scene: String = "App/Sources/Features",
@@ -26,10 +31,15 @@ public struct SwiftBlockConfig: Codable {
             entity: String = "App/Sources/Domain/Entities",
             coordinator: String = "App/Sources/Presentation/Coordinators",
             component: String = "App/Sources/Presentation/Components",
+            mapper: String = "App/Sources/Domain/Mappers",
+            validator: String = "App/Sources/Presentation/Validators",
             storage: String = "App/Sources/Core/Storage",
             network: String = "App/Sources/Core/Network",
             logger: String = "App/Sources/Core/Logger",
-            analytics: String = "App/Sources/Core/Analytics"
+            analytics: String = "App/Sources/Core/Analytics",
+            config: String = "App/Sources/Core/Config",
+            auth: String = "App/Sources/Core/Auth",
+            featureflag: String = "App/Sources/Core/FeatureFlag"
         ) {
             self.scene = scene
             self.usecase = usecase
@@ -38,10 +48,15 @@ public struct SwiftBlockConfig: Codable {
             self.entity = entity
             self.coordinator = coordinator
             self.component = component
+            self.mapper = mapper
+            self.validator = validator
             self.storage = storage
             self.network = network
             self.logger = logger
             self.analytics = analytics
+            self.config = config
+            self.auth = auth
+            self.featureflag = featureflag
         }
 
         public func path(for type: ModuleType) -> String {
@@ -53,10 +68,15 @@ public struct SwiftBlockConfig: Codable {
             case .entity: return entity
             case .coordinator: return coordinator
             case .component: return component
+            case .mapper: return mapper
+            case .validator: return validator
             case .storage: return storage
             case .network: return network
             case .logger: return logger
             case .analytics: return analytics
+            case .config: return config
+            case .auth: return auth
+            case .featureflag: return featureflag
             }
         }
     }
@@ -105,19 +125,25 @@ public enum ModuleType: String, CaseIterable, Codable {
     case entity
     case coordinator
     case component
+    case mapper
+    case validator
     case storage
     case network
     case logger
     case analytics
+    case config
+    case auth
+    case featureflag
 
     public var category: ModuleCategory {
         switch self {
-        case .scene, .usecase, .repository, .service, .entity, .coordinator, .component:
+        case .scene, .usecase, .repository, .service, .entity, .coordinator, .component, .mapper, .validator:
             return .feature
-        case .storage, .network, .logger, .analytics:
+        case .storage, .network, .logger, .analytics, .config, .auth, .featureflag:
             return .core
         }
     }
 }
+
 
 

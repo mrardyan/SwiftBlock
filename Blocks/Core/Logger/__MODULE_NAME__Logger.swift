@@ -26,11 +26,11 @@ public enum LogLevel: String, CaseIterable, Comparable {
     }
 }
 
-public protocol __MODULE_NAME__Logger {
+public protocol __MODULE_NAME__Logging {
     func log(_ level: LogLevel, _ message: String, file: String, line: Int, function: String)
 }
 
-public extension __MODULE_NAME__Logger {
+public extension __MODULE_NAME__Logging {
     func log(_ level: LogLevel, _ message: String, file: String = #file, line: Int = #line, function: String = #function) {
         log(level, message, file: file, line: line, function: function)
     }
@@ -56,7 +56,7 @@ public extension __MODULE_NAME__Logger {
     }
 }
 
-public final class Default__MODULE_NAME__Logger: __MODULE_NAME__Logger {
+public final class __MODULE_NAME__Logger: __MODULE_NAME__Logging {
     private let logger: Logger
 
     public init(subsystem: String = Bundle.main.bundleIdentifier ?? "com.example", category: String = "App") {
