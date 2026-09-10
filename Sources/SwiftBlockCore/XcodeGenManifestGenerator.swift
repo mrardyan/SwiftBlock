@@ -69,13 +69,13 @@ schemes:
         \(config.projectName): all
     run:
       config: Development
-  \(config.projectName)-Staging:
+  \(config.projectName)-Stg:
     build:
       targets:
         \(config.projectName): all
     run:
       config: Staging
-  \(config.projectName)-Prod:
+  \(config.projectName):
     build:
       targets:
         \(config.projectName): all
