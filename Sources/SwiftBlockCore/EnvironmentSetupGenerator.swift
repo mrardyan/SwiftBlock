@@ -143,7 +143,14 @@ help:
         setupSteps.append("""
 if which mise > /dev/null; then
     echo "◆ Installing tool dependencies via mise..."
-    mise install
+    if [ -z "$GITHUB_TOKEN" ] && which gh > /dev/null 2>&1; then
+        export GITHUB_TOKEN=$(gh auth token 2>/dev/null || true)
+    fi
+    if ! mise install; then
+        echo "⚠️ Warning: 'mise install' failed (likely GitHub API rate limit 403)."
+        echo "⚠️ To fix: set GITHUB_TOKEN env var or run 'gh auth login'."
+        echo "⚠️ Proceeding setup with available system tools..."
+    fi
 fi
 """)
 
