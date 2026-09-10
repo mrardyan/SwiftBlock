@@ -1,0 +1,5 @@
+{
+  "title": "Auth",
+  "description": "User Session & Token State Manager",
+  "defaultOutputPath": "App/Sources/Core/Auth"
+}

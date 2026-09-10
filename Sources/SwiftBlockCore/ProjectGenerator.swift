@@ -6,19 +6,22 @@ public struct ProjectGeneratorOptions {
     public var templatePath: String
     public var outputPath: String
     public var isDryRun: Bool
+    public var customConfig: SwiftBlockConfig?
 
     public init(
         projectName: String,
         bundlePrefix: String = "com.example",
         templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI",
         outputPath: String? = nil,
-        isDryRun: Bool = false
+        isDryRun: Bool = false,
+        customConfig: SwiftBlockConfig? = nil
     ) {
         self.projectName = projectName
         self.bundlePrefix = bundlePrefix
         self.templatePath = templatePath
         self.outputPath = outputPath ?? "\(FileManager.default.currentDirectoryPath)/\(projectName)"
         self.isDryRun = isDryRun
+        self.customConfig = customConfig
     }
 }
 
@@ -59,6 +62,14 @@ public class ProjectGenerator {
             try fileManager.copyItem(atPath: options.templatePath, toPath: options.outputPath)
             try replacePlaceholders(in: options.outputPath, projectName: options.projectName, bundlePrefix: options.bundlePrefix)
             try renamePaths(in: options.outputPath, projectName: options.projectName, bundlePrefix: options.bundlePrefix)
+
+            if let customConfig = options.customConfig {
+                let configFilePath = "\(options.outputPath)/.swiftblock"
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+                let configData = try encoder.encode(customConfig)
+                try configData.write(to: URL(fileURLWithPath: configFilePath))
+            }
         } catch {
             // Clean up partially copied project folder if generation failed
             if fileManager.fileExists(atPath: options.outputPath) {

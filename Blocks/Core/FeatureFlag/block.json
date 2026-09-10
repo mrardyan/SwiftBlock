@@ -1,0 +1,5 @@
+{
+  "title": "FeatureFlag",
+  "description": "Feature Flags & Remote Toggles Engine",
+  "defaultOutputPath": "App/Sources/Core/FeatureFlag"
+}

@@ -1,0 +1,5 @@
+{
+  "title": "Coordinator",
+  "description": "Navigation Flow Routing",
+  "defaultOutputPath": "App/Sources/Features/{module}/Coordinator"
+}

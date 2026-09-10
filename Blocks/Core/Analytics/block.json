@@ -1,0 +1,5 @@
+{
+  "title": "Analytics",
+  "description": "Event Analytics & Metrics Engine",
+  "defaultOutputPath": "App/Sources/Core/Analytics"
+}

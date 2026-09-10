@@ -1,0 +1,5 @@
+{
+  "title": "Validator",
+  "description": "Form Input Field Validator",
+  "defaultOutputPath": "App/Sources/Features/{module}/Validator"
+}

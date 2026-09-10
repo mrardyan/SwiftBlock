@@ -1,8 +1,36 @@
 import Foundation
 
-public struct SwiftBlockConfig: Codable {
+public struct PackagingConfig: Codable, Equatable {
+    public var feature: String
+    public var core: String
+
+    public init(feature: String = "monolithic", core: String = "spm") {
+        self.feature = feature
+        self.core = core
+    }
+
+    public init(from decoder: Decoder) throws {
+        if let container = try? decoder.container(keyedBy: CodingKeys.self) {
+            self.feature = (try? container.decode(String.self, forKey: .feature)) ?? "monolithic"
+            self.core = (try? container.decode(String.self, forKey: .core)) ?? "spm"
+        } else if let single = try? decoder.singleValueContainer(),
+                  let value = try? single.decode(String.self) {
+            self.feature = value
+            self.core = value == "spm" ? "spm" : "monolithic"
+        } else {
+            self.feature = "monolithic"
+            self.core = "spm"
+        }
+    }
+}
+
+public struct SwiftBlockConfig: Codable, Equatable {
     public var projectName: String
     public var bundlePrefix: String
+    public var packaging: PackagingConfig
+    public var organization: String
+    public var pathTemplates: [String: String]
+    public var overrides: [String: String]
     public var paths: ModulePaths
 
     public struct ModulePaths: Codable, Equatable {
@@ -54,11 +82,45 @@ public struct SwiftBlockConfig: Codable {
     public init(
         projectName: String,
         bundlePrefix: String = "com.example",
+        packaging: PackagingConfig = PackagingConfig(),
+        organization: String = "business-first",
+        pathTemplates: [String: String] = [
+            "feature": "App/Sources/Features/{module}/{block}",
+            "core": "Packages/Core/Sources/{block}"
+        ],
+        overrides: [String: String] = [:],
         paths: ModulePaths = ModulePaths()
     ) {
         self.projectName = projectName
         self.bundlePrefix = bundlePrefix
+        self.packaging = packaging
+        self.organization = organization
+        self.pathTemplates = pathTemplates
+        self.overrides = overrides
         self.paths = paths
+    }
+
+    public func resolveOutputPath(for type: ModuleType, moduleName: String) -> String {
+        let blockName = type.rawValue.lowercased()
+
+        // Priority 1: Check overrides in .swiftblock
+        if let overridePath = overrides[blockName] {
+            return BlockDiscoveryEngine.evaluateTokens(in: overridePath, moduleName: moduleName, blockName: blockName)
+        }
+
+        // Priority 2: Check pathTemplates in .swiftblock
+        let categoryKey = type.category.rawValue
+        if let template = pathTemplates[categoryKey] {
+            return BlockDiscoveryEngine.evaluateTokens(in: template, moduleName: moduleName, blockName: blockName)
+        }
+
+        // Priority 3: Check block.json metadata or fallback
+        if let defaultPath = BlockRegistry.spec(for: type)?.defaultOutputPath {
+            return BlockDiscoveryEngine.evaluateTokens(in: defaultPath, moduleName: moduleName, blockName: blockName)
+        }
+
+        // Priority 4: Standard engine fallback
+        return paths.path(for: type)
     }
 
     public static func load(from directoryPath: String = FileManager.default.currentDirectoryPath) throws -> SwiftBlockConfig {

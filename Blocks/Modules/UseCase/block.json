@@ -1,0 +1,5 @@
+{
+  "title": "UseCase",
+  "description": "Domain Protocol + Implementation",
+  "defaultOutputPath": "App/Sources/Features/{module}/UseCase"
+}

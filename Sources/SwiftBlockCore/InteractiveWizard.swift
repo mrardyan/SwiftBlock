@@ -75,16 +75,65 @@ public class InteractiveWizard {
 
         let bundlePrefix = prompt(message: "Enter Bundle Identifier Prefix", defaultValue: "com.example", readLine: readLine)
 
+        let featurePkgOptions = [
+            "Monolithic / Main Target (e.g. App/Sources/Features/Home/...)",
+            "SPM Multi-Package (e.g. Packages/HomeFeature/Sources/HomeFeature/...)"
+        ]
+        let featurePkgChoice = promptChoice(title: "📦 Select Feature Packaging Strategy:", options: featurePkgOptions, readLine: readLine)
+        let featurePkg = featurePkgChoice == 0 ? "monolithic" : "spm"
+
+        let corePkgOptions = [
+            "Monolithic / Main Target (e.g. App/Sources/Core/Storage/...)",
+            "SPM Core Package (e.g. Packages/Core/Sources/Storage/...)"
+        ]
+        let corePkgChoice = promptChoice(title: "📦 Select Core Packaging Strategy:", options: corePkgOptions, readLine: readLine)
+        let corePkg = corePkgChoice == 0 ? "monolithic" : "spm"
+
+        let orgOptions = [
+            "Business-First (e.g. Home/Scene, Home/UseCase, Payment/Scene)",
+            "Technical-First (e.g. Scenes/Home, UseCases/Home, Repositories/Payment)"
+        ]
+        let orgChoice = promptChoice(title: "📁 Select Code Organization Strategy:", options: orgOptions, readLine: readLine)
+        let orgStrategy = orgChoice == 0 ? "business-first" : "technical-first"
+
         let confirm = promptConfirm(message: "Create project '\(projectName)' with bundle prefix '\(bundlePrefix)'?", readLine: readLine)
         guard confirm else {
             print("❌ Project creation cancelled.")
             throw InteractiveWizardError.cancelled
         }
 
+        let featureTemplate: String
+        if featurePkg == "spm" {
+            featureTemplate = "Packages/{module}Feature/Sources/{module}Feature/{block}s"
+        } else if orgStrategy == "technical-first" {
+            featureTemplate = "App/Sources/{block}s/{module}"
+        } else {
+            featureTemplate = "App/Sources/Features/{module}/{block}"
+        }
+
+        let coreTemplate: String
+        if corePkg == "spm" {
+            coreTemplate = "Packages/Core/Sources/{block}"
+        } else {
+            coreTemplate = "App/Sources/Core/{block}"
+        }
+
+        let config = SwiftBlockConfig(
+            projectName: projectName,
+            bundlePrefix: bundlePrefix,
+            packaging: PackagingConfig(feature: featurePkg, core: corePkg),
+            organization: orgStrategy,
+            pathTemplates: [
+                "feature": featureTemplate,
+                "core": coreTemplate
+            ]
+        )
+
         return ProjectGeneratorOptions(
             projectName: projectName,
             bundlePrefix: bundlePrefix,
-            templatePath: defaultTemplatePath
+            templatePath: defaultTemplatePath,
+            customConfig: config
         )
     }
 

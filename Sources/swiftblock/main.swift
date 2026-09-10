@@ -100,7 +100,7 @@ private func executeWithOptions(options: ProjectGeneratorOptions) throws {
 struct Add: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "add",
-        abstract: "Add a feature architecture block to current project",
+        abstract: "Add an architecture block to current project (e.g. swiftblock add storage AppStorage)",
         subcommands: [
             AddScene.self,
             AddUseCase.self,
@@ -110,21 +110,45 @@ struct Add: ParsableCommand {
             AddCoordinator.self,
             AddComponent.self,
             AddMapper.self,
-            AddValidator.self
+            AddValidator.self,
+            CoreStorage.self,
+            CoreNetwork.self,
+            CoreLogger.self,
+            CoreAnalytics.self,
+            CoreConfig.self,
+            CoreAuth.self,
+            CoreFeatureFlag.self
         ]
     )
 
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
+    @Argument(help: "Block type (e.g. storage, scene, usecase)")
+    var block: String?
 
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
+    @Argument(help: "Module or block name (e.g. AppStorage, Home)")
+    var name: String?
+
+    @Option(name: [.customShort("t"), .long], help: "Custom templates path")
+    var templatePath: String = "/usr/local/share/swiftblock/Blocks"
+
+    @Flag(name: .long, help: "Simulate block generation without writing to disk")
     var dryRun: Bool = false
 
     func run() throws {
-        let options = try InteractiveWizard.runModuleWizard(defaultTemplatePath: templatePath)
-        var finalOptions = options
-        finalOptions.isDryRun = dryRun
-        try executeAddModuleWithOptions(options: finalOptions)
+        if let block = block, let name = name {
+            if let spec = BlockRegistry.spec(forCommand: block) {
+                try executeAddModule(type: spec.type, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+            } else if let type = ModuleType(rawValue: block.lowercased()) {
+                try executeAddModule(type: type, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
+            } else {
+                print("❌ Block type '\(block)' not found.")
+                throw ExitCode.failure
+            }
+        } else {
+            let options = try InteractiveWizard.runModuleWizard(defaultTemplatePath: templatePath)
+            var finalOptions = options
+            finalOptions.isDryRun = dryRun
+            try executeAddModuleWithOptions(options: finalOptions)
+        }
     }
 }
 

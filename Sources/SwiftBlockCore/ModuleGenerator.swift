@@ -53,10 +53,20 @@ public class ModuleGenerator {
 
     public func generateModule(options: ModuleGeneratorOptions) throws -> String {
         let config = try SwiftBlockConfig.load(from: options.projectRootPath)
-        let relativePath = config.paths.path(for: options.type)
-        let destinationFolderPath = "\(options.projectRootPath)/\(relativePath)/\(options.moduleName)"
-        
-        let templateTypeFolderPath = "\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)"
+        let resolvedPath = config.resolveOutputPath(for: options.type, moduleName: options.moduleName)
+
+        let destinationFolderPath: String
+        if resolvedPath.contains(options.moduleName.lowercased()) || resolvedPath.contains(options.moduleName) {
+            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
+        } else {
+            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)/\(options.moduleName)"
+        }
+
+        var templateTypeFolderPath = "\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)"
+        if !fileManager.fileExists(atPath: templateTypeFolderPath) {
+            templateTypeFolderPath = options.modulesTemplatePath
+        }
+
         guard fileManager.fileExists(atPath: templateTypeFolderPath) else {
             throw ModuleGeneratorError.templateNotFound(templateTypeFolderPath)
         }
@@ -98,6 +108,11 @@ public class ModuleGenerator {
         let enumerator = fileManager.enumerator(atPath: sourcePath)
 
         while let item = enumerator?.nextObject() as? String {
+            // NEVER copy template metadata (block.json) to output projects
+            if (item as NSString).lastPathComponent == "block.json" {
+                continue
+            }
+
             let itemSourcePath = "\(sourcePath)/\(item)"
             let itemRelativePath = item
                 .replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
@@ -114,10 +129,17 @@ public class ModuleGenerator {
                         try fileManager.createDirectory(atPath: parentDir, withIntermediateDirectories: true)
                     }
 
-                    var content = try String(contentsOfFile: itemSourcePath, encoding: .utf8)
-                    content = content.replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
-                    content = content.replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
-                    try content.write(toFile: itemTargetPath, atomically: true, encoding: .utf8)
+                    // Text files are processed with placeholder replacement; binary files copied raw
+                    if let content = try? String(contentsOfFile: itemSourcePath, encoding: .utf8) {
+                        var processed = content.replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
+                        processed = processed.replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
+                        try processed.write(toFile: itemTargetPath, atomically: true, encoding: .utf8)
+                    } else {
+                        if fileManager.fileExists(atPath: itemTargetPath) {
+                            try? fileManager.removeItem(atPath: itemTargetPath)
+                        }
+                        try fileManager.copyItem(atPath: itemSourcePath, toPath: itemTargetPath)
+                    }
                 }
             }
         }
