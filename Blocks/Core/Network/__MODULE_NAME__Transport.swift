@@ -53,7 +53,6 @@ public protocol HTTPTransporting {
 }
 
 /// `URLSession`-backed HTTP transport layer.
-@available(iOS 15.0, macOS 12.0, *)
 public final class URLSessionTransport: HTTPTransporting {
     private let session: URLSession
 

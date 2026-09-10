@@ -60,7 +60,6 @@ public extension Logging {
 }
 
 /// Unified Apple `OSLog` logging implementation.
-@available(iOS 15.0, macOS 11.0, *)
 public final class __MODULE_NAME__: Logging {
     private let logger: Logger
 
