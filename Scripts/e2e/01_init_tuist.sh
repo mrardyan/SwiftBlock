@@ -44,6 +44,13 @@ run_scenario() {
     assert_dir_exists ".git" ".git directory initialized"
     assert_file_exists ".gitignore" ".gitignore present"
 
+    # Validate real tuist generate command if tuist is installed
+    if which tuist > /dev/null 2>&1; then
+        log_info "Testing real 'tuist generate' graph validation..."
+        tuist generate --no-open
+        log_success "Tuist project graph generated cleanly without linting issues"
+    fi
+
     cd "$TEST_DIR"
 }
 

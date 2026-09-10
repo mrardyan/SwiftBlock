@@ -16,6 +16,12 @@ run_scenario() {
     assert_file_contains "project.yml" "TestNewApp" "project.yml contains app name"
     assert_file_contains "project.yml" "com.mycompany.newapp" "project.yml contains bundle prefix"
 
+    if which xcodegen > /dev/null 2>&1; then
+        log_info "Testing real 'xcodegen generate' spec validation..."
+        xcodegen generate
+        log_success "XcodeGen project generated cleanly without specification issues"
+    fi
+
     cd "$TEST_DIR"
 }
 
