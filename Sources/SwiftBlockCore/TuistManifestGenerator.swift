@@ -114,7 +114,8 @@ let project = Project(
             sources: ["App/Sources/**"],
             resources: ["App/Resources/**"],
             \(scriptsString)
-            \(targetSettings)dependencies: [\(dependenciesString)]
+            dependencies: [\(dependenciesString)],
+            \(targetSettings)
         ),
         .target(
             name: "\(config.projectName)Tests",

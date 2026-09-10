@@ -38,6 +38,7 @@ struct EnvironmentSetupGeneratorTests {
         #expect(makefileContent.contains("swiftlint"))
 
         let miseContent = try String(contentsOf: miseFile, encoding: .utf8)
+        #expect(miseContent.contains("[tools]"))
         #expect(miseContent.contains("tuist = \"4.12.0\""))
         #expect(miseContent.contains("swiftlint = \"0.55.0\""))
 

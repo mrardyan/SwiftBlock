@@ -21,7 +21,7 @@ public class EnvironmentSetupGenerator {
     }
 
     private func generateMiseToml(in projectPath: String, config: SwiftBlockConfig, versions: DependencyVersionRegistry) throws {
-        var tools: [String] = []
+        var tools: [String] = ["[tools]"]
 
         if config.generatorTool == .tuist {
             tools.append("tuist = \"\(versions.tuist)\"")
