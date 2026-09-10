@@ -1,16 +1,19 @@
 import UIKit
 
+/// Application delegate handling app lifecycle and scene configuration.
 class AppDelegate: NSObject, UIApplicationDelegate {
+    /// Triggered after the application launch process finishes.
     func application(
         _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // Perform any setup like FirebaseApp.configure() here
+        // Perform initial application setup here
         return true
     }
 
-    // MARK: UISceneSession Lifecycle
+    // MARK: - UISceneSession Lifecycle
 
+    /// Configures scene session delegate for incoming window connections.
     func application(
         _ application: UIApplication,
         configurationForConnecting connectingSceneSession: UISceneSession,
@@ -21,4 +24,5 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return sceneConfig
     }
 }
+
 
