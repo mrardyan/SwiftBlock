@@ -168,4 +168,88 @@ struct E2ETests {
         // 4. Validate gitInit == false
         #expect(!FileManager.default.fileExists(atPath: "\(projectPath)/.git"))
     }
+
+    @Test func testE2EBlueprintCreationAndExecutionMatrix() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("E2E_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let projectPath = tempDir.appendingPathComponent("BlueprintApp").path
+
+        // 1. Initialize project & config
+        var config = SwiftBlockConfig(
+            projectName: "BlueprintApp",
+            bundlePrefix: "com.testorg",
+            packaging: PackagingConfig(feature: "monolithic", core: "monolithic"),
+            organization: "feature-first",
+            generatorTool: .tuist
+        )
+
+        let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+        try "// Main App".write(toFile: "\(mockTemplate)/App/Sources/Main.swift", atomically: true, encoding: .utf8)
+
+        let mockModuleTemplate = tempDir.appendingPathComponent("MockModuleTemplate").path
+        let blockTypes = ["Scene", "Usecase", "Repository", "Service", "Mapper"]
+        for block in blockTypes {
+            try FileManager.default.createDirectory(atPath: "\(mockModuleTemplate)/\(block)", withIntermediateDirectories: true)
+            try "// \(block)".write(toFile: "\(mockModuleTemplate)/\(block)/__MODULE_NAME__\(block).swift", atomically: true, encoding: .utf8)
+        }
+
+        let options = ProjectGeneratorOptions(
+            projectName: "BlueprintApp",
+            bundlePrefix: "com.testorg",
+            templatePath: mockTemplate,
+            outputPath: projectPath,
+            customConfig: config
+        )
+
+        let projectGen = ProjectGenerator()
+        try projectGen.generateProject(options: options)
+
+        // 2. Add and save a custom blueprint to .swiftblock
+        config.blueprints["custom_auth"] = ["scene", "usecase", "service"]
+        try config.save(to: projectPath)
+
+        let loadedConfig = try SwiftBlockConfig.load(from: projectPath)
+        #expect(loadedConfig.blueprints["custom_auth"] == ["scene", "usecase", "service"])
+        #expect(loadedConfig.blueprints["feature"] == ["scene", "usecase", "repository", "mapper"])
+
+        // 3. Execute custom blueprint 'custom_auth' for module 'Auth'
+        let engine = BlueprintEngine()
+        let resultAuth = try engine.executeBlueprint(
+            name: "custom_auth",
+            moduleName: "Auth",
+            config: loadedConfig,
+            templatePath: mockModuleTemplate,
+            projectPath: projectPath
+        )
+
+        #expect(resultAuth.blueprintName == "custom_auth")
+        #expect(resultAuth.moduleName == "Auth")
+        #expect(resultAuth.generatedBlocks == [.scene, .usecase, .service])
+        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/auth/scene/AuthScene.swift"))
+        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/auth/usecase/AuthUsecase.swift"))
+        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/auth/service/AuthService.swift"))
+
+        // 4. Execute built-in blueprint 'feature' for module 'Settings'
+        let resultSettings = try engine.executeBlueprint(
+            name: "feature",
+            moduleName: "Settings",
+            config: loadedConfig,
+            templatePath: mockModuleTemplate,
+            projectPath: projectPath
+        )
+
+        #expect(resultSettings.blueprintName == "feature")
+        #expect(resultSettings.moduleName == "Settings")
+        #expect(resultSettings.generatedBlocks == [.scene, .usecase, .repository, .mapper])
+        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/scene/SettingsScene.swift"))
+        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/usecase/SettingsUsecase.swift"))
+        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/repository/SettingsRepository.swift"))
+        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/mapper/SettingsMapper.swift"))
+    }
 }
