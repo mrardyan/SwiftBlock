@@ -252,4 +252,89 @@ struct E2ETests {
         #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/repository/SettingsRepository.swift"))
         #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/mapper/SettingsMapper.swift"))
     }
+
+    @Test func testE2EWizardMatrixFullPermutations() throws {
+        let ciProviders: [CICDProvider] = [.githubActions, .gitlabCI, .bitrise, .xcodeCloud, .none]
+        let buildTools: [ProjectGeneratorTool] = [.tuist, .xcodegen]
+        let orgStrategies = ["feature-first", "technical-first"]
+
+        for tool in buildTools {
+            for provider in ciProviders {
+                for org in orgStrategies {
+                    let tempDir = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("E2E_Matrix_\(UUID().uuidString)", isDirectory: true)
+                    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+                    defer {
+                        try? FileManager.default.removeItem(at: tempDir)
+                    }
+
+                    let projName = "MatrixApp"
+                    let projectPath = tempDir.appendingPathComponent(projName).path
+
+                    let config = SwiftBlockConfig(
+                        projectName: projName,
+                        bundlePrefix: "com.matrix",
+                        packaging: PackagingConfig(feature: "spm", core: "spm"),
+                        organization: org,
+                        generatorTool: tool,
+                        guardrails: GuardrailsConfig.all,
+                        cicd: CICDConfig(provider: provider),
+                        gitInit: true
+                    )
+
+                    let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+                    try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+                    try "// Main App".write(toFile: "\(mockTemplate)/App/Sources/Main.swift", atomically: true, encoding: .utf8)
+                    try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Tests", withIntermediateDirectories: true)
+                    try "// Test".write(toFile: "\(mockTemplate)/App/Tests/__PROJECT_NAME__Tests.swift", atomically: true, encoding: .utf8)
+
+                    let options = ProjectGeneratorOptions(
+                        projectName: projName,
+                        bundlePrefix: "com.matrix",
+                        templatePath: mockTemplate,
+                        outputPath: projectPath,
+                        customConfig: config
+                    )
+
+                    let projectGen = ProjectGenerator()
+                    try projectGen.generateProject(options: options)
+
+                    // 1. Verify Manifest
+                    if tool == .tuist {
+                        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/Project.swift"))
+                    } else {
+                        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/project.yml"))
+                    }
+
+                    // 2. Verify CI/CD
+                    switch provider {
+                    case .githubActions:
+                        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/.github/workflows/ci.yml"))
+                    case .gitlabCI:
+                        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/.gitlab-ci.yml"))
+                    case .bitrise:
+                        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/bitrise.yml"))
+                    case .xcodeCloud:
+                        #expect(FileManager.default.fileExists(atPath: "\(projectPath)/ci_scripts/ci_post_clone.sh"))
+                    case .none:
+                        #expect(!FileManager.default.fileExists(atPath: "\(projectPath)/.github/workflows/ci.yml"))
+                        #expect(!FileManager.default.fileExists(atPath: "\(projectPath)/.gitlab-ci.yml"))
+                        #expect(!FileManager.default.fileExists(atPath: "\(projectPath)/bitrise.yml"))
+                        #expect(!FileManager.default.fileExists(atPath: "\(projectPath)/ci_scripts/ci_post_clone.sh"))
+                    }
+
+                    // 3. Verify .swiftblock config
+                    let loaded = try SwiftBlockConfig.load(from: projectPath)
+                    #expect(loaded.projectName == projName)
+                    #expect(loaded.generatorTool == tool)
+                    #expect(loaded.cicd.provider == provider)
+                    #expect(loaded.organization == org)
+
+                    // 4. Verify starter unit test file
+                    #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Tests/MatrixAppTests.swift"))
+                }
+            }
+        }
+    }
 }
+
