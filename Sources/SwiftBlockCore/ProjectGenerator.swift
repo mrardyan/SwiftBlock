@@ -177,7 +177,8 @@ public class ProjectGenerator {
                 var content = try String(contentsOfFile: filePath, encoding: .utf8)
                 content = content.replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
                 content = content.replacingOccurrences(of: "__BUNDLE_PREFIX__", with: bundlePrefix)
-                try content.write(toFile: filePath, atomically: true, encoding: .utf8)
+                let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+                try trimmedContent.write(toFile: filePath, atomically: true, encoding: .utf8)
             }
         }
     }

@@ -138,7 +138,8 @@ public class ModuleGenerator {
                     if let content = try? String(contentsOfFile: itemSourcePath, encoding: .utf8) {
                         var processed = content.replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
                         processed = processed.replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
-                        try processed.write(toFile: itemTargetPath, atomically: true, encoding: .utf8)
+                        let trimmedProcessed = processed.trimmingCharacters(in: .newlines) + "\n"
+                        try trimmedProcessed.write(toFile: itemTargetPath, atomically: true, encoding: .utf8)
                     } else {
                         if fileManager.fileExists(atPath: itemTargetPath) {
                             try? fileManager.removeItem(atPath: itemTargetPath)

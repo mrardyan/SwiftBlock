@@ -93,7 +93,8 @@ jobs:
 \(steps.joined(separator: "\n\n"))
 """
 
-        try content.write(toFile: ciPath, atomically: true, encoding: .utf8)
+        let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+        try trimmedContent.write(toFile: ciPath, atomically: true, encoding: .utf8)
     }
 
     private func generateGitLabCI(in projectPath: String, config: SwiftBlockConfig) throws {
@@ -123,7 +124,8 @@ test_job:
     - \(generateCmd)
     - xcodebuild test -scheme \(config.projectName) -destination 'platform=iOS Simulator,name=iPhone 15'
 """
-        try content.write(toFile: ciPath, atomically: true, encoding: .utf8)
+        let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+        try trimmedContent.write(toFile: ciPath, atomically: true, encoding: .utf8)
     }
 
     private func generateBitrise(in projectPath: String, config: SwiftBlockConfig) throws {
@@ -149,7 +151,8 @@ workflows:
             - project_path: \(config.projectName).xcodeproj
             - scheme: \(config.projectName)
 """
-        try content.write(toFile: ciPath, atomically: true, encoding: .utf8)
+        let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+        try trimmedContent.write(toFile: ciPath, atomically: true, encoding: .utf8)
     }
 
     private func generateXcodeCloud(in projectPath: String, config: SwiftBlockConfig) throws {
@@ -170,7 +173,8 @@ fi
 
 \(generateCmd)
 """
-        try content.write(toFile: scriptPath, atomically: true, encoding: .utf8)
+        let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+        try trimmedContent.write(toFile: scriptPath, atomically: true, encoding: .utf8)
         try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptPath)
     }
 }

@@ -48,7 +48,8 @@ public class LocalPackageGenerator {
                 public init() {}
             }
             """
-            try content.write(toFile: coreSwiftFile, atomically: true, encoding: .utf8)
+            let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+            try trimmedContent.write(toFile: coreSwiftFile, atomically: true, encoding: .utf8)
         }
 
         let packageManifestPath = "\(corePackageDir)/Package.swift"
@@ -71,7 +72,8 @@ let package = Package(
     ]
 )
 """
-        try manifestContent.write(toFile: packageManifestPath, atomically: true, encoding: .utf8)
+        let trimmedManifest = manifestContent.trimmingCharacters(in: .newlines) + "\n"
+        try trimmedManifest.write(toFile: packageManifestPath, atomically: true, encoding: .utf8)
     }
 
     public func generateFeaturePackage(moduleName: String, in projectPath: String, config: SwiftBlockConfig) throws {
@@ -94,7 +96,8 @@ let package = Package(
                 public init() {}
             }
             """
-            try content.write(toFile: featureSwiftFile, atomically: true, encoding: .utf8)
+            let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+            try trimmedContent.write(toFile: featureSwiftFile, atomically: true, encoding: .utf8)
         }
 
         let packageManifestPath = "\(featurePackageDir)/Package.swift"
@@ -117,6 +120,7 @@ let package = Package(
     ]
 )
 """
-        try manifestContent.write(toFile: packageManifestPath, atomically: true, encoding: .utf8)
+        let trimmedManifest = manifestContent.trimmingCharacters(in: .newlines) + "\n"
+        try trimmedManifest.write(toFile: packageManifestPath, atomically: true, encoding: .utf8)
     }
 }

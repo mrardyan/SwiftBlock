@@ -24,7 +24,8 @@ included:
   - App
   - Packages
 """
-                try content.write(toFile: swiftlintPath, atomically: true, encoding: .utf8)
+                let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+                try trimmedContent.write(toFile: swiftlintPath, atomically: true, encoding: .utf8)
             }
         }
 
@@ -38,7 +39,8 @@ included:
 --swiftversion 6.0
 --exclude **/Generated/**
 """
-                try content.write(toFile: swiftformatPath, atomically: true, encoding: .utf8)
+                let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+                try trimmedContent.write(toFile: swiftformatPath, atomically: true, encoding: .utf8)
             }
         }
 
@@ -79,7 +81,8 @@ included:
 repos:
 \(repos.joined(separator: "\n"))
 """
-                try content.write(toFile: precommitPath, atomically: true, encoding: .utf8)
+                let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+                try trimmedContent.write(toFile: precommitPath, atomically: true, encoding: .utf8)
             }
         }
 
@@ -94,7 +97,8 @@ schemes:
 targets:
   - \(config.projectName)
 """
-                try content.write(toFile: peripheryPath, atomically: true, encoding: .utf8)
+                let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+                try trimmedContent.write(toFile: peripheryPath, atomically: true, encoding: .utf8)
             }
         }
 
@@ -121,7 +125,8 @@ if hasSourceChanges && !hasTestChanges {
     warn("Source files were modified, but no test files were updated. Please add unit tests.")
 }
 """
-                try content.write(toFile: dangerPath, atomically: true, encoding: .utf8)
+                let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+                try trimmedContent.write(toFile: dangerPath, atomically: true, encoding: .utf8)
             }
         }
 
@@ -137,7 +142,8 @@ xcassets:
     - templateName: swift5
       output: App/Sources/Generated/XCAssets+Generated.swift
 """
-                try content.write(toFile: swiftgenPath, atomically: true, encoding: .utf8)
+                let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+                try trimmedContent.write(toFile: swiftgenPath, atomically: true, encoding: .utf8)
             }
         }
     }

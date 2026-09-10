@@ -65,7 +65,8 @@ targets:
       - target: \(config.projectName)
 """
 
-        try content.write(toFile: manifestPath, atomically: true, encoding: .utf8)
+        let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+        try trimmedContent.write(toFile: manifestPath, atomically: true, encoding: .utf8)
     }
 
     public func addModuleDependency(moduleName: String, type: ModuleType, config: SwiftBlockConfig, projectPath: String) throws {

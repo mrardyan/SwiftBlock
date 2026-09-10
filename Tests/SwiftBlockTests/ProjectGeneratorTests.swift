@@ -110,7 +110,7 @@ struct ProjectGeneratorTests {
         try FileManager.default.createDirectory(at: mockTemplateURL, withIntermediateDirectories: true)
 
         let templateMainFile = mockTemplateURL.appendingPathComponent("Main.swift")
-        let templateContent = "struct __PROJECT_NAME__App {}"
+        let templateContent = "struct __PROJECT_NAME__App {}\n"
         try templateContent.write(to: templateMainFile, atomically: true, encoding: .utf8)
 
         let outputURL = tempDir.appendingPathComponent("GeneratedApp")
@@ -127,8 +127,8 @@ struct ProjectGeneratorTests {
         let generatedFileExists = FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Main.swift").path)
         #expect(generatedFileExists)
 
-        let generatedContent = try String(contentsOf: outputURL.appendingPathComponent("Main.swift"), encoding: .utf8)
-        #expect(generatedContent == "struct GeneratedAppApp {}")
+        let generatedContent = try String(contentsOfFile: outputURL.appendingPathComponent("Main.swift").path, encoding: .utf8)
+        #expect(generatedContent == "struct GeneratedAppApp {}\n")
     }
 
     @Test func projectGeneratorErrorDescriptions() {

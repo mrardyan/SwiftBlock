@@ -29,7 +29,8 @@ public class GitRepositoryInitializer {
 DerivedData/
 .mise.local.toml
 """
-            try content.write(toFile: gitignorePath, atomically: true, encoding: .utf8)
+            let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
+            try trimmedContent.write(toFile: gitignorePath, atomically: true, encoding: .utf8)
         }
 
         // Run pre-commit install if precommit guardrail is enabled and pre-commit executable is present

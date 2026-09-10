@@ -37,10 +37,7 @@ public class EnvironmentSetupGenerator {
         if config.guardrails.swiftgen { tools.append("swiftgen = \"\(versions.swiftgen)\"") }
         if config.guardrails.licenseplist { tools.append("license-plist = \"\(versions.licenseplist)\"") }
 
-        let content = """
-[tools]
-\(tools.joined(separator: "\n"))
-"""
+        let content = tools.joined(separator: "\n").trimmingCharacters(in: .newlines) + "\n"
         try content.write(toFile: "\(projectPath)/.mise.toml", atomically: true, encoding: .utf8)
     }
 
@@ -133,7 +130,7 @@ help:
 \(helpLines.map { "\t@echo \"\($0)\"" }.joined(separator: "\n"))
 """
 
-        let content = ([helpTarget] + targets).joined(separator: "\n\n") + "\n"
+        let content = ([helpTarget] + targets).joined(separator: "\n\n").trimmingCharacters(in: .newlines) + "\n"
         try content.write(toFile: "\(projectPath)/Makefile", atomically: true, encoding: .utf8)
     }
 
@@ -175,7 +172,8 @@ echo "✔ Setup complete!"
 """
 
         let setupPath = "\(scriptsDir)/setup.sh"
-        try scriptContent.write(toFile: setupPath, atomically: true, encoding: .utf8)
+        let trimmedScript = scriptContent.trimmingCharacters(in: .newlines) + "\n"
+        try trimmedScript.write(toFile: setupPath, atomically: true, encoding: .utf8)
         try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: setupPath)
     }
 }

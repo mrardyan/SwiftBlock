@@ -23,7 +23,7 @@ struct ModuleGeneratorTests {
         try FileManager.default.createDirectory(at: mockSceneURL, withIntermediateDirectories: true)
 
         let viewTemplate = mockSceneURL.appendingPathComponent("__MODULE_NAME__View.swift")
-        try "struct __MODULE_NAME__View {}".write(to: viewTemplate, atomically: true, encoding: .utf8)
+        try "struct __MODULE_NAME__View {}\n".write(to: viewTemplate, atomically: true, encoding: .utf8)
 
         let options = ModuleGeneratorOptions(
             type: .scene,
@@ -38,7 +38,7 @@ struct ModuleGeneratorTests {
         let expectedViewPath = "\(generatedPath)/HomeView.swift"
         #expect(FileManager.default.fileExists(atPath: expectedViewPath))
         let content = try String(contentsOfFile: expectedViewPath, encoding: .utf8)
-        #expect(content == "struct HomeView {}")
+        #expect(content == "struct HomeView {}\n")
     }
 
     @Test func generateUseCaseModule() throws {
@@ -58,7 +58,7 @@ struct ModuleGeneratorTests {
         try FileManager.default.createDirectory(at: mockUseCaseURL, withIntermediateDirectories: true)
 
         let ucTemplate = mockUseCaseURL.appendingPathComponent("__MODULE_NAME__UseCase.swift")
-        try "protocol __MODULE_NAME__UseCase {}".write(to: ucTemplate, atomically: true, encoding: .utf8)
+        try "protocol __MODULE_NAME__UseCase {}\n".write(to: ucTemplate, atomically: true, encoding: .utf8)
 
         let options = ModuleGeneratorOptions(
             type: .usecase,
@@ -213,7 +213,7 @@ struct ModuleGeneratorTests {
         try FileManager.default.createDirectory(at: subDirURL, withIntermediateDirectories: true)
 
         let componentFile = subDirURL.appendingPathComponent("__MODULE_NAME__Header.swift")
-        try "struct __MODULE_NAME__Header {}".write(to: componentFile, atomically: true, encoding: .utf8)
+        try "struct __MODULE_NAME__Header {}\n".write(to: componentFile, atomically: true, encoding: .utf8)
 
         let options = ModuleGeneratorOptions(
             type: .scene,
@@ -228,7 +228,7 @@ struct ModuleGeneratorTests {
         let expectedComponentPath = "\(generatedPath)/Components/ProfileHeader.swift"
         #expect(FileManager.default.fileExists(atPath: expectedComponentPath))
         let content = try String(contentsOfFile: expectedComponentPath, encoding: .utf8)
-        #expect(content == "struct ProfileHeader {}")
+        #expect(content == "struct ProfileHeader {}\n")
     }
 
     @Test func generateNewModuleTypes() throws {
