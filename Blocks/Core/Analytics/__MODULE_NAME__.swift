@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol __MODULE_NAME__AnalyticsTracking {
+public protocol AnalyticsTracking {
     func track(_ event: AnalyticsEvent)
     func track(_ event: AnalyticsEvent, to targetProviders: [AnalyticsProviderIdentifier])
     func track(_ event: AnalyticsEvent, to targetProvider: AnalyticsProviderIdentifier)
@@ -9,7 +9,7 @@ public protocol __MODULE_NAME__AnalyticsTracking {
     func addProvider(_ provider: AnalyticsProvider)
 }
 
-public final class Default__MODULE_NAME__Analytics: __MODULE_NAME__AnalyticsTracking {
+public final class __MODULE_NAME__: AnalyticsTracking {
     private var providers: [AnalyticsProviderIdentifier: AnalyticsProvider] = [:]
 
     public init(providers: [AnalyticsProvider] = [ConsoleAnalyticsProvider()]) {

@@ -6,14 +6,16 @@ public struct ProjectGeneratorOptions {
     public var templatePath: String
     public var outputPath: String
     public var isDryRun: Bool
+    public var isVerbose: Bool
     public var customConfig: SwiftBlockConfig?
 
     public init(
         projectName: String,
-        bundlePrefix: String = "com.example",
+        bundlePrefix: String = "com.company",
         templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI",
         outputPath: String? = nil,
         isDryRun: Bool = false,
+        isVerbose: Bool = false,
         customConfig: SwiftBlockConfig? = nil
     ) {
         self.projectName = projectName
@@ -21,18 +23,22 @@ public struct ProjectGeneratorOptions {
         self.templatePath = templatePath
         self.outputPath = outputPath ?? "\(FileManager.default.currentDirectoryPath)/\(projectName)"
         self.isDryRun = isDryRun
+        self.isVerbose = isVerbose
         self.customConfig = customConfig
     }
 }
 
-public enum ProjectGeneratorError: Error, LocalizedError {
+public enum ProjectGeneratorError: Error, LocalizedError, Equatable {
     case templateNotFound(String)
+    case destinationAlreadyExists(String)
     case generationFailed(String)
 
     public var errorDescription: String? {
         switch self {
         case .templateNotFound(let path):
             return "Template not found at \(path)"
+        case .destinationAlreadyExists(let path):
+            return "Directory already exists at \(path). Please specify a different project name or remove the existing folder."
         case .generationFailed(let message):
             return "Failed to generate project: \(message)"
         }
@@ -51,6 +57,10 @@ public class ProjectGenerator {
             throw ProjectGeneratorError.templateNotFound(options.templatePath)
         }
 
+        if fileManager.fileExists(atPath: options.outputPath) {
+            throw ProjectGeneratorError.destinationAlreadyExists(options.outputPath)
+        }
+
         if options.isDryRun {
             print("🔍 [DRY RUN] Would copy project block from: \(options.templatePath)")
             print("🔍 [DRY RUN] Would create project directory: \(options.outputPath)")
@@ -58,21 +68,88 @@ public class ProjectGenerator {
             return
         }
 
+        var didCreateDestination = false
+
         do {
+            if options.isVerbose {
+                print("🔹 [Assembly] Copying base template from \(options.templatePath) to \(options.outputPath)...")
+            }
             try fileManager.copyItem(atPath: options.templatePath, toPath: options.outputPath)
+            didCreateDestination = true
+
             try replacePlaceholders(in: options.outputPath, projectName: options.projectName, bundlePrefix: options.bundlePrefix)
             try renamePaths(in: options.outputPath, projectName: options.projectName, bundlePrefix: options.bundlePrefix)
 
-            if let customConfig = options.customConfig {
-                let configFilePath = "\(options.outputPath)/.swiftblock"
-                let encoder = JSONEncoder()
-                encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-                let configData = try encoder.encode(customConfig)
-                try configData.write(to: URL(fileURLWithPath: configFilePath))
+            // Load/Write SwiftBlockConfig
+            let config = options.customConfig ?? SwiftBlockConfig(projectName: options.projectName, bundlePrefix: options.bundlePrefix)
+            let configFilePath = "\(options.outputPath)/.swiftblock"
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let configData = try encoder.encode(config)
+            try configData.write(to: URL(fileURLWithPath: configFilePath))
+
+            // 1. Generate Local SPM Packages if selected
+            let packageGen = LocalPackageGenerator(fileManager: fileManager)
+            if config.packaging.core == "spm" {
+                if options.isVerbose { print("🔹 [Assembly] Generating Core local SPM package...") }
+                try packageGen.generateCorePackage(in: options.outputPath, config: config)
+            }
+
+            // 1.5 Generate Selected Core Blocks
+            if !config.coreBlocks.isEmpty {
+                if options.isVerbose { print("🔹 [Assembly] Assembling selected Core Foundation modules...") }
+                let moduleGen = ModuleGenerator(fileManager: fileManager)
+                for type in config.coreBlocks {
+                    let defaultName: String
+                    switch type {
+                    case .storage: defaultName = "AppStorage"
+                    case .network: defaultName = "NetworkClient"
+                    case .logger: defaultName = "AppLogger"
+                    case .config: defaultName = "AppConfig"
+                    case .auth: defaultName = "UserAuth"
+                    case .analytics: defaultName = "AppAnalytics"
+                    case .featureflag: defaultName = "FeatureFlags"
+                    default: defaultName = type.rawValue.capitalized
+                    }
+                    let moduleOptions = ModuleGeneratorOptions(
+                        type: type,
+                        moduleName: defaultName,
+                        projectRootPath: options.outputPath
+                    )
+                    _ = try? moduleGen.generateModule(options: moduleOptions)
+                }
+            }
+
+            // 2. Generate Build Manifest (Tuist / XcodeGen)
+            if options.isVerbose { print("🔹 [Assembly] Generating build manifest for \(config.generatorTool.rawValue)...") }
+            let manifestGen = ProjectManifestGeneratorFactory.createGenerator(for: config.generatorTool)
+            try manifestGen.generateManifest(config: config, projectPath: options.outputPath)
+
+            // 3. Generate Environment Files (Makefile, .mise.toml, Scripts/setup.sh)
+            if options.isVerbose { print("🔹 [Assembly] Generating environment setup files...") }
+            let envGen = EnvironmentSetupGenerator(fileManager: fileManager)
+            try envGen.generateSetupFiles(in: options.outputPath, config: config)
+
+            // 4. Inject Guardrails (.swiftlint.yml, .swiftformat, .pre-commit-config.yaml, etc.)
+            if options.isVerbose { print("🔹 [Assembly] Injecting guardrail configuration files...") }
+            let guardrailGen = GuardrailsInjector(fileManager: fileManager)
+            try guardrailGen.injectGuardrails(in: options.outputPath, config: config)
+
+            // 5. Generate CI/CD Pipeline Workflow Files
+            if config.cicd.provider != .none {
+                if options.isVerbose { print("🔹 [Assembly] Generating CI/CD pipeline for \(config.cicd.provider.rawValue)...") }
+                let cicdGen = CICDManifestGenerator(fileManager: fileManager)
+                try cicdGen.generateCICDPipeline(in: options.outputPath, config: config)
+            }
+
+            // 6. Initialize Git Repository
+            if config.gitInit {
+                let gitGen = GitRepositoryInitializer(fileManager: fileManager)
+                try gitGen.initializeRepository(at: options.outputPath, config: config, isVerbose: options.isVerbose)
             }
         } catch {
-            // Clean up partially copied project folder if generation failed
-            if fileManager.fileExists(atPath: options.outputPath) {
+            // Clean up partially copied project folder ONLY if created during generation
+            if didCreateDestination && fileManager.fileExists(atPath: options.outputPath) {
                 try? fileManager.removeItem(atPath: options.outputPath)
             }
             throw error

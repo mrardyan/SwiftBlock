@@ -43,7 +43,7 @@ struct InteractiveWizardTests {
     }
 
     @Test func runProjectWizardSuccess() throws {
-        var inputs = ["", "AwesomeApp", "com.mycompany", "1", "1", "1", "y"]
+        var inputs = ["AwesomeApp", "com.mycompany", "1", "1", "1", "1", "1", "y", "y"]
         let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
@@ -54,7 +54,7 @@ struct InteractiveWizardTests {
     }
 
     @Test func runProjectWizardCancelled() {
-        var inputs = ["AwesomeApp", "com.mycompany", "1", "1", "1", "n"]
+        var inputs = ["AwesomeApp", "com.mycompany", "1", "1", "1", "1", "1", "y", "n"]
         #expect(throws: InteractiveWizardError.cancelled) {
             try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
                 inputs.isEmpty ? nil : inputs.removeFirst()
@@ -87,6 +87,12 @@ struct InteractiveWizardTests {
     @Test func errorDescription() {
         let err = InteractiveWizardError.cancelled
         #expect(err.errorDescription == "Operation cancelled by user.")
+    }
+
+    @Test func stripANSIEscapeCodes() {
+        let dirtyInput = "MyCompany\u{001B}[D\u{001B}[CApp"
+        let cleanInput = InteractiveWizard.stripANSIEscapeCodes(dirtyInput)
+        #expect(cleanInput == "MyCompanyApp")
     }
 }
 

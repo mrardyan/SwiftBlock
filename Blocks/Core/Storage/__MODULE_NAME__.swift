@@ -1,7 +1,13 @@
 import Foundation
 import Security
 
-public final class Keychain__MODULE_NAME__Storage: __MODULE_NAME__Storage {
+public protocol Storage {
+    func save<T: Codable>(_ item: T, forKey key: String) throws
+    func load<T: Codable>(forKey key: String, as type: T.Type) throws -> T?
+    func remove(forKey key: String)
+}
+
+public final class __MODULE_NAME__: Storage {
     private let service: String
 
     public init(service: String = Bundle.main.bundleIdentifier ?? "com.example") {

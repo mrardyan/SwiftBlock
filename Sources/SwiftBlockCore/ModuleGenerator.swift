@@ -56,7 +56,9 @@ public class ModuleGenerator {
         let resolvedPath = config.resolveOutputPath(for: options.type, moduleName: options.moduleName)
 
         let destinationFolderPath: String
-        if resolvedPath.contains(options.moduleName.lowercased()) || resolvedPath.contains(options.moduleName) {
+        if options.type.category == .core {
+            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
+        } else if resolvedPath.contains(options.moduleName.lowercased()) || resolvedPath.contains(options.moduleName) {
             destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
         } else {
             destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)/\(options.moduleName)"
@@ -74,7 +76,7 @@ public class ModuleGenerator {
             throw ModuleGeneratorError.templateNotFound("\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)")
         }
 
-        if fileManager.fileExists(atPath: destinationFolderPath) {
+        if options.type.category != .core && fileManager.fileExists(atPath: destinationFolderPath) {
             throw ModuleGeneratorError.moduleAlreadyExists(destinationFolderPath)
         }
 

@@ -66,7 +66,7 @@ swiftblock add
 #### Command Line Initialization
 
 ```bash
-# Create a project with default bundle prefix (com.example)
+# Create a project with default bundle prefix (com.company)
 swiftblock new MyApp
 
 # Create a project with custom organization bundle prefix
@@ -107,7 +107,7 @@ swiftblock add scene Home --dry-run
 
 | Command | Option / Flag | Description | Default |
 | :--- | :--- | :--- | :--- |
-| `swiftblock new <Name>` (or `init`) | `-b, --bundle-prefix` | Set custom bundle identifier prefix | `com.example` |
+| `swiftblock new <Name>` (or `init`) | `-p, --bundle-prefix` | Set custom bundle identifier prefix | `com.company` |
 | | `-t, --template-path` | Use custom project block path | `/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI` |
 | | `--dry-run` | Simulate generation without writing to disk | `false` |
 | `swiftblock add scene <Name>` | `-t, --template-path` | Generate MVVM Scene module | `App/Sources/Features/<Name>` |
@@ -126,7 +126,7 @@ Every generated project includes a `.swiftblock` configuration file at the proje
 ```json
 {
   "projectName": "MyApp",
-  "bundlePrefix": "com.example",
+  "bundlePrefix": "com.company",
   "paths": {
     "scene": "App/Sources/Features",
     "usecase": "App/Sources/Domain/UseCases",

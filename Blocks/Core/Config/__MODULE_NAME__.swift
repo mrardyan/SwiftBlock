@@ -19,7 +19,7 @@ public enum AppEnvironment: String, CaseIterable {
     }
 }
 
-public protocol __MODULE_NAME__Configuring {
+public protocol Configuring {
     var environment: AppEnvironment { get }
     var baseURL: URL { get }
     var apiKey: String { get }
@@ -28,7 +28,7 @@ public protocol __MODULE_NAME__Configuring {
 }
 
 /// Production implementation reading configuration safely from Bundle Info.plist / .xcconfig
-public final class Bundle__MODULE_NAME__Configuration: __MODULE_NAME__Configuring {
+public final class __MODULE_NAME__: Configuring {
     public let environment: AppEnvironment
     private let bundle: Bundle
     private var featureFlags: [String: Bool]

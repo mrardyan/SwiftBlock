@@ -5,22 +5,22 @@ public enum SessionState: Equatable {
     case authenticated(userId: String)
 }
 
-public protocol __MODULE_NAME__SessionDelegate: AnyObject {
+public protocol SessionDelegate: AnyObject {
     func sessionStateDidChange(_ state: SessionState)
 }
 
-public protocol __MODULE_NAME__Authenticatable {
+public protocol Authenticatable {
     var currentState: SessionState { get }
     var accessToken: String? { get }
     func setSession(accessToken: String, userId: String)
     func clearSession()
 }
 
-public final class Default__MODULE_NAME__Session: __MODULE_NAME__Authenticatable {
+public final class __MODULE_NAME__: Authenticatable {
     public private(set) var currentState: SessionState = .unauthenticated
     public private(set) var accessToken: String?
 
-    public weak var delegate: __MODULE_NAME__SessionDelegate?
+    public weak var delegate: SessionDelegate?
 
     public init() {}
 

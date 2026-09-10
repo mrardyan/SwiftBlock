@@ -7,7 +7,7 @@ struct SwiftBlockConfigTests {
     @Test func defaultInitPaths() {
         let config = SwiftBlockConfig(projectName: "TestApp")
         #expect(config.projectName == "TestApp")
-        #expect(config.bundlePrefix == "com.example")
+        #expect(config.bundlePrefix == "com.company")
         #expect(config.paths.path(for: .scene) == "App/Sources/Features")
         #expect(config.paths.path(for: .storage) == "App/Sources/Core/Storage")
     }

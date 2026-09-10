@@ -135,8 +135,43 @@ struct ProjectGeneratorTests {
         let err1 = ProjectGeneratorError.templateNotFound("/path/to/template")
         #expect(err1.errorDescription == "Template not found at /path/to/template")
 
-        let err2 = ProjectGeneratorError.generationFailed("Disk full")
-        #expect(err2.errorDescription == "Failed to generate project: Disk full")
+        let err2 = ProjectGeneratorError.destinationAlreadyExists("/path/to/dest")
+        #expect(err2.errorDescription == "Directory already exists at /path/to/dest. Please specify a different project name or remove the existing folder.")
+
+        let err3 = ProjectGeneratorError.generationFailed("Disk full")
+        #expect(err3.errorDescription == "Failed to generate project: Disk full")
+    }
+
+    @Test func destinationAlreadyExistsThrowsErrorAndPreservesDirectory() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let mockTemplateURL = tempDir.appendingPathComponent("MockTemplate")
+        try FileManager.default.createDirectory(at: mockTemplateURL, withIntermediateDirectories: true)
+
+        let existingFolderURL = tempDir.appendingPathComponent("ExistingApp")
+        try FileManager.default.createDirectory(at: existingFolderURL, withIntermediateDirectories: true)
+        let dummyFile = existingFolderURL.appendingPathComponent("ImportantUserFile.txt")
+        try "do not delete".write(to: dummyFile, atomically: true, encoding: .utf8)
+
+        let options = ProjectGeneratorOptions(
+            projectName: "ExistingApp",
+            templatePath: mockTemplateURL.path,
+            outputPath: existingFolderURL.path
+        )
+
+        let generator = ProjectGenerator()
+
+        #expect(throws: ProjectGeneratorError.destinationAlreadyExists(existingFolderURL.path)) {
+            try generator.generateProject(options: options)
+        }
+
+        #expect(FileManager.default.fileExists(atPath: existingFolderURL.path))
+        #expect(FileManager.default.fileExists(atPath: dummyFile.path))
     }
 
     @Test func replacePlaceholdersIgnoresUnsupportedFiles() throws {
@@ -161,5 +196,40 @@ struct ProjectGeneratorTests {
         let contentAfter = try Data(contentsOf: binFile)
         #expect(contentAfter == rawBytes)
     }
+
+    @Test func coreSwiftExecutableInjections() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let config = SwiftBlockConfig(
+            projectName: "CoreTestApp",
+            coreBlocks: [.storage, .logger, .config]
+        )
+
+        let pkgGen = LocalPackageGenerator()
+        try pkgGen.generateCorePackage(in: tempDir.path, config: config)
+
+        let coreSwiftFile = tempDir.appendingPathComponent("Packages/Core/Sources/Core/Core.swift").path
+        #expect(FileManager.default.fileExists(atPath: coreSwiftFile))
+
+        let content = try String(contentsOfFile: coreSwiftFile, encoding: .utf8)
+        #expect(content.contains("AppStorage()"))
+        #expect(content.contains("AppLogger()"))
+        #expect(content.contains("AppConfig()"))
+    }
+
+    @Test func baseProjectTemplateContainsSceneAndAppDelegate() {
+        let templateBaseDir = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI/App/Sources"
+        if FileManager.default.fileExists(atPath: templateBaseDir) {
+            #expect(FileManager.default.fileExists(atPath: "\(templateBaseDir)/AppDelegate.swift"))
+            #expect(FileManager.default.fileExists(atPath: "\(templateBaseDir)/SceneDelegate.swift"))
+            #expect(FileManager.default.fileExists(atPath: "\(templateBaseDir)/Main.swift"))
+        }
+    }
 }
+
 

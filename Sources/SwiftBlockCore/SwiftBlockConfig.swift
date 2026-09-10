@@ -29,6 +29,12 @@ public struct SwiftBlockConfig: Codable, Equatable {
     public var bundlePrefix: String
     public var packaging: PackagingConfig
     public var organization: String
+    public var generatorTool: ProjectGeneratorTool
+    public var guardrails: GuardrailsConfig
+    public var cicd: CICDConfig
+    public var toolVersions: [String: String]
+    public var coreBlocks: [ModuleType]
+    public var gitInit: Bool
     public var pathTemplates: [String: String]
     public var overrides: [String: String]
     public var paths: ModulePaths
@@ -38,6 +44,12 @@ public struct SwiftBlockConfig: Codable, Equatable {
         case bundlePrefix
         case packaging
         case organization
+        case generatorTool
+        case guardrails
+        case cicd
+        case toolVersions
+        case coreBlocks
+        case gitInit
         case pathTemplates
         case overrides
         case paths
@@ -46,12 +58,19 @@ public struct SwiftBlockConfig: Codable, Equatable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.projectName = try container.decode(String.self, forKey: .projectName)
-        self.bundlePrefix = (try? container.decode(String.self, forKey: .bundlePrefix)) ?? "com.example"
+        self.bundlePrefix = (try? container.decode(String.self, forKey: .bundlePrefix)) ?? "com.company"
         self.packaging = (try? container.decode(PackagingConfig.self, forKey: .packaging)) ?? PackagingConfig()
-        self.organization = (try? container.decode(String.self, forKey: .organization)) ?? "business-first"
+        let decodedOrg = (try? container.decode(String.self, forKey: .organization)) ?? "feature-first"
+        self.organization = (decodedOrg == "business-first") ? "feature-first" : decodedOrg
+        self.generatorTool = (try? container.decode(ProjectGeneratorTool.self, forKey: .generatorTool)) ?? .tuist
+        self.guardrails = (try? container.decode(GuardrailsConfig.self, forKey: .guardrails)) ?? GuardrailsConfig.all
+        self.cicd = (try? container.decode(CICDConfig.self, forKey: .cicd)) ?? CICDConfig()
+        self.toolVersions = (try? container.decode([String: String].self, forKey: .toolVersions)) ?? [:]
+        self.coreBlocks = (try? container.decode([ModuleType].self, forKey: .coreBlocks)) ?? [.storage, .network, .logger, .config]
+        self.gitInit = (try? container.decode(Bool.self, forKey: .gitInit)) ?? true
         self.pathTemplates = (try? container.decode([String: String].self, forKey: .pathTemplates)) ?? [
             "feature": "App/Sources/Features/{module}/{block}",
-            "core": "Packages/Core/Sources/{block}"
+            "core": "Packages/Core/Sources/Core/{block}"
         ]
         self.overrides = (try? container.decode([String: String].self, forKey: .overrides)) ?? [:]
         self.paths = (try? container.decode(ModulePaths.self, forKey: .paths)) ?? ModulePaths()
@@ -105,12 +124,18 @@ public struct SwiftBlockConfig: Codable, Equatable {
 
     public init(
         projectName: String,
-        bundlePrefix: String = "com.example",
+        bundlePrefix: String = "com.company",
         packaging: PackagingConfig = PackagingConfig(),
-        organization: String = "business-first",
+        organization: String = "feature-first",
+        generatorTool: ProjectGeneratorTool = .tuist,
+        guardrails: GuardrailsConfig = .all,
+        cicd: CICDConfig = CICDConfig(),
+        toolVersions: [String: String] = [:],
+        coreBlocks: [ModuleType] = [.storage, .network, .logger, .config],
+        gitInit: Bool = true,
         pathTemplates: [String: String] = [
             "feature": "App/Sources/Features/{module}/{block}",
-            "core": "Packages/Core/Sources/{block}"
+            "core": "Packages/Core/Sources/Core/{block}"
         ],
         overrides: [String: String] = [:],
         paths: ModulePaths = ModulePaths()
@@ -119,6 +144,12 @@ public struct SwiftBlockConfig: Codable, Equatable {
         self.bundlePrefix = bundlePrefix
         self.packaging = packaging
         self.organization = organization
+        self.generatorTool = generatorTool
+        self.guardrails = guardrails
+        self.cicd = cicd
+        self.toolVersions = toolVersions
+        self.coreBlocks = coreBlocks
+        self.gitInit = gitInit
         self.pathTemplates = pathTemplates
         self.overrides = overrides
         self.paths = paths

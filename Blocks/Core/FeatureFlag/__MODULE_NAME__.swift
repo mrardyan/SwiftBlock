@@ -36,7 +36,7 @@ public protocol FeatureFlagProvider {
     func isEnabled(_ flag: FeatureFlag) -> Bool
 }
 
-public protocol __MODULE_NAME__FeatureFlagManaging {
+public protocol FeatureFlagManaging {
     func isEnabled(_ flag: FeatureFlag) -> Bool
     func setOverride(_ isEnabled: Bool?, for flag: FeatureFlag)
     func checkExpiredFlags() -> [FeatureFlag]
@@ -44,7 +44,7 @@ public protocol __MODULE_NAME__FeatureFlagManaging {
 
 // MARK: - Default Manager Implementation
 
-public final class Default__MODULE_NAME__FeatureFlagManager: __MODULE_NAME__FeatureFlagManaging {
+public final class __MODULE_NAME__: FeatureFlagManaging {
     private let remoteProvider: FeatureFlagProvider?
     private var localOverrides: [String: Bool] = [:]
     private let registeredFlags: [FeatureFlag]

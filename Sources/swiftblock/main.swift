@@ -14,28 +14,36 @@ struct SwiftBlock: ParsableCommand {
 struct Init: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "init",
-        abstract: "Initialize a new SwiftUI project using Tuist, SwiftLint, SwiftFormat, and Makefile"
+        abstract: "Initialize a new SwiftUI project using Tuist or XcodeGen with composable guardrails and CI/CD pipelines"
     )
 
-    @Argument(help: "Project name (optional, triggers wizard if omitted)")
+    @Argument(help: "Project name (optional, triggers interactive setup if omitted)")
     var projectName: String?
 
-    @Option(name: [.customShort("b"), .long], help: "Bundle identifier prefix (default: com.example)")
-    var bundlePrefix: String = "com.example"
+    @Option(name: [.customShort("p"), .customLong("bundle-prefix"), .customLong("prefix")], help: "Bundle identifier prefix (default: com.company)")
+    var bundlePrefix: String = "com.company"
 
     @Option(name: [.customShort("t"), .long], help: "Custom project template path")
     var templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
 
+    @Option(name: .long, help: "Build tool generator: tuist or xcodegen (default: tuist)")
+    var tool: String = "tuist"
+
     @Flag(name: .long, help: "Simulate project generation without writing to disk")
     var dryRun: Bool = false
 
+    @Flag(name: [.customShort("v"), .long], help: "Enable verbose step-by-step log output")
+    var verbose: Bool = false
+
     func run() throws {
         if let projectName = projectName, !projectName.isEmpty {
-            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, isDryRun: dryRun)
+            let toolEnum = ProjectGeneratorTool(rawValue: tool.lowercased()) ?? .tuist
+            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, generatorTool: toolEnum, isDryRun: dryRun, isVerbose: verbose)
         } else {
             let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: templatePath)
             var finalOptions = options
             finalOptions.isDryRun = dryRun
+            finalOptions.isVerbose = verbose
             try executeWithOptions(options: finalOptions)
         }
     }
@@ -47,52 +55,72 @@ struct New: ParsableCommand {
         abstract: "Create a new SwiftUI project (alias for 'init')"
     )
 
-    @Argument(help: "Project name (optional, triggers wizard if omitted)")
+    @Argument(help: "Project name (optional, triggers interactive setup if omitted)")
     var projectName: String?
 
-    @Option(name: [.customShort("b"), .long], help: "Bundle identifier prefix (default: com.example)")
-    var bundlePrefix: String = "com.example"
+    @Option(name: [.customShort("p"), .customLong("bundle-prefix"), .customLong("prefix")], help: "Bundle identifier prefix (default: com.company)")
+    var bundlePrefix: String = "com.company"
 
     @Option(name: [.customShort("t"), .long], help: "Custom project template path")
     var templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
 
+    @Option(name: .long, help: "Build tool generator: tuist or xcodegen (default: tuist)")
+    var tool: String = "tuist"
+
     @Flag(name: .long, help: "Simulate project generation without writing to disk")
     var dryRun: Bool = false
 
+    @Flag(name: [.customShort("v"), .long], help: "Enable verbose step-by-step log output")
+    var verbose: Bool = false
+
     func run() throws {
         if let projectName = projectName, !projectName.isEmpty {
-            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, isDryRun: dryRun)
+            let toolEnum = ProjectGeneratorTool(rawValue: tool.lowercased()) ?? .tuist
+            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, generatorTool: toolEnum, isDryRun: dryRun, isVerbose: verbose)
         } else {
             let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: templatePath)
             var finalOptions = options
             finalOptions.isDryRun = dryRun
+            finalOptions.isVerbose = verbose
             try executeWithOptions(options: finalOptions)
         }
     }
 }
 
-private func executeInitProject(projectName: String, bundlePrefix: String, templatePath: String, isDryRun: Bool) throws {
+private func executeInitProject(projectName: String, bundlePrefix: String, templatePath: String, generatorTool: ProjectGeneratorTool, isDryRun: Bool, isVerbose: Bool) throws {
+    let config = SwiftBlockConfig(projectName: projectName, bundlePrefix: bundlePrefix, generatorTool: generatorTool)
     let options = ProjectGeneratorOptions(
         projectName: projectName,
         bundlePrefix: bundlePrefix,
         templatePath: templatePath,
-        isDryRun: isDryRun
+        isDryRun: isDryRun,
+        isVerbose: isVerbose,
+        customConfig: config
     )
     try executeWithOptions(options: options)
 }
 
 private func executeWithOptions(options: ProjectGeneratorOptions) throws {
-    print("🛠️ Generating project: \(options.projectName)")
+    print("◆ Generating project: \(options.projectName)")
     let generator = ProjectGenerator()
 
     do {
         try generator.generateProject(options: options)
         if !options.isDryRun {
-            print("✅ Project created at \(options.outputPath)")
-            print("🔁 Placeholders replaced with \(options.projectName) (bundle prefix: \(options.bundlePrefix))")
+            print("✔ Project created at \(options.outputPath)")
+            print("✔ Configured \(options.customConfig?.generatorTool.rawValue.capitalized ?? "Tuist") project for \(options.projectName) (bundle prefix: \(options.bundlePrefix))")
+            
+            let dirName = (options.outputPath as NSString).lastPathComponent
+            print("""
+
+            Next steps:
+              1. cd \(dirName)
+              2. make setup      # Setup environment (install tools, hooks & generate workspace)
+              3. make help       # Display available development commands
+            """)
         }
     } catch {
-        print("❌ \(error.localizedDescription)")
+        print("✖ \(error.localizedDescription)")
         throw ExitCode.failure
     }
 }
@@ -513,16 +541,16 @@ private func executeAddModule(type: ModuleType, moduleName: String, templatePath
 }
 
 private func executeAddModuleWithOptions(options: ModuleGeneratorOptions) throws {
-    print("🧩 Adding \(options.type.rawValue) block: \(options.moduleName)")
+    print("◆ Adding \(options.type.rawValue) block: \(options.moduleName)")
     let generator = ModuleGenerator()
 
     do {
         let generatedPath = try generator.generateModule(options: options)
         if !options.isDryRun {
-            print("✅ Generated \(options.type.rawValue) block '\(options.moduleName)' at \(generatedPath)")
+            print("✔ Generated \(options.type.rawValue) block '\(options.moduleName)' at \(generatedPath)")
         }
     } catch {
-        print("❌ \(error.localizedDescription)")
+        print("✖ \(error.localizedDescription)")
         throw ExitCode.failure
     }
 }
