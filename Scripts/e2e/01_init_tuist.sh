@@ -17,11 +17,12 @@ run_scenario() {
     assert_file_contains "Project.swift" "TuistApp" "Project.swift contains app name"
     assert_file_contains "Project.swift" "com.company.tuist" "Project.swift contains bundle prefix"
 
-    # Validate App sources (AppDelegate, SceneDelegate, Main)
+    # Validate App sources (AppDelegate, SceneDelegate, Main, Tests)
     assert_file_exists "App/Sources/AppDelegate.swift" "AppDelegate.swift present in App target"
     assert_file_exists "App/Sources/SceneDelegate.swift" "SceneDelegate.swift present in App target"
     assert_file_contains "App/Sources/AppDelegate.swift" "SceneDelegate.self" "AppDelegate configures SceneDelegate"
     assert_file_contains "App/Sources/Main.swift" "CoreModule.configure()" "Main.swift configures CoreModule"
+    assert_file_exists "App/Tests/TestTuistAppTests.swift" "Starter unit test file present in App/Tests target"
 
     # Validate Non-empty Core.swift SPM Target
     assert_file_exists "Packages/Core/Sources/Core/Core.swift" "Core.swift present in Core SPM target"
