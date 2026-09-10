@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Root content view for __PROJECT_NAME__.
+/// Root content view for `__PROJECT_NAME__`.
 struct ContentView: View {
     var body: some View {
         Text("Welcome to __PROJECT_NAME__!")

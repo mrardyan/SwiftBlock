@@ -1,11 +1,9 @@
 import SwiftUI
 
-/// Reusable UI component view block for __MODULE_NAME__.
+/// Reusable UI view component for `__MODULE_NAME__`.
 public struct __MODULE_NAME__Component: View {
-    /// Component title text.
     public var title: String
 
-    /// Initializes a new reusable UI component instance.
     public init(title: String = "__MODULE_NAME__ Component") {
         self.title = title
     }

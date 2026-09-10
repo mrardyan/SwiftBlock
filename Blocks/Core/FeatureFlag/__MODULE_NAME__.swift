@@ -2,24 +2,14 @@ import Foundation
 
 // MARK: - Feature Flag Definition & Expiration Metadata
 
-/// Represents a feature flag definition with owner and expiration metadata.
+/// A feature toggle with ownership and expiration metadata.
 public struct FeatureFlag: Hashable {
-    /// Unique feature flag key identifier.
     public let key: String
-
-    /// Team or developer owner of the feature flag.
     public let owner: String
-
-    /// Description of the feature toggle functionality.
     public let description: String
-
-    /// Fallback default value when remote or override values are absent.
     public let defaultValue: Bool
-
-    /// Target expiration date for flag cleanup.
     public let expirationDate: Date?
 
-    /// Initializes a feature flag definition.
     public init(
         key: String,
         owner: String = "Unassigned",
@@ -34,7 +24,7 @@ public struct FeatureFlag: Hashable {
         self.expirationDate = expirationDate
     }
 
-    /// Checks if the feature flag has passed its intended expiration date.
+    /// Indicates whether the flag has passed its expiration date.
     public var isExpired: Bool {
         guard let expirationDate = expirationDate else { return false }
         return Date() > expirationDate
@@ -43,33 +33,26 @@ public struct FeatureFlag: Hashable {
 
 // MARK: - Feature Flag Provider & Managing Protocols
 
-/// Protocol for remote feature flag providers (e.g. Firebase Remote Config, LaunchDarkly).
+/// A remote provider for feature flags (e.g. Firebase Remote Config).
 public protocol FeatureFlagProvider {
-    /// Determines whether a flag is enabled on the remote provider.
     func isEnabled(_ flag: FeatureFlag) -> Bool
 }
 
-/// Interface for feature flag evaluation and local override management.
+/// Interface for evaluating feature flags and managing local overrides.
 public protocol FeatureFlagManaging {
-    /// Evaluates if a feature flag is enabled considering local overrides, remote providers, and defaults.
     func isEnabled(_ flag: FeatureFlag) -> Bool
-
-    /// Sets or removes an in-memory local override for a feature flag.
     func setOverride(_ isEnabled: Bool?, for flag: FeatureFlag)
-
-    /// Audits registered flags and returns all flags that have passed their expiration date.
     func checkExpiredFlags() -> [FeatureFlag]
 }
 
 // MARK: - Default Manager Implementation
 
-/// Default feature flag manager supporting local overrides, remote providers, and expiration warnings.
+/// Feature flag manager supporting local overrides, remote providers, and expiration audits.
 public final class __MODULE_NAME__: FeatureFlagManaging {
     private let remoteProvider: FeatureFlagProvider?
     private var localOverrides: [String: Bool] = [:]
     private let registeredFlags: [FeatureFlag]
 
-    /// Initializes manager with remote provider and registered flag definitions.
     public init(
         remoteProvider: FeatureFlagProvider? = nil,
         registeredFlags: [FeatureFlag] = []
@@ -78,7 +61,6 @@ public final class __MODULE_NAME__: FeatureFlagManaging {
         self.registeredFlags = registeredFlags
     }
 
-    /// Evaluates whether the given feature flag is active.
     public func isEnabled(_ flag: FeatureFlag) -> Bool {
         #if DEBUG
         if flag.isExpired {
@@ -97,7 +79,6 @@ public final class __MODULE_NAME__: FeatureFlagManaging {
         return flag.defaultValue
     }
 
-    /// Configures or resets a local debug override value for a flag.
     public func setOverride(_ isEnabled: Bool?, for flag: FeatureFlag) {
         if let value = isEnabled {
             localOverrides[flag.key] = value
@@ -106,7 +87,6 @@ public final class __MODULE_NAME__: FeatureFlagManaging {
         }
     }
 
-    /// Returns a list of all flags that are past their expiration date.
     public func checkExpiredFlags() -> [FeatureFlag] {
         registeredFlags.filter { $0.isExpired }
     }

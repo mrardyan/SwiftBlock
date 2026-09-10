@@ -1,6 +1,6 @@
 import Foundation
 
-/// Identifier representing an analytics service provider backend.
+/// Unique identifier for an analytics provider.
 public struct AnalyticsProviderIdentifier: RawRepresentable, Hashable, ExpressibleByStringLiteral, Sendable {
     public let rawValue: String
 
@@ -18,15 +18,10 @@ public struct AnalyticsProviderIdentifier: RawRepresentable, Hashable, Expressib
     public static let amplitude: AnalyticsProviderIdentifier = "amplitude"
 }
 
-/// Abstract contract for trackable analytics events.
+/// An analytics event payload.
 public protocol AnalyticsEvent {
-    /// Unique event name identifier.
     var name: String { get }
-
-    /// Optional payload metadata dictionary.
     var parameters: [String: Any]? { get }
-
-    /// Optional target provider filter list.
     var targetProviders: [AnalyticsProviderIdentifier]? { get }
 }
 
@@ -34,13 +29,12 @@ public extension AnalyticsEvent {
     var targetProviders: [AnalyticsProviderIdentifier]? { nil }
 }
 
-/// Default implementation struct for AnalyticsEvent.
+/// Concrete implementation of an analytics event.
 public struct DefaultAnalyticsEvent: AnalyticsEvent {
     public let name: String
     public let parameters: [String: Any]?
     public let targetProviders: [AnalyticsProviderIdentifier]?
 
-    /// Initializes a default analytics event.
     public init(
         name: String,
         parameters: [String: Any]? = nil,
