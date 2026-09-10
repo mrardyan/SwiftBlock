@@ -24,22 +24,22 @@ public struct SwiftBlockConfig: Codable {
         public var featureflag: String
 
         public init(
-            scene: String = "App/Sources/Features",
-            usecase: String = "App/Sources/Domain/UseCases",
-            repository: String = "App/Sources/Data/Repositories",
-            service: String = "App/Sources/Data/Services",
-            entity: String = "App/Sources/Domain/Entities",
-            coordinator: String = "App/Sources/Presentation/Coordinators",
-            component: String = "App/Sources/Presentation/Components",
-            mapper: String = "App/Sources/Domain/Mappers",
-            validator: String = "App/Sources/Presentation/Validators",
-            storage: String = "App/Sources/Core/Storage",
-            network: String = "App/Sources/Core/Network",
-            logger: String = "App/Sources/Core/Logger",
-            analytics: String = "App/Sources/Core/Analytics",
-            config: String = "App/Sources/Core/Config",
-            auth: String = "App/Sources/Core/Auth",
-            featureflag: String = "App/Sources/Core/FeatureFlag"
+            scene: String = BlockRegistry.spec(for: .scene)?.defaultOutputPath ?? "App/Sources/Features",
+            usecase: String = BlockRegistry.spec(for: .usecase)?.defaultOutputPath ?? "App/Sources/Domain/UseCases",
+            repository: String = BlockRegistry.spec(for: .repository)?.defaultOutputPath ?? "App/Sources/Data/Repositories",
+            service: String = BlockRegistry.spec(for: .service)?.defaultOutputPath ?? "App/Sources/Data/Services",
+            entity: String = BlockRegistry.spec(for: .entity)?.defaultOutputPath ?? "App/Sources/Domain/Entities",
+            coordinator: String = BlockRegistry.spec(for: .coordinator)?.defaultOutputPath ?? "App/Sources/Presentation/Coordinators",
+            component: String = BlockRegistry.spec(for: .component)?.defaultOutputPath ?? "App/Sources/Presentation/Components",
+            mapper: String = BlockRegistry.spec(for: .mapper)?.defaultOutputPath ?? "App/Sources/Domain/Mappers",
+            validator: String = BlockRegistry.spec(for: .validator)?.defaultOutputPath ?? "App/Sources/Presentation/Validators",
+            storage: String = BlockRegistry.spec(for: .storage)?.defaultOutputPath ?? "App/Sources/Core/Storage",
+            network: String = BlockRegistry.spec(for: .network)?.defaultOutputPath ?? "App/Sources/Core/Network",
+            logger: String = BlockRegistry.spec(for: .logger)?.defaultOutputPath ?? "App/Sources/Core/Logger",
+            analytics: String = BlockRegistry.spec(for: .analytics)?.defaultOutputPath ?? "App/Sources/Core/Analytics",
+            config: String = BlockRegistry.spec(for: .config)?.defaultOutputPath ?? "App/Sources/Core/Config",
+            auth: String = BlockRegistry.spec(for: .auth)?.defaultOutputPath ?? "App/Sources/Core/Auth",
+            featureflag: String = BlockRegistry.spec(for: .featureflag)?.defaultOutputPath ?? "App/Sources/Core/FeatureFlag"
         ) {
             self.scene = scene
             self.usecase = usecase

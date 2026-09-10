@@ -95,21 +95,11 @@ public class InteractiveWizard {
         print("\n🪄 SwiftBlock Feature Module Block Wizard")
         print("──────────────────────────────────────────")
 
-        let types: [ModuleType] = [.scene, .usecase, .repository, .service, .entity, .coordinator, .component, .mapper, .validator]
-        let typeTitles = [
-            "Scene (MVVM View + ViewModel + State)",
-            "UseCase (Domain Protocol + Implementation)",
-            "Repository (Data Protocol + Implementation)",
-            "Service (API Service Protocol + Implementation)",
-            "Entity (Domain Entity / DTO Model)",
-            "Coordinator (Navigation Flow Routing)",
-            "Component (Reusable UI Component)",
-            "Mapper (DTO to Domain Entity Transformer)",
-            "Validator (Form Input Field Validator)"
-        ]
+        let blocks = BlockRegistry.featureBlocks
+        let typeTitles = blocks.map { "\($0.title) (\($0.description))" }
 
         let selectedIndex = promptChoice(title: "Select Feature Block Type:", options: typeTitles, readLine: readLine)
-        let selectedType = types[selectedIndex]
+        let selectedType = blocks[selectedIndex].type
 
         var moduleName = ""
         while moduleName.isEmpty {
@@ -133,19 +123,11 @@ public class InteractiveWizard {
         print("\n🪄 SwiftBlock Core Foundation Block Wizard")
         print("───────────────────────────────────────────")
 
-        let types: [ModuleType] = [.storage, .network, .logger, .analytics, .config, .auth, .featureflag]
-        let typeTitles = [
-            "Storage (Local Persistence Storage Engine)",
-            "Network (Network Client / HTTP Request Engine)",
-            "Logger (Unified OSLog / Crash Logger Engine)",
-            "Analytics (Event Analytics & Metrics Engine)",
-            "Config (Environment Config & Feature Flags)",
-            "Auth (User Session & Token State Manager)",
-            "FeatureFlag (Feature Flags & Remote Toggles Engine)"
-        ]
+        let blocks = BlockRegistry.coreBlocks
+        let typeTitles = blocks.map { "\($0.title) (\($0.description))" }
 
         let selectedIndex = promptChoice(title: "Select Core Block Type:", options: typeTitles, readLine: readLine)
-        let selectedType = types[selectedIndex]
+        let selectedType = blocks[selectedIndex].type
 
         var moduleName = ""
         while moduleName.isEmpty {
