@@ -64,7 +64,7 @@ public final class __MODULE_NAME__: FeatureFlagManaging {
     public func isEnabled(_ flag: FeatureFlag) -> Bool {
         #if DEBUG
         if flag.isExpired {
-            print("⚠️ [FeatureFlag Warning] Flag '\(flag.key)' (Owner: \(flag.owner)) EXPIRED on \(flag.expirationDate?.description ?? "N/A"). Time to remove/clean up this flag!")
+            print("[FeatureFlag Warning] Flag '\(flag.key)' (Owner: \(flag.owner)) EXPIRED on \(flag.expirationDate?.description ?? "N/A"). Time to remove/clean up this flag!")
         }
         #endif
 

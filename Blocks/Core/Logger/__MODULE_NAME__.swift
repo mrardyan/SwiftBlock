@@ -16,14 +16,14 @@ public enum LogLevel: String, CaseIterable, Comparable {
         return lhsIndex < rhsIndex
     }
 
-    /// Associated emoji indicator for console output.
-    public var emoji: String {
+    /// ANSI color code for console formatting.
+    public var colorCode: String {
         switch self {
-        case .debug: return "🐛"
-        case .info: return "ℹ️"
-        case .warning: return "⚠️"
-        case .error: return "❌"
-        case .fault: return "💥"
+        case .debug: return "\u{001B}[36m"   // Cyan
+        case .info: return "\u{001B}[32m"    // Green
+        case .warning: return "\u{001B}[33m" // Yellow
+        case .error: return "\u{001B}[31m"   // Red
+        case .fault: return "\u{001B}[35m"   // Magenta
         }
     }
 }
@@ -70,7 +70,8 @@ public final class __MODULE_NAME__: Logging {
 
     public func log(_ level: LogLevel, _ message: String, file: String, line: Int, function: String) {
         let fileName = URL(fileURLWithPath: file).lastPathComponent
-        let formattedMessage = "\(level.emoji) [\(fileName):\(line) \(function)] \(message)"
+        let resetCode = "\u{001B}[0m"
+        let formattedMessage = "\(level.colorCode)[\(level.rawValue)] [\(fileName):\(line) \(function)] \(message)\(resetCode)"
 
         switch level {
         case .debug:
