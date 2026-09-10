@@ -283,7 +283,7 @@ public class InteractiveWizard {
             TerminalPrompt.MultiChoiceOption(id: "storage", title: "Storage", subtitle: "Local persistence storage engine", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "network", title: "Network", subtitle: "Network client & HTTP engine", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "logger", title: "Logger", subtitle: "Unified OSLog & crash logger", isSelected: true),
-            TerminalPrompt.MultiChoiceOption(id: "config", title: "Config", subtitle: "Environment config & remote settings", isSelected: true),
+            TerminalPrompt.MultiChoiceOption(id: "config", title: "Config", subtitle: "Multi-environment (.xcconfig) & Dev/Staging/Prod schemes", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "auth", title: "Auth", subtitle: "User session & token state manager", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "analytics", title: "Analytics", subtitle: "Event analytics & metrics engine", isSelected: false),
             TerminalPrompt.MultiChoiceOption(id: "featureflag", title: "FeatureFlag", subtitle: "Remote feature flags & toggles", isSelected: false)
