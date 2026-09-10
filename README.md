@@ -2,7 +2,7 @@
   <img src="Docs/Assets/SwiftBlock.svg" width="120" height="120" alt="SwiftBlock Logo">
   <h1 align="center">SwiftBlock</h1>
   <p align="center">
-    <strong>Production-ready iOS project generator and scaffolding CLI.</strong>
+    <strong>Swift building blocks to create anything.</strong>
   </p>
   <p align="center">
     <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.10-orange.svg?style=flat-square" alt="Swift 5.10"></a>
@@ -13,20 +13,21 @@
 
 ---
 
-**SwiftBlock** is a command-line tool designed to instantly scaffold clean, modern SwiftUI Xcode projects and architecture building blocks pre-configured with industry-standard developer tooling.
+**SwiftBlock** is a modular framework providing composable Swift building blocks to create complete SwiftUI Xcode projects and tailored architecture foundations pre-configured with industry-standard developer tooling.
 
 ---
 
 ## Key Features
 
-- **Instant Scaffolding**: Generate complete SwiftUI-based Xcode projects with `swiftblock new` or `swiftblock init`.
-- **Interactive Wizard Mode**: Step-by-step CLI prompts when arguments are omitted.
-- **Architecture Building Blocks**: Generate `scene`, `usecase`, `repository`, and `service` modules directly from your project root.
-- **Simulation Mode (--dry-run)**: Test project and module generation without writing to disk.
-- **Project Config (.swiftblock)**: Automatic JSON configuration for customizable directory paths per project.
-- **Tuist Integration**: Built-in support for Tuist project generation out of the box.
-- **Pre-configured Code Quality**: Automatic setup for SwiftLint, SwiftFormat, and pre-commit hooks.
-- **Dynamic Bundle Identifiers**: Support for custom organization prefixes (`--bundle-prefix`).
+- **Instant Project Scaffolding**: Generate complete SwiftUI Xcode projects powered by **Tuist** or **XcodeGen**.
+- **Interactive Wizard Mode**: Step-by-step CLI prompts when arguments are omitted for guided setup.
+- **Core Foundation Blocks**: Modular infrastructure blocks (`storage`, `network`, `logger`, `config`, `auth`, `analytics`, `featureflag`).
+- **Feature Architecture Blocks**: Scaffolds clean code components (`scene`, `usecase`, `repository`, `service`, `entity`, `coordinator`, `component`, `mapper`, `validator`).
+- **Automated Unit Test Generation**: Automatically generates composable unit tests alongside every Core and Feature module.
+- **Custom Architecture Blueprints**: Compose multi-block templates into reusable blueprints (`swiftblock blueprint`).
+- **CI/CD Pipeline Generator**: Automatic setup for Xcode Cloud, GitHub Actions, or GitLab CI.
+- **Pre-configured Code Quality**: Built-in setup for SwiftLint, SwiftFormat, and pre-commit hooks.
+- **Simulation Mode (`--dry-run`)**: Test project and module generation without mutating disk state.
 
 ---
 
@@ -49,6 +50,8 @@ chmod +x Scripts/install.sh
 ./Scripts/install.sh
 ```
 
+---
+
 ### 2. Usage
 
 #### Interactive Wizard Mode
@@ -56,82 +59,104 @@ chmod +x Scripts/install.sh
 Run commands without arguments to launch the interactive step-by-step wizard:
 
 ```bash
-# Launch interactive project creation wizard
+# Interactive project creation wizard
 swiftblock new
 
-# Launch interactive architecture module wizard
+# Interactive architecture module wizard
 swiftblock add
+
+# Interactive core block wizard
+swiftblock core
 ```
 
 #### Command Line Initialization
 
 ```bash
-# Create a project with default bundle prefix (com.company)
-swiftblock new MyApp
-
-# Create a project with custom organization bundle prefix
+# Create a Tuist-based project (default)
 swiftblock new MyApp --bundle-prefix com.mycompany
 
-# Simulate creation without writing to disk
+# Create an XcodeGen-based project
+swiftblock new MyApp --tool xcodegen --bundle-prefix com.mycompany
+
+# Dry-run simulation mode
 swiftblock new MyApp --dry-run
 
 cd MyApp
-make setup
-make generate
+make setup      # Install dependencies, hooks & generate workspace
+make generate   # Regenerate Xcode workspace manifest
 ```
 
-#### Add Modular Building Blocks
-
-Run these commands from your project root:
+#### Add Architecture & Core Blocks
 
 ```bash
-# Add a new MVVM Scene (View + ViewModel + State)
+# Add Feature Blocks
 swiftblock add scene Home
-
-# Add a new Domain UseCase
 swiftblock add usecase Authenticate
-
-# Add a new Data Repository
 swiftblock add repository User
-
-# Add a new API Service
 swiftblock add service Network
+swiftblock add coordinator MainFlow
+swiftblock add component PrimaryButton
+swiftblock add mapper UserMapper
+swiftblock add validator EmailValidator
+swiftblock add entity UserProfile
 
-# Simulate module generation
-swiftblock add scene Home --dry-run
+# Add Core Foundation Blocks
+swiftblock core storage AppStorage
+swiftblock core network HTTPClient
+swiftblock core logger AppLogger
+swiftblock core auth SessionManager
+swiftblock core analytics AnalyticsEngine
+swiftblock core config AppConfig
+swiftblock core featureflag RemoteFlags
+```
+
+#### Custom Architecture Blueprints
+
+```bash
+# List available blueprints
+swiftblock blueprint list
+
+# Create a new custom blueprint
+swiftblock blueprint create feature --blocks scene,usecase,repository,service
+
+# Run blueprint to generate all composed blocks in one step
+swiftblock blueprint run feature Profile
 ```
 
 ---
 
 ## Command Reference
 
-| Command | Option / Flag | Description | Default |
-| :--- | :--- | :--- | :--- |
-| `swiftblock new <Name>` (or `init`) | `-p, --bundle-prefix` | Set custom bundle identifier prefix | `com.company` |
-| | `-t, --template-path` | Use custom project block path | `/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI` |
-| | `--dry-run` | Simulate generation without writing to disk | `false` |
-| `swiftblock add scene <Name>` | `-t, --template-path` | Generate MVVM Scene module | `App/Sources/Features/<Name>` |
-| `swiftblock add usecase <Name>` | `-t, --template-path` | Generate Domain UseCase module | `App/Sources/Domain/UseCases/<Name>` |
-| `swiftblock add repository <Name>` | `-t, --template-path` | Generate Data Repository module | `App/Sources/Data/Repositories/<Name>` |
-| `swiftblock add service <Name>` | `-t, --template-path` | Generate API Service module | `App/Sources/Data/Services/<Name>` |
-| | `--dry-run` | Simulate module generation | `false` |
-| | `-h, --help` | Show command usage and help | |
+| Command                             | Option / Flag                                                                                            | Description                                           | Default                                                           |
+| :---------------------------------- | :------------------------------------------------------------------------------------------------------- | :---------------------------------------------------- | :---------------------------------------------------------------- |
+| `swiftblock new <Name>` (or `init`) | `-p, --bundle-prefix`                                                                                    | Set custom bundle identifier prefix                   | `com.company`                                                     |
+|                                     | `--tool <tuist\|xcodegen>`                                                                               | Build tool generator backend                          | `tuist`                                                           |
+|                                     | `-t, --template-path`                                                                                    | Custom project block template directory               | `/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI` |
+|                                     | `--dry-run`                                                                                              | Simulate generation without writing to disk           | `false`                                                           |
+| `swiftblock add <block> <Name>`     | `scene`, `usecase`, `repository`, `service`, `entity`, `coordinator`, `component`, `mapper`, `validator` | Generate architectural feature module + unit test     | `App/Sources/Features/`                                           |
+| `swiftblock core <block> <Name>`    | `storage`, `network`, `logger`, `auth`, `analytics`, `config`, `featureflag`                             | Generate core foundation module + unit test           | `App/Sources/Core/`                                               |
+| `swiftblock blueprint <cmd>`        | `list`, `create`, `run`, `remove`                                                                        | Manage and execute composable architecture blueprints |                                                                   |
+|                                     | `-h, --help`                                                                                             | Display command usage instructions                    |                                                                   |
 
 ---
 
-## Project Configuration (.swiftblock)
+## Project Configuration (`.swiftblock`)
 
 Every generated project includes a `.swiftblock` configuration file at the project root:
 
 ```json
 {
   "projectName": "MyApp",
-  "bundlePrefix": "com.company",
+  "bundlePrefix": "com.mycompany",
+  "generatorTool": "tuist",
   "paths": {
     "scene": "App/Sources/Features",
-    "usecase": "App/Sources/Domain/UseCases",
-    "repository": "App/Sources/Data/Repositories",
-    "service": "App/Sources/Data/Services"
+    "usecase": "App/Sources/Features",
+    "repository": "App/Sources/Features",
+    "service": "App/Sources/Features"
+  },
+  "blueprints": {
+    "feature": ["scene", "usecase", "repository", "service"]
   }
 }
 ```
@@ -144,18 +169,28 @@ Blocks are stored at `/usr/local/share/swiftblock/Blocks/`:
 
 ```text
 Blocks/
-├── Projects/                     # Project Starter Blocks
+├── Projects/                     # Project Starter Blocks (Tuist & XcodeGen)
 │   └── BaseProject-SwiftUI/
-│       ├── .swiftblock           # Project Config File
-│       ├── Project.swift         # Tuist Project Manifest
-│       ├── Makefile              # Makefile Automation
-│       └── App/                  # Source Directories
 │
-└── Modules/                      # Architecture Building Block Templates
+├── Core/                         # Core Foundation Blocks
+│   ├── Storage/                  # Local Persistence Storage
+│   ├── Network/                  # HTTP Network Transport
+│   ├── Logger/                   # Unified OSLog Logger
+│   ├── Auth/                     # Session & Token Manager
+│   ├── Analytics/                # Analytics Event Engine
+│   ├── Config/                   # Environment Configuration
+│   └── FeatureFlag/              # Remote Toggles Engine
+│
+└── Modules/                      # Feature Architecture Blocks
     ├── Scene/                    # MVVM Scene (View + ViewModel + State)
-    ├── UseCase/                  # Domain UseCase (Protocol + Default Impl)
-    ├── Repository/               # Data Repository (Protocol + Default Impl)
-    └── Service/                  # API Service (Protocol + Default Impl)
+    ├── UseCase/                  # Domain UseCase (Protocol + Impl)
+    ├── Repository/               # Data Repository (Protocol + Impl)
+    ├── Service/                  # API Service (Protocol + Impl)
+    ├── Entity/                   # Domain Model / DTO
+    ├── Coordinator/              # MVVM-C Router Flow
+    ├── Component/                # Reusable UI Component
+    ├── Mapper/                   # DTO Transformer
+    └── Validator/                # Input Validator
 ```
 
 ---
@@ -169,8 +204,8 @@ swift build -c release
 # Run unit test suite (Swift Testing framework)
 swift test
 
-# Test executable without global installation
-.build/release/swiftblock new SampleApp
+# Run End-to-End integration test matrix (12 scenarios)
+./Scripts/test_e2e.sh
 ```
 
 ---

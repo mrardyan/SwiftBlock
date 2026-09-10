@@ -6,7 +6,7 @@ import SwiftBlockCore
 struct SwiftBlock: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "swiftblock",
-        abstract: "Swift project and architecture module generator CLI",
+        abstract: "Swift building blocks to create anything: project and architecture generator CLI",
         subcommands: [Init.self, New.self, Add.self, CoreCommand.self, BlueprintCommand.self]
     )
 }
