@@ -81,10 +81,10 @@ struct ProjectManifestGeneratorTests {
         #expect(content.contains("TestTuistConfigApp-Staging"))
         #expect(content.contains("TestTuistConfigApp-Prod"))
 
-        // Verify strict Tuist parameter ordering: dependencies must precede settings
-        if let depRange = content.range(of: "dependencies:"),
-           let setRange = content.range(of: "settings:") {
-            #expect(depRange.lowerBound < setRange.lowerBound)
+        // Verify target parameter ordering: dependencies must precede target settings
+        if let depRange = content.range(of: "dependencies: ["),
+           let lastSetRange = content.range(of: "settings:", options: .backwards) {
+            #expect(depRange.lowerBound < lastSetRange.lowerBound)
         } else {
             Issue.record("Manifest must contain both 'dependencies:' and 'settings:' parameters.")
         }

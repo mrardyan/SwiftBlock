@@ -50,6 +50,7 @@ fi
                     ],
 """
         var targetSettings = ""
+        var projectSettings = ""
         var schemesBlock = ""
 
         if config.coreBlocks.contains(.config) {
@@ -58,6 +59,15 @@ fi
                     "BASE_URL": "$(BASE_URL)",
                     "API_KEY": "$(API_KEY)",
                     "CFBundleDisplayName": "$(TARGET_NAME)$(APP_NAME_SUFFIX)",
+"""
+            projectSettings = """
+    settings: .settings(
+        configurations: [
+            .debug(name: "Development", xcconfig: "Configs/Development.xcconfig"),
+            .debug(name: "Staging", xcconfig: "Configs/Staging.xcconfig"),
+            .release(name: "Production", xcconfig: "Configs/Production.xcconfig"),
+        ]
+    ),
 """
             targetSettings = """
             settings: .settings(
@@ -100,6 +110,7 @@ import ProjectDescription
 
 let project = Project(
     name: "\(config.projectName)",\(packagesString)
+\(projectSettings)
     targets: [
         .target(
             name: "\(config.projectName)",
