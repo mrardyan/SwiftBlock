@@ -140,23 +140,48 @@ help:
 
         var setupSteps: [String] = []
 
+        var requiredToolChecks: [(binary: String, brewFormula: String)] = []
+        if config.generatorTool == .tuist {
+            requiredToolChecks.append(("tuist", "tuist/tuist/tuist"))
+        } else {
+            requiredToolChecks.append(("xcodegen", "xcodegen"))
+        }
+
+        if config.guardrails.swiftlint { requiredToolChecks.append(("swiftlint", "swiftlint")) }
+        if config.guardrails.swiftformat { requiredToolChecks.append(("swiftformat", "swiftformat")) }
+        if config.guardrails.periphery { requiredToolChecks.append(("periphery", "peripheryapp/periphery/periphery")) }
+        if config.guardrails.gitleaks { requiredToolChecks.append(("gitleaks", "gitleaks")) }
+        if config.guardrails.precommit { requiredToolChecks.append(("pre-commit", "pre-commit")) }
+        if config.guardrails.swiftgen { requiredToolChecks.append(("swiftgen", "swiftgen")) }
+        if config.guardrails.licenseplist { requiredToolChecks.append(("license-plist", "license-plist")) }
+
+        let checkStatements = requiredToolChecks.map { item in
+            "which \(item.binary) > /dev/null 2>&1 || MISSING_TOOLS=\"$MISSING_TOOLS \(item.brewFormula)\""
+        }.joined(separator: "\n")
+
         setupSteps.append("""
-if which mise > /dev/null; then
+if which mise > /dev/null 2>&1; then
     echo "◆ Installing tool dependencies via mise..."
     if [ -z "$GITHUB_TOKEN" ] && which gh > /dev/null 2>&1; then
         export GITHUB_TOKEN=$(gh auth token 2>/dev/null || true)
     fi
-    if ! mise install; then
-        echo "⚠️ Warning: 'mise install' failed (likely GitHub API rate limit 403)."
-        echo "⚠️ To fix: set GITHUB_TOKEN env var or run 'gh auth login'."
-        echo "⚠️ Proceeding setup with available system tools..."
+    mise install || true
+fi
+
+MISSING_TOOLS=""
+\(checkStatements)
+
+if [ -n "$MISSING_TOOLS" ]; then
+    if which brew > /dev/null 2>&1; then
+        echo "◆ Installing missing tools via Homebrew:$MISSING_TOOLS..."
+        brew install $MISSING_TOOLS
     fi
 fi
 """)
 
         if config.guardrails.precommit {
             setupSteps.append("""
-if which pre-commit > /dev/null; then
+if which pre-commit > /dev/null 2>&1; then
     echo "◆ Installing git pre-commit hooks..."
     pre-commit install
 fi
