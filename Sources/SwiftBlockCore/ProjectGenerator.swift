@@ -125,10 +125,13 @@ public class ProjectGenerator {
             let manifestGen = ProjectManifestGeneratorFactory.createGenerator(for: config.generatorTool)
             try manifestGen.generateManifest(config: config, projectPath: options.outputPath)
 
-            // 3. Generate Environment Files (Makefile, .mise.toml, Scripts/setup.sh)
+            // 3. Generate Environment Files (Makefile, .mise.toml, Scripts/setup.sh, .xcconfig)
             if options.isVerbose { print("🔹 [Assembly] Generating environment setup files...") }
             let envGen = EnvironmentSetupGenerator(fileManager: fileManager)
             try envGen.generateSetupFiles(in: options.outputPath, config: config)
+
+            let envConfigGen = EnvironmentConfigGenerator(fileManager: fileManager)
+            try envConfigGen.generateConfigs(in: options.outputPath, config: config)
 
             // 4. Inject Guardrails (.swiftlint.yml, .swiftformat, .pre-commit-config.yaml, etc.)
             if options.isVerbose { print("🔹 [Assembly] Injecting guardrail configuration files...") }

@@ -43,6 +43,58 @@ fi
             scriptsString = "scripts: [],"
         }
 
+        var infoPlistProps = """
+                    "UILaunchScreen": [
+                        "UIColorName": "",
+                        "UIImageName": "",
+                    ],
+"""
+        var targetSettings = ""
+        var schemesBlock = ""
+
+        if config.coreBlocks.contains(.config) {
+            infoPlistProps += """
+                    "APP_ENVIRONMENT": "$(APP_ENVIRONMENT)",
+                    "BASE_URL": "$(BASE_URL)",
+                    "API_KEY": "$(API_KEY)",
+                    "CFBundleDisplayName": "$(TARGET_NAME)$(APP_NAME_SUFFIX)",
+"""
+            targetSettings = """
+            settings: .settings(
+                configurations: [
+                    .debug(name: "Development", xcconfig: "Configs/Development.xcconfig"),
+                    .debug(name: "Staging", xcconfig: "Configs/Staging.xcconfig"),
+                    .release(name: "Production", xcconfig: "Configs/Production.xcconfig"),
+                ]
+            ),
+"""
+            schemesBlock = """
+    schemes: [
+        .scheme(
+            name: "\(config.projectName)-Dev",
+            shared: true,
+            buildAction: .buildAction(targets: ["\(config.projectName)"]),
+            testAction: .targets(["\(config.projectName)Tests"]),
+            runAction: .runAction(configuration: "Development")
+        ),
+        .scheme(
+            name: "\(config.projectName)-Staging",
+            shared: true,
+            buildAction: .buildAction(targets: ["\(config.projectName)"]),
+            testAction: .targets(["\(config.projectName)Tests"]),
+            runAction: .runAction(configuration: "Staging")
+        ),
+        .scheme(
+            name: "\(config.projectName)-Prod",
+            shared: true,
+            buildAction: .buildAction(targets: ["\(config.projectName)"]),
+            testAction: .targets(["\(config.projectName)Tests"]),
+            runAction: .runAction(configuration: "Production")
+        ),
+    ],
+"""
+        }
+
         let content = """
 import ProjectDescription
 
@@ -56,16 +108,13 @@ let project = Project(
             bundleId: "\(config.bundlePrefix).\(config.projectName)",
             infoPlist: .extendingDefault(
                 with: [
-                    "UILaunchScreen": [
-                        "UIColorName": "",
-                        "UIImageName": "",
-                    ],
+\(infoPlistProps)
                 ]
             ),
             sources: ["App/Sources/**"],
             resources: ["App/Resources/**"],
             \(scriptsString)
-            dependencies: [\(dependenciesString)]
+            \(targetSettings)dependencies: [\(dependenciesString)]
         ),
         .target(
             name: "\(config.projectName)Tests",
@@ -77,7 +126,8 @@ let project = Project(
             resources: [],
             dependencies: [.target(name: "\(config.projectName)")]
         ),
-    ]
+    ],
+\(schemesBlock)
 )
 """
 

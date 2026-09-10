@@ -36,6 +36,53 @@ packages:
 """
         }
 
+        var configsBlock = ""
+        var targetConfigSettings = ""
+        var schemesBlock = ""
+
+        if config.coreBlocks.contains(.config) {
+            configsBlock = """
+configs:
+  Development: debug
+  Staging: debug
+  Production: release
+"""
+            targetConfigSettings = """
+    configFiles:
+      Development: Configs/Development.xcconfig
+      Staging: Configs/Staging.xcconfig
+      Production: Configs/Production.xcconfig
+    info:
+      properties:
+        APP_ENVIRONMENT: "$(APP_ENVIRONMENT)"
+        BASE_URL: "$(BASE_URL)"
+        API_KEY: "$(API_KEY)"
+        CFBundleDisplayName: "$(TARGET_NAME)$(APP_NAME_SUFFIX)"
+"""
+            schemesBlock = """
+
+schemes:
+  \(config.projectName)-Dev:
+    build:
+      targets:
+        \(config.projectName): all
+    run:
+      config: Development
+  \(config.projectName)-Staging:
+    build:
+      targets:
+        \(config.projectName): all
+    run:
+      config: Staging
+  \(config.projectName)-Prod:
+    build:
+      targets:
+        \(config.projectName): all
+    run:
+      config: Production
+"""
+        }
+
         let content = """
 name: \(config.projectName)
 options:
@@ -43,13 +90,14 @@ options:
   deploymentTarget:
     iOS: \(versions.iOSDeploymentTarget)
 
+\(configsBlock)
 \(packagesBlock)
 
 targets:
   \(config.projectName):
     type: application
     platform: iOS
-    sources:
+\(targetConfigSettings)    sources:
       - App/Sources
       - App/Resources
     dependencies:
@@ -63,6 +111,7 @@ targets:
       - App/Tests
     dependencies:
       - target: \(config.projectName)
+\(schemesBlock)
 """
 
         let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
