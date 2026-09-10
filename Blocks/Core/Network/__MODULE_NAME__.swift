@@ -24,6 +24,7 @@ public protocol Networking {
 }
 
 /// HTTP network client engine.
+@available(iOS 15.0, macOS 12.0, *)
 public final class __MODULE_NAME__: Networking {
     private let transport: HTTPTransporting
     private let jsonDecoder: JSONDecoder

@@ -10,7 +10,9 @@ struct __PROJECT_NAME__App: App {
 
     init() {
         #if canImport(Core)
-        CoreModule.configure()
+        if #available(iOS 15.0, macOS 12.0, *) {
+            CoreModule.configure()
+        }
         #endif
     }
 

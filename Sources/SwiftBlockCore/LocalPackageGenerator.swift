@@ -37,10 +37,12 @@ public class LocalPackageGenerator {
             import Foundation
 
             /// Central entry point and namespace for shared Core infrastructure.
+            @available(iOS 15.0, macOS 12.0, *)
             public struct CoreModule {
                 public static let version = "1.0.0"
 
                 /// Call this method during application launch (e.g. in @main App.init()) to initialize Core services.
+                @available(iOS 15.0, macOS 12.0, *)
                 public static func configure() {
             \(stepsText)
                 }
@@ -59,7 +61,7 @@ import PackageDescription
 
 let package = Package(
     name: "Core",
-    platforms: [.iOS(.v\(versions.iOSDeploymentTarget.replacingOccurrences(of: ".0", with: "")))],
+    platforms: [.iOS(.v\(versions.iOSDeploymentTarget.replacingOccurrences(of: ".0", with: ""))), .macOS(.v13)],
     products: [
         .library(name: "Core", targets: ["Core"]),
     ],
@@ -107,7 +109,7 @@ import PackageDescription
 
 let package = Package(
     name: "\(capitalizedName)Feature",
-    platforms: [.iOS(.v\(versions.iOSDeploymentTarget.replacingOccurrences(of: ".0", with: "")))],
+    platforms: [.iOS(.v\(versions.iOSDeploymentTarget.replacingOccurrences(of: ".0", with: ""))), .macOS(.v13)],
     products: [
         .library(name: "\(capitalizedName)Feature", targets: ["\(capitalizedName)Feature"]),
     ],

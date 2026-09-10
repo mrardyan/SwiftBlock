@@ -99,6 +99,7 @@ public class ProjectGenerator {
             if !config.coreBlocks.isEmpty {
                 if options.isVerbose { print("🔹 [Assembly] Assembling selected Core Foundation modules...") }
                 let moduleGen = ModuleGenerator(fileManager: fileManager)
+                let baseBlocksDir = ((options.templatePath as NSString).deletingLastPathComponent as NSString).deletingLastPathComponent
                 for type in config.coreBlocks {
                     let defaultName: String
                     switch type {
@@ -111,10 +112,13 @@ public class ProjectGenerator {
                     case .featureflag: defaultName = "FeatureFlags"
                     default: defaultName = type.rawValue.capitalized
                     }
+                    let subFolder = type.category == .core ? "Core" : "Modules"
+                    let modulesTemplatePath = "\(baseBlocksDir)/\(subFolder)"
                     let moduleOptions = ModuleGeneratorOptions(
                         type: type,
                         moduleName: defaultName,
-                        projectRootPath: options.outputPath
+                        projectRootPath: options.outputPath,
+                        modulesTemplatePath: modulesTemplatePath
                     )
                     _ = try? moduleGen.generateModule(options: moduleOptions)
                 }
