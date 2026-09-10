@@ -53,6 +53,7 @@ configs:
       Staging: Configs/Staging.xcconfig
       Production: Configs/Production.xcconfig
     info:
+      path: App/Info.plist
       properties:
         APP_ENVIRONMENT: "$(APP_ENVIRONMENT)"
         BASE_URL: "$(BASE_URL)"
@@ -83,6 +84,9 @@ schemes:
 """
         }
 
+        let targetConfigSettingsSection = targetConfigSettings.isEmpty ? "" : "\(targetConfigSettings)\n"
+        let targetDepsSection = targetPackagesDependencies.isEmpty ? "" : "    dependencies:\n\(targetPackagesDependencies)\n"
+
         let content = """
 name: \(config.projectName)
 options:
@@ -97,12 +101,10 @@ targets:
   \(config.projectName):
     type: application
     platform: iOS
-\(targetConfigSettings)    sources:
+\(targetConfigSettingsSection)    sources:
       - App/Sources
       - App/Resources
-    dependencies:
-\(targetPackagesDependencies)
-\(postBuildScripts)
+\(targetDepsSection)\(postBuildScripts)
 
   \(config.projectName)Tests:
     type: bundle.unit-test
