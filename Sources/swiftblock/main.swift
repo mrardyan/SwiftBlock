@@ -333,21 +333,12 @@ struct BoxUpdate: ParsableCommand {
 struct DoctorCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "doctor",
-        abstract: "Diagnose SwiftBlock environment, Xcode, Tuist, and XcodeGen tooling"
+        abstract: "Diagnose SwiftBlock environment, build tools, dependency graph, and Periphery static analysis"
     )
 
     func run() throws {
-        print("┌  \(ANSIColor.boldText("SwiftBlock System Diagnostics"))")
-        print("│")
-        
-        let fm = FileManager.default
-        let tuistInstalled = fm.fileExists(atPath: "/usr/local/bin/tuist") || fm.fileExists(atPath: "/opt/homebrew/bin/tuist")
-        let xcodegenInstalled = fm.fileExists(atPath: "/usr/local/bin/xcodegen") || fm.fileExists(atPath: "/opt/homebrew/bin/xcodegen")
-        
-        print("│  \(tuistInstalled ? "[✓]" : "[!]") Tuist: \(tuistInstalled ? "Installed" : "Not found in standard PATH")")
-        print("│  \(xcodegenInstalled ? "[✓]" : "[!]") XcodeGen: \(xcodegenInstalled ? "Installed" : "Not found in standard PATH")")
-        print("│")
-        print("└  \(ANSIColor.boldText("SwiftBlock environment is operational."))")
+        let engine = DoctorEngine()
+        engine.printDiagnosticsReport()
     }
 }
 
