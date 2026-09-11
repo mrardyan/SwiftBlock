@@ -69,4 +69,38 @@ struct BoxManagerTests {
         #expect(discovered.map { $0.manifest.name }.contains("network"))
         #expect(discovered.map { $0.manifest.name }.contains("storage"))
     }
+
+    @Test func boxNameSanitizationAndTraversalPrevention() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("BoxStoreSanitization_\(UUID().uuidString)", isDirectory: true).path
+        defer {
+            try? FileManager.default.removeItem(atPath: tempDir)
+        }
+
+        let manager = BoxManager(storeRootPath: tempDir)
+        
+        // Attempt removing with path traversal characters
+        #expect(throws: Never.self) {
+            try manager.removeBox(name: "../../evil_box")
+        }
+
+        // Attempt adding with empty name
+        #expect(throws: BoxManagerError.self) {
+            try manager.addBox(name: "   ", gitURL: "https://invalid-repo-url.git")
+        }
+    }
+
+    @Test func invalidGitURLOrCloneFailure() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("BoxStoreCloneFail_\(UUID().uuidString)", isDirectory: true).path
+        defer {
+            try? FileManager.default.removeItem(atPath: tempDir)
+        }
+
+        let manager = BoxManager(storeRootPath: tempDir)
+        
+        #expect(throws: BoxManagerError.self) {
+            try manager.addBox(name: "invalidbox", gitURL: "https://invalid-non-existent-domain-12345.com/repo.git")
+        }
+    }
 }

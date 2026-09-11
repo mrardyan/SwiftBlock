@@ -60,4 +60,21 @@ struct HooksEngineTests {
         #expect(manifest.postSnapHooks.count == 1)
         #expect(manifest.postSnapHooks[0].contains("HookExecuted"))
     }
+
+    @Test func failedHookExecutionGracefullyHandled() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
+        try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: tempDir) }
+
+        let failingCommand = "non_existent_command_123456789 || exit 1"
+        #expect(throws: Never.self) {
+            try HooksEngine.executeHook(
+                failingCommand,
+                variables: [:],
+                projectName: "TestApp",
+                moduleName: "Profile",
+                projectRootPath: tempDir
+            )
+        }
+    }
 }

@@ -180,4 +180,41 @@ struct CodeInjectorTests {
         let contentUnchanged = try String(contentsOfFile: outsideFile, encoding: .utf8)
         #expect(contentUnchanged == "sensitive content")
     }
+
+    @Test func multipleMarkersAndNestedBraces() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
+        try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: tempDir) }
+
+        let targetFile = "\(tempDir)/Nested.swift"
+        let initialContent = """
+        struct Outer {
+            // MARK: - Section
+            func first() {
+                // MARK: - Section
+                let x = 1
+            }
+        }
+        """
+        try initialContent.write(toFile: targetFile, atomically: true, encoding: .utf8)
+
+        let spec = InjectionSpec(
+            target: "Nested.swift",
+            marker: "// MARK: - Section",
+            content: "let injectedFirst = true"
+        )
+
+        let injected = try CodeInjector.inject(
+            spec: spec,
+            variables: [:],
+            projectName: "TestApp",
+            moduleName: nil,
+            projectRootPath: tempDir
+        )
+
+        #expect(injected == true)
+        let updatedContent = try String(contentsOfFile: targetFile, encoding: .utf8)
+        let lines = updatedContent.components(separatedBy: "\n")
+        #expect(lines[2].contains("let injectedFirst = true"))
+    }
 }

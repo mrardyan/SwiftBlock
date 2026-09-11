@@ -330,4 +330,32 @@ struct ModuleGeneratorTests {
         #expect(FileManager.default.fileExists(atPath: "\(featurePath)/ProfileView.swift"))
         #expect(FileManager.default.fileExists(atPath: "\(tempDir.path)/App/Tests/Features/profile/scene/ProfileTests.swift"))
     }
+
+    @Test func moduleGenerationRollbackOnFailure() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Rollback_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let config = SwiftBlockConfig(projectName: "TestApp")
+        try config.save(to: tempDir.path)
+
+        // Invalid options targeting non-existent template
+        let options = ModuleGeneratorOptions(
+            type: .scene,
+            moduleName: "RollbackTest",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: "\(tempDir.path)/NonExistentTemplate"
+        )
+
+        let generator = ModuleGenerator()
+        #expect(throws: ModuleGeneratorError.self) {
+            try generator.generateModule(options: options)
+        }
+
+        let targetDir = "\(tempDir.path)/App/Sources/Features/rollbacktest"
+        #expect(!FileManager.default.fileExists(atPath: targetDir))
+    }
 }
