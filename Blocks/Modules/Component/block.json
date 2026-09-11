@@ -1,5 +1,0 @@
-{
-  "title": "Component",
-  "description": "Reusable UI Component",
-  "defaultOutputPath": "App/Sources/Features/{module}/Component"
-}

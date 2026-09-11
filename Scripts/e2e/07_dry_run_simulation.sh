@@ -5,11 +5,11 @@ run_scenario() {
 
     cd "$TEST_DIR"
 
-    "$SWIFTBLOCK_BIN" new DryRunApp --dry-run
+    "$SWIFTBLOCK_BIN" baseplate DryRunApp --dry-run
     assert_file_not_exists "DryRunApp" "DryRunApp directory should not be created on --dry-run"
 
     cd "$TEST_DIR/TestNewApp"
-    "$SWIFTBLOCK_BIN" add scene DryRunHome -t "$MODULES_PATH" --dry-run
+    "$SWIFTBLOCK_BIN" snap scene DryRunHome --dry-run
     assert_file_not_exists "Custom/Scenes/dryrunhome" "DryRunHome module should not be created on --dry-run"
 
     cd "$TEST_DIR"

@@ -169,7 +169,7 @@ struct E2ETests {
         #expect(!FileManager.default.fileExists(atPath: "\(projectPath)/.git"))
     }
 
-    @Test func testE2EBlueprintCreationAndExecutionMatrix() throws {
+    @Test func testE2EKitCreationAndExecutionMatrix() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("E2E_\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -177,11 +177,11 @@ struct E2ETests {
             try? FileManager.default.removeItem(at: tempDir)
         }
 
-        let projectPath = tempDir.appendingPathComponent("BlueprintApp").path
+        let projectPath = tempDir.appendingPathComponent("KitApp").path
 
         // 1. Initialize project & config
         var config = SwiftBlockConfig(
-            projectName: "BlueprintApp",
+            projectName: "KitApp",
             bundlePrefix: "com.testorg",
             packaging: PackagingConfig(feature: "monolithic", core: "monolithic"),
             organization: "feature-first",
@@ -200,7 +200,7 @@ struct E2ETests {
         }
 
         let options = ProjectGeneratorOptions(
-            projectName: "BlueprintApp",
+            projectName: "KitApp",
             bundlePrefix: "com.testorg",
             templatePath: mockTemplate,
             outputPath: projectPath,
@@ -210,17 +210,17 @@ struct E2ETests {
         let projectGen = ProjectGenerator()
         try projectGen.generateProject(options: options)
 
-        // 2. Add and save a custom blueprint to .swiftblock
-        config.blueprints["custom_auth"] = ["scene", "usecase", "service"]
+        // 2. Add and save a custom kit to .swiftblock
+        config.kits["custom_auth"] = ["scene", "usecase", "service"]
         try config.save(to: projectPath)
 
         let loadedConfig = try SwiftBlockConfig.load(from: projectPath)
-        #expect(loadedConfig.blueprints["custom_auth"] == ["scene", "usecase", "service"])
-        #expect(loadedConfig.blueprints["feature"] == ["scene", "usecase", "repository", "mapper"])
+        #expect(loadedConfig.kits["custom_auth"] == ["scene", "usecase", "service"])
+        #expect(loadedConfig.kits["feature"] == ["scene", "usecase", "repository", "mapper"])
 
-        // 3. Execute custom blueprint 'custom_auth' for module 'Auth'
-        let engine = BlueprintEngine()
-        let resultAuth = try engine.executeBlueprint(
+        // 3. Execute custom kit 'custom_auth' for module 'Auth'
+        let engine = KitEngine()
+        let resultAuth = try engine.executeKit(
             name: "custom_auth",
             moduleName: "Auth",
             config: loadedConfig,
@@ -228,15 +228,15 @@ struct E2ETests {
             projectPath: projectPath
         )
 
-        #expect(resultAuth.blueprintName == "custom_auth")
+        #expect(resultAuth.kitName == "custom_auth")
         #expect(resultAuth.moduleName == "Auth")
-        #expect(resultAuth.generatedBlocks == [.scene, .usecase, .service])
+        #expect(resultAuth.generatedBricks == [.scene, .usecase, .service])
         #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/auth/scene/AuthScene.swift"))
         #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/auth/usecase/AuthUsecase.swift"))
         #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/auth/service/AuthService.swift"))
 
-        // 4. Execute built-in blueprint 'feature' for module 'Settings'
-        let resultSettings = try engine.executeBlueprint(
+        // 4. Execute built-in kit 'feature' for module 'Settings'
+        let resultSettings = try engine.executeKit(
             name: "feature",
             moduleName: "Settings",
             config: loadedConfig,
@@ -244,9 +244,9 @@ struct E2ETests {
             projectPath: projectPath
         )
 
-        #expect(resultSettings.blueprintName == "feature")
+        #expect(resultSettings.kitName == "feature")
         #expect(resultSettings.moduleName == "Settings")
-        #expect(resultSettings.generatedBlocks == [.scene, .usecase, .repository, .mapper])
+        #expect(resultSettings.generatedBricks == [.scene, .usecase, .repository, .mapper])
         #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/scene/SettingsScene.swift"))
         #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/usecase/SettingsUsecase.swift"))
         #expect(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/repository/SettingsRepository.swift"))

@@ -24,7 +24,7 @@
 - **Core Foundation Blocks**: Modular infrastructure blocks (`storage`, `network`, `logger`, `config`, `auth`, `analytics`, `featureflag`).
 - **Feature Architecture Blocks**: Scaffolds clean code components (`scene`, `usecase`, `repository`, `service`, `entity`, `coordinator`, `component`, `mapper`, `validator`).
 - **Automated Unit Test Generation**: Automatically generates composable unit tests alongside every Core and Feature module.
-- **Custom Architecture Blueprints**: Compose multi-block templates into reusable blueprints (`swiftblock blueprint`).
+- **Custom Architecture Kits**: Compose multi-brick templates into reusable kits (`swiftblock kit`).
 - **CI/CD Pipeline Generator**: Automatic setup for Xcode Cloud, GitHub Actions, or GitLab CI.
 - **Pre-configured Code Quality**: Built-in setup for SwiftLint, SwiftFormat, and pre-commit hooks.
 - **Simulation Mode (`--dry-run`)**: Test project and module generation without mutating disk state.
@@ -110,17 +110,17 @@ swiftblock core config AppConfig
 swiftblock core featureflag RemoteFlags
 ```
 
-#### Custom Architecture Blueprints
+#### Custom Architecture Kits
 
 ```bash
-# List available blueprints
-swiftblock blueprint list
+# List available kits
+swiftblock kit list
 
-# Create a new custom blueprint
-swiftblock blueprint create feature --blocks scene,usecase,repository,service
+# Create a new custom kit
+swiftblock kit create feature --blocks scene,usecase,repository,service
 
-# Run blueprint to generate all composed blocks in one step
-swiftblock blueprint run feature Profile
+# Run kit to generate all composed bricks in one step
+swiftblock kit run feature Profile
 ```
 
 ---
@@ -135,7 +135,7 @@ swiftblock blueprint run feature Profile
 |                                     | `--dry-run`                                                                                              | Simulate generation without writing to disk           | `false`                                                           |
 | `swiftblock add <block> <Name>`     | `scene`, `usecase`, `repository`, `service`, `entity`, `coordinator`, `component`, `mapper`, `validator` | Generate architectural feature module + unit test     | `App/Sources/Features/`                                           |
 | `swiftblock core <block> <Name>`    | `storage`, `network`, `logger`, `auth`, `analytics`, `config`, `featureflag`                             | Generate core foundation module + unit test           | `App/Sources/Core/`                                               |
-| `swiftblock blueprint <cmd>`        | `list`, `create`, `run`, `remove`                                                                        | Manage and execute composable architecture blueprints |                                                                   |
+| `swiftblock kit <cmd>`              | `list`, `create`, `run`, `remove`                                                                        | Manage and execute composable architecture kits       |                                                                   |
 |                                     | `-h, --help`                                                                                             | Display command usage instructions                    |                                                                   |
 
 ---
@@ -155,7 +155,7 @@ Every generated project includes a `.swiftblock` configuration file at the proje
     "repository": "App/Sources/Features",
     "service": "App/Sources/Features"
   },
-  "blueprints": {
+  "kits": {
     "feature": ["scene", "usecase", "repository", "service"]
   }
 }

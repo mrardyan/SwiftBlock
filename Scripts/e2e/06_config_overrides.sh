@@ -5,21 +5,21 @@ run_scenario() {
 
     cd "$TEST_DIR/TestNewApp"
 
-    cat << 'EOF' > .swiftblock
-{
-  "projectName": "TestNewApp",
-  "bundlePrefix": "com.mycompany.newapp",
-  "packaging": { "feature": "monolithic", "core": "spm" },
-  "organization": "feature-first",
-  "generatorTool": "xcodegen",
-  "overrides": {
-    "scene": "Custom/Scenes/{module}",
-    "usecase": "Custom/Domain/{module}"
-  }
-}
+    mkdir -p .swiftblock
+    cat << 'EOF' > .swiftblock/config.yml
+projectName: TestNewApp
+bundlePrefix: com.mycompany.newapp
+packaging:
+  feature: monolithic
+  core: spm
+organization: feature-first
+generatorTool: xcodegen
+overrides:
+  scene: Custom/Scenes/{module}
+  usecase: Custom/Domain/{module}
 EOF
 
-    "$SWIFTBLOCK_BIN" add scene CustomDashboard -t "$MODULES_PATH"
+    "$SWIFTBLOCK_BIN" snap scene CustomDashboard
 
     assert_file_exists "Custom/Scenes/customdashboard/CustomDashboardView.swift" "Custom path override for scene respected"
 

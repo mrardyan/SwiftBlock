@@ -5,8 +5,8 @@ run_scenario() {
 
     cd "$TEST_DIR/TestNewApp"
 
-    "$SWIFTBLOCK_BIN" add storage LocalStore -t "$CORE_PATH"
-    "$SWIFTBLOCK_BIN" add scene Settings -t "$MODULES_PATH"
+    "$SWIFTBLOCK_BIN" snap storage LocalStore
+    "$SWIFTBLOCK_BIN" snap scene Settings
 
     assert_file_exists "Packages/Core/Sources/Core/storage/LocalStore.swift" "Generic add storage LocalStore present"
     assert_file_exists "App/Sources/Features/settings/scene/SettingsView.swift" "Generic add scene Settings present"

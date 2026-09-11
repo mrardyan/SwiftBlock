@@ -1,0 +1,8 @@
+name: mapper
+category: architecture
+instantiation: generative
+description: "DTO to Domain model transformer mapper"
+defaultPath: "App/Sources/Features"
+requiresNameArgument: true
+namingConvention:
+  postfix: "Mapper"

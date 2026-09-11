@@ -1,0 +1,6 @@
+name: config
+category: infrastructure
+instantiation: singleton
+description: "App runtime environment configuration"
+defaultPath: "App/Sources/Core/Config"
+requiresNameArgument: false

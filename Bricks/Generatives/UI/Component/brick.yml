@@ -1,0 +1,6 @@
+name: component
+category: ui
+instantiation: generative
+description: "Reusable SwiftUI UI Component"
+defaultPath: "App/Sources/UI/Components"
+requiresNameArgument: true

@@ -1,0 +1,8 @@
+name: service
+category: architecture
+instantiation: generative
+description: "API Service protocol and implementation"
+defaultPath: "App/Sources/Features"
+requiresNameArgument: true
+namingConvention:
+  postfix: "Service"

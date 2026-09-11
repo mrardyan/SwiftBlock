@@ -1,0 +1,8 @@
+name: validator
+category: architecture
+instantiation: generative
+description: "Input validator protocol and implementation"
+defaultPath: "App/Sources/Features"
+requiresNameArgument: true
+namingConvention:
+  postfix: "Validator"

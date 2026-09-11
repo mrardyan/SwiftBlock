@@ -25,7 +25,8 @@ public struct PackagingConfig: Codable, Equatable {
 }
 
 public struct SwiftBlockConfig: Codable, Equatable {
-    public static let defaultBlueprints: [String: [String]] = [
+    public static let defaultKits: [String: [String]] = [
+        "clean-feature": ["scene", "usecase", "repository", "service"],
         "feature": ["scene", "usecase", "repository", "mapper"],
         "simple": ["scene", "service"],
         "data": ["repository", "service", "entity"]
@@ -44,7 +45,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
     public var pathTemplates: [String: String]
     public var overrides: [String: String]
     public var paths: ModulePaths
-    public var blueprints: [String: [String]]
+    public var kits: [String: [String]]
 
     enum CodingKeys: String, CodingKey {
         case projectName
@@ -60,7 +61,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         case pathTemplates
         case overrides
         case paths
-        case blueprints
+        case kits
     }
 
     public init(from decoder: Decoder) throws {
@@ -82,11 +83,33 @@ public struct SwiftBlockConfig: Codable, Equatable {
         ]
         self.overrides = (try? container.decode([String: String].self, forKey: .overrides)) ?? [:]
         self.paths = (try? container.decode(ModulePaths.self, forKey: .paths)) ?? ModulePaths()
-        self.blueprints = (try? container.decode([String: [String]].self, forKey: .blueprints)) ?? SwiftBlockConfig.defaultBlueprints
+        self.kits = (try? container.decode([String: [String]].self, forKey: .kits)) ?? SwiftBlockConfig.defaultKits
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(projectName, forKey: .projectName)
+        try container.encode(bundlePrefix, forKey: .bundlePrefix)
+        try container.encode(packaging, forKey: .packaging)
+        try container.encode(organization, forKey: .organization)
+        try container.encode(generatorTool, forKey: .generatorTool)
+        try container.encode(guardrails, forKey: .guardrails)
+        try container.encode(cicd, forKey: .cicd)
+        try container.encode(toolVersions, forKey: .toolVersions)
+        try container.encode(coreBlocks, forKey: .coreBlocks)
+        try container.encode(gitInit, forKey: .gitInit)
+        try container.encode(pathTemplates, forKey: .pathTemplates)
+        try container.encode(overrides, forKey: .overrides)
+        try container.encode(paths, forKey: .paths)
+        try container.encode(kits, forKey: .kits)
     }
 
     public struct ModulePaths: Codable, Equatable {
         private var customPaths: [String: String]
+
+        public var allCustomPaths: [String: String] {
+            return customPaths
+        }
 
         public init(customPaths: [String: String] = [:]) {
             self.customPaths = customPaths
@@ -148,7 +171,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         ],
         overrides: [String: String] = [:],
         paths: ModulePaths = ModulePaths(),
-        blueprints: [String: [String]] = SwiftBlockConfig.defaultBlueprints
+        kits: [String: [String]] = SwiftBlockConfig.defaultKits
     ) {
         self.projectName = projectName
         self.bundlePrefix = bundlePrefix
@@ -163,7 +186,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         self.pathTemplates = pathTemplates
         self.overrides = overrides
         self.paths = paths
-        self.blueprints = blueprints
+        self.kits = kits
     }
 
     public func resolveOutputPath(for type: ModuleType, moduleName: String) -> String {
@@ -190,24 +213,143 @@ public struct SwiftBlockConfig: Codable, Equatable {
     }
 
     public static func load(from directoryPath: String = FileManager.default.currentDirectoryPath) throws -> SwiftBlockConfig {
-        let configFilePath = "\(directoryPath)/.swiftblock"
-        guard FileManager.default.fileExists(atPath: configFilePath) else {
-            throw SwiftBlockConfigError.configNotFound(configFilePath)
+        let fileManager = FileManager.default
+        let ymlConfigPath = "\(directoryPath)/.swiftblock/config.yml"
+        let yamlConfigPath = "\(directoryPath)/.swiftblock/config.yaml"
+        let rootConfigPath = "\(directoryPath)/.swiftblock"
+        
+        var targetPath: String?
+        if fileManager.fileExists(atPath: ymlConfigPath) {
+            targetPath = ymlConfigPath
+        } else if fileManager.fileExists(atPath: yamlConfigPath) {
+            targetPath = yamlConfigPath
+        } else if fileManager.fileExists(atPath: rootConfigPath) {
+            targetPath = rootConfigPath
         }
-        let data = try Data(contentsOf: URL(fileURLWithPath: configFilePath))
-        return try JSONDecoder().decode(SwiftBlockConfig.self, from: data)
+        
+        guard let finalPath = targetPath else {
+            throw SwiftBlockConfigError.configNotFound("\(directoryPath)/.swiftblock/config.yml")
+        }
+        
+        let data = try Data(contentsOf: URL(fileURLWithPath: finalPath))
+        if let config = try? JSONDecoder().decode(SwiftBlockConfig.self, from: data) {
+            return config
+        }
+        
+        if let content = String(data: data, encoding: .utf8) {
+            let parsed = SimpleYAMLParser.parse(content)
+            let name = (parsed["projectName"] as? String) ?? "App"
+            let prefix = (parsed["bundlePrefix"] as? String) ?? "com.company"
+            let toolStr = (parsed["generatorTool"] as? String) ?? "tuist"
+            let tool = ProjectGeneratorTool(rawValue: toolStr.lowercased()) ?? .tuist
+            let org = (parsed["organization"] as? String) ?? "feature-first"
+            
+            var pkg = PackagingConfig()
+            if let pkgDict = parsed["packaging"] as? [String: Any] {
+                pkg.feature = (pkgDict["feature"] as? String) ?? "monolithic"
+                pkg.core = (pkgDict["core"] as? String) ?? "spm"
+            }
+            
+            var cicdCfg = CICDConfig()
+            if let cicdDict = parsed["cicd"] as? [String: Any],
+               let providerStr = cicdDict["provider"] as? String,
+               let prov = CICDProvider(rawValue: providerStr) {
+                cicdCfg.provider = prov
+            }
+            
+            var customPaths: [String: String] = [:]
+            if let pathsDict = parsed["paths"] as? [String: Any] {
+                for (k, v) in pathsDict {
+                    if let str = v as? String { customPaths[k] = str }
+                }
+            }
+            
+            var overridesDict: [String: String] = [:]
+            if let ovDict = parsed["overrides"] as? [String: Any] {
+                for (k, v) in ovDict {
+                    if let str = v as? String { overridesDict[k] = str }
+                }
+            }
+            
+            var kitsDict: [String: [String]] = SwiftBlockConfig.defaultKits
+            if let kDict = parsed["kits"] as? [String: [String]] {
+                kitsDict = kDict
+            }
+            
+            return SwiftBlockConfig(
+                projectName: name,
+                bundlePrefix: prefix,
+                packaging: pkg,
+                organization: org,
+                generatorTool: tool,
+                cicd: cicdCfg,
+                overrides: overridesDict,
+                paths: ModulePaths(customPaths: customPaths),
+                kits: kitsDict
+            )
+        }
+        
+        throw SwiftBlockConfigError.configNotFound(finalPath)
     }
 
     public func save(to directoryPath: String = FileManager.default.currentDirectoryPath) throws {
-        let configFilePath = "\(directoryPath)/.swiftblock"
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let data = try encoder.encode(self)
-        guard var jsonString = String(data: data, encoding: .utf8) else {
-            throw SwiftBlockConfigError.encodingFailed
+        let fileManager = FileManager.default
+        let folderPath = "\(directoryPath)/.swiftblock"
+        var isDir: ObjCBool = false
+        if fileManager.fileExists(atPath: folderPath, isDirectory: &isDir) {
+            if !isDir.boolValue {
+                try? fileManager.removeItem(atPath: folderPath)
+                try fileManager.createDirectory(atPath: folderPath, withIntermediateDirectories: true)
+            }
+        } else {
+            try fileManager.createDirectory(atPath: folderPath, withIntermediateDirectories: true)
         }
-        jsonString = jsonString.trimmingCharacters(in: .newlines) + "\n"
-        try jsonString.write(toFile: configFilePath, atomically: true, encoding: .utf8)
+        
+        let configFilePath = "\(folderPath)/config.yml"
+        
+        var yaml = """
+        # SwiftBlock Project Configuration (.swiftblock/config.yml)
+        projectName: \(projectName)
+        bundlePrefix: \(bundlePrefix)
+        organization: \(organization)
+        generatorTool: \(generatorTool.rawValue)
+
+        packaging:
+          feature: \(packaging.feature)
+          core: \(packaging.core)
+
+        cicd:
+          provider: \(cicd.provider.rawValue)
+
+        paths:
+        """
+        
+        let allPaths = paths.allCustomPaths
+        if allPaths.isEmpty {
+            yaml += "\n  scene: App/Sources/Features\n  network: App/Sources/Core/Network"
+        } else {
+            for (key, val) in allPaths.sorted(by: { $0.key < $1.key }) {
+                yaml += "\n  \(key): \(val)"
+            }
+        }
+        
+        if !overrides.isEmpty {
+            yaml += "\n\noverrides:"
+            for (key, val) in overrides.sorted(by: { $0.key < $1.key }) {
+                yaml += "\n  \(key): \(val)"
+            }
+        }
+        
+        yaml += "\n\nkits:"
+        for (kitName, bricksList) in kits.sorted(by: { $0.key < $1.key }) {
+            yaml += "\n  \(kitName):"
+            for b in bricksList {
+                yaml += "\n    - \(b)"
+            }
+        }
+        
+        yaml += "\n"
+        try yaml.write(toFile: configFilePath, atomically: true, encoding: .utf8)
     }
 }
 

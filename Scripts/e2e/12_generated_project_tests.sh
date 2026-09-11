@@ -23,7 +23,7 @@ run_scenario_12() {
 
     # 4. Add a Feature Block (Scene) and verify its composable test file
     log_info "Sub-test 12.2: Adding Feature block 'Profile'..."
-    "$SWIFTBLOCK_BIN" add scene Profile --template-path "$MODULES_PATH" > /dev/null 2>&1
+    "$SWIFTBLOCK_BIN" snap scene Profile > /dev/null 2>&1
     assert_file_exists "App/Tests/Features/profile/scene/ProfileTests.swift" "Feature block Profile unit test file present"
 
     # 5. Verify Core SPM package compiles cleanly

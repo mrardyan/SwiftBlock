@@ -1,0 +1,6 @@
+name: featureflag
+category: infrastructure
+instantiation: singleton
+description: "Remote feature flags & toggles engine"
+defaultPath: "App/Sources/Core/FeatureFlag"
+requiresNameArgument: false

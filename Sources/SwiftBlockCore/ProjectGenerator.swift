@@ -12,7 +12,7 @@ public struct ProjectGeneratorOptions {
     public init(
         projectName: String,
         bundlePrefix: String = "com.company",
-        templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI",
+        templatePath: String? = nil,
         outputPath: String? = nil,
         isDryRun: Bool = false,
         isVerbose: Bool = false,
@@ -20,7 +20,21 @@ public struct ProjectGeneratorOptions {
     ) {
         self.projectName = projectName
         self.bundlePrefix = bundlePrefix
-        self.templatePath = templatePath
+        
+        let defaultShare = "/usr/local/share/swiftblock/Baseplates/Baseplate-SwiftUI"
+        let localDir = "\(FileManager.default.currentDirectoryPath)/Baseplates/Baseplate-SwiftUI"
+        let fallbackOld = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
+        
+        if let custom = templatePath, !custom.isEmpty {
+            self.templatePath = custom
+        } else if FileManager.default.fileExists(atPath: defaultShare) {
+            self.templatePath = defaultShare
+        } else if FileManager.default.fileExists(atPath: localDir) {
+            self.templatePath = localDir
+        } else {
+            self.templatePath = fallbackOld
+        }
+        
         self.outputPath = outputPath ?? "\(FileManager.default.currentDirectoryPath)/\(projectName)"
         self.isDryRun = isDryRun
         self.isVerbose = isVerbose
@@ -82,11 +96,7 @@ public class ProjectGenerator {
 
             // Load/Write SwiftBlockConfig
             let config = options.customConfig ?? SwiftBlockConfig(projectName: options.projectName, bundlePrefix: options.bundlePrefix)
-            let configFilePath = "\(options.outputPath)/.swiftblock"
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let configData = try encoder.encode(config)
-            try configData.write(to: URL(fileURLWithPath: configFilePath))
+            try config.save(to: options.outputPath)
 
             // 1. Generate Local SPM Packages if selected
             let packageGen = LocalPackageGenerator(fileManager: fileManager)
@@ -112,15 +122,16 @@ public class ProjectGenerator {
                     case .featureflag: defaultName = "FeatureFlags"
                     default: defaultName = type.rawValue.capitalized
                     }
-                    let subFolder = type.category == .core ? "Core" : "Modules"
-                    let modulesTemplatePath = "\(baseBlocksDir)/\(subFolder)"
                     let moduleOptions = ModuleGeneratorOptions(
                         type: type,
                         moduleName: defaultName,
-                        projectRootPath: options.outputPath,
-                        modulesTemplatePath: modulesTemplatePath
+                        projectRootPath: options.outputPath
                     )
-                    _ = try? moduleGen.generateModule(options: moduleOptions)
+                    do {
+                        _ = try moduleGen.generateModule(options: moduleOptions)
+                    } catch {
+                        print("⚠️ [Assembly] Failed to generate core block '\(type.rawValue)': \(error)")
+                    }
                 }
             }
 

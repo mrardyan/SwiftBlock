@@ -84,13 +84,13 @@ struct InteractiveWizardTests {
         #expect(options.modulesTemplatePath == "/tmp/core")
     }
 
-    @Test func runBlueprintCreateWizardSuccess() throws {
-        var inputs = ["", "my_custom_blueprint", "a"] // a = toggle all blocks
-        let result = try InteractiveWizard.runBlueprintCreateWizard(readLine: {
+    @Test func runKitCreateWizardSuccess() throws {
+        var inputs = ["", "my_custom_kit", "a"] // a = toggle all blocks
+        let result = try InteractiveWizard.runKitCreateWizard(readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
 
-        #expect(result.name == "my_custom_blueprint")
+        #expect(result.name == "my_custom_kit")
         #expect(!result.blocks.isEmpty)
     }
 

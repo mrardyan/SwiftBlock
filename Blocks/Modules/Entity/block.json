@@ -1,5 +1,0 @@
-{
-  "title": "Entity",
-  "description": "Domain Entity / DTO Model",
-  "defaultOutputPath": "App/Sources/Features/{module}/Entity"
-}

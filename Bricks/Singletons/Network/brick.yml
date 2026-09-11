@@ -1,0 +1,6 @@
+name: network
+category: infrastructure
+instantiation: singleton
+description: "HTTP Network Transport engine with URLSession & Concurrency"
+defaultPath: "App/Sources/Core/Network"
+requiresNameArgument: false

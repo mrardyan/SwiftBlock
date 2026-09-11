@@ -1,0 +1,6 @@
+name: storage
+category: infrastructure
+instantiation: singleton
+description: "Persistence storage engine (SwiftData/CoreData/UserDefaults)"
+defaultPath: "App/Sources/Core/Storage"
+requiresNameArgument: false

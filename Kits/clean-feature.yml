@@ -1,0 +1,22 @@
+name: clean-feature
+description: "Generates a full Clean Architecture feature slice with Scene, UseCase, Repository, and Service"
+
+variables:
+  - name: name
+    type: string
+    prompt: "Enter feature module name (e.g. Profile, Auth):"
+    required: true
+
+bricks:
+  - brick: generatives/architecture/scene
+    args:
+      name: "{{name}}"
+  - brick: generatives/architecture/usecase
+    args:
+      name: "{{name}}"
+  - brick: generatives/architecture/repository
+    args:
+      name: "{{name}}"
+  - brick: generatives/architecture/service
+    args:
+      name: "{{name}}"

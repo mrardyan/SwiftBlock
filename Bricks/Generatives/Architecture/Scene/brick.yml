@@ -1,0 +1,8 @@
+name: scene
+category: architecture
+instantiation: generative
+description: "MVVM Scene with SwiftUI View, ViewModel, and State"
+defaultPath: "App/Sources/Features"
+requiresNameArgument: true
+namingConvention:
+  postfix: "Scene"

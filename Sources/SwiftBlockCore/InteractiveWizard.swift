@@ -412,18 +412,18 @@ public class InteractiveWizard {
         )
     }
 
-    public static func runBlueprintCreateWizard(
+    public static func runKitCreateWizard(
         projectPath: String = FileManager.default.currentDirectoryPath,
         readLine: () -> String? = { InteractiveWizard.readLine() }
     ) throws -> (name: String, blocks: [String]) {
-        print("┌  \(ANSIColor.boldText("Design Architecture Blueprint"))")
+        print("┌  \(ANSIColor.boldText("Design Architecture Kit"))")
         print("│")
 
-        var blueprintName = ""
-        while blueprintName.isEmpty {
-            blueprintName = prompt(message: "Enter Blueprint Name", readLine: readLine).lowercased()
-            if blueprintName.isEmpty {
-                print("  \(ANSIColor.yellowText("⚠️"))  Blueprint name cannot be empty.")
+        var kitName = ""
+        while kitName.isEmpty {
+            kitName = prompt(message: "Enter Kit Name", readLine: readLine).lowercased()
+            if kitName.isEmpty {
+                print("  \(ANSIColor.yellowText("⚠️"))  Kit name cannot be empty.")
             }
         }
 
@@ -432,9 +432,9 @@ public class InteractiveWizard {
             TerminalPrompt.MultiChoiceOption(id: $0.commandName, title: $0.title, subtitle: $0.description, isSelected: true)
         }
 
-        let selectedBlockIds = TerminalPrompt.selectMultiChoice(title: "Select composed blocks for '\(blueprintName)'", options: blockOptions, readLineFallback: readLine)
+        let selectedBlockIds = TerminalPrompt.selectMultiChoice(title: "Select composed bricks for '\(kitName)'", options: blockOptions, readLineFallback: readLine)
         guard !selectedBlockIds.isEmpty else {
-            print("└  \(ANSIColor.redText("✖ Blueprint creation cancelled (no blocks selected)."))")
+            print("└  \(ANSIColor.redText("✖ Kit creation cancelled (no bricks selected)."))")
             throw InteractiveWizardError.cancelled
         }
 
@@ -442,7 +442,7 @@ public class InteractiveWizard {
             print("  \(ANSIColor.dimText("ℹ Note: ViewModel will access Repository directly without a UseCase layer."))")
         }
 
-        return (name: blueprintName, blocks: selectedBlockIds)
+        return (name: kitName, blocks: selectedBlockIds)
     }
 }
 

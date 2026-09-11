@@ -19,56 +19,139 @@ public struct BlockDiscoveryEngine {
         self.fileManager = fileManager
     }
 
-    /// Discovers all block specs inside a base template directory (e.g. /usr/local/share/swiftblock/Blocks)
-    public func discoverBlocks(in baseTemplatePath: String, category: ModuleCategory) -> [BlockSpec] {
-        let subfolder = category == .feature ? "Modules" : "Core"
-        let categoryDir = "\(baseTemplatePath)/\(subfolder)"
-
-        guard fileManager.fileExists(atPath: categoryDir),
-              let folderNames = try? fileManager.contentsOfDirectory(atPath: categoryDir) else {
-            return fallbackSpecs(for: category)
+    /// Smart Namespace Resolution (`[box/][category/]<brick>`)
+    /// Resolves brick name or path to the full file directory path containing brick.yml
+    public func resolveBrickPath(named nameOrPath: String, in baseDir: String) -> String? {
+        let nameLower = nameOrPath.lowercased()
+        
+        // 1. Direct path check
+        if fileManager.fileExists(atPath: nameOrPath) {
+            return nameOrPath
         }
-
-        var specs: [BlockSpec] = []
-
-        for folderName in folderNames.sorted() {
-            let fullPath = "\(categoryDir)/\(folderName)"
+        
+        // 2. Check explicitly under baseDir
+        let candidatePath = "\(baseDir)/\(nameOrPath)"
+        if fileManager.fileExists(atPath: candidatePath) {
+            return candidatePath
+        }
+        
+        // 3. Search under Bricks/ Singletons, Generatives/Architecture, Generatives/UI
+        let searchSubdirs = [
+            "Bricks/Singletons",
+            "Bricks/Generatives/Architecture",
+            "Bricks/Generatives/UI",
+            "Bricks",
+            "Blocks/Core",
+            "Blocks/Modules",
+            "Singletons",
+            "Generatives/Architecture",
+            "Generatives/UI"
+        ]
+        
+        for subdir in searchSubdirs {
+            let direct = "\(baseDir)/\(subdir)/\(nameOrPath)"
+            if fileManager.fileExists(atPath: direct) {
+                return direct
+            }
+            
+            // Check case-insensitive folder names
+            let parentDir = "\(baseDir)/\(subdir)"
+            if let items = try? fileManager.contentsOfDirectory(atPath: parentDir) {
+                for item in items {
+                    if item.lowercased() == nameLower {
+                        return "\(parentDir)/\(item)"
+                    }
+                }
+            }
+        }
+        
+        // 4. Recursive scan for matching brick directory across standard search roots
+        var searchRoots = [
+            baseDir,
+            "\(baseDir)/Bricks",
+            "\(FileManager.default.currentDirectoryPath)/Bricks",
+            "/usr/local/share/swiftblock/Bricks",
+            "/usr/local/share/swiftblock/Blocks"
+        ]
+        if let envRoot = ProcessInfo.processInfo.environment["SWIFTBLOCK_ROOT"] {
+            searchRoots.insert("\(envRoot)/Bricks", at: 0)
+            searchRoots.insert(envRoot, at: 1)
+        }
+        for root in searchRoots {
+            if fileManager.fileExists(atPath: root), let resolved = scanDirectory(root, targetName: nameLower) {
+                return resolved
+            }
+        }
+        
+        return nil
+    }
+    
+    private func scanDirectory(_ dir: String, targetName: String) -> String? {
+        guard fileManager.fileExists(atPath: dir),
+              let items = try? fileManager.contentsOfDirectory(atPath: dir) else {
+            return nil
+        }
+        
+        for item in items {
+            let fullPath = "\(dir)/\(item)"
             var isDir: ObjCBool = false
-            guard fileManager.fileExists(atPath: fullPath, isDirectory: &isDir), isDir.boolValue else {
+            if fileManager.fileExists(atPath: fullPath, isDirectory: &isDir), isDir.boolValue {
+                if item.lowercased() == targetName {
+                    let ymlPath = "\(fullPath)/brick.yml"
+                    let jsonPath = "\(fullPath)/block.json"
+                    if fileManager.fileExists(atPath: ymlPath) || fileManager.fileExists(atPath: jsonPath) {
+                        return fullPath
+                    }
+                }
+                if let subMatch = scanDirectory(fullPath, targetName: targetName) {
+                    return subMatch
+                }
+            }
+        }
+        return nil
+    }
+
+    public func discoverBlocks(in baseTemplatePath: String, category: ModuleCategory) -> [BlockSpec] {
+        let searchDirs = category == .feature ? ["Bricks/Generatives/Architecture", "Bricks/Generatives/UI", "Blocks/Modules"] : ["Bricks/Singletons", "Blocks/Core"]
+        
+        var specs: [BlockSpec] = []
+        for dir in searchDirs {
+            let categoryDir = "\(baseTemplatePath)/\(dir)"
+            guard fileManager.fileExists(atPath: categoryDir),
+                  let folderNames = try? fileManager.contentsOfDirectory(atPath: categoryDir) else {
                 continue
             }
-
-            // Level-1 folder directly under category is the Block Root
-            let commandName = folderName.lowercased()
-            let metadataPath = "\(fullPath)/block.json"
-            var metadata: BlockMetadata? = nil
-
-            if fileManager.fileExists(atPath: metadataPath),
-               let data = try? Data(contentsOf: URL(fileURLWithPath: metadataPath)) {
-                metadata = try? JSONDecoder().decode(BlockMetadata.self, from: data)
+            
+            for folderName in folderNames.sorted() {
+                let fullPath = "\(categoryDir)/\(folderName)"
+                var isDir: ObjCBool = false
+                guard fileManager.fileExists(atPath: fullPath, isDirectory: &isDir), isDir.boolValue else {
+                    continue
+                }
+                
+                let manifest = BrickManifest.load(fromPath: fullPath)
+                let commandName = manifest?.name ?? folderName.lowercased()
+                let title = manifest?.name.capitalized ?? folderName
+                let description = manifest?.description ?? "\(folderName) Brick"
+                let defaultOutputPath = manifest?.defaultPath ?? (category == .feature ? "App/Sources/Features/{module}/\(folderName)" : "App/Sources/Core/\(folderName)")
+                let moduleType = ModuleType(rawValue: commandName) ?? .scene
+                
+                let spec = BlockSpec(
+                    type: moduleType,
+                    commandName: commandName,
+                    title: title,
+                    description: description,
+                    category: category,
+                    defaultOutputPath: defaultOutputPath,
+                    defaultTemplateSubpath: "\(dir)/\(folderName)"
+                )
+                specs.append(spec)
             }
-
-            let title = metadata?.title ?? folderName
-            let description = metadata?.description ?? "\(folderName) Block"
-            let defaultOutputPath = metadata?.defaultOutputPath ?? (category == .feature ? "App/Sources/Features/{module}/\(folderName)" : "App/Sources/Core/\(folderName)")
-            let moduleType = ModuleType(rawValue: commandName) ?? .scene
-
-            let spec = BlockSpec(
-                type: moduleType,
-                commandName: commandName,
-                title: title,
-                description: description,
-                category: category,
-                defaultOutputPath: defaultOutputPath,
-                defaultTemplateSubpath: "\(subfolder)/\(folderName)"
-            )
-            specs.append(spec)
         }
 
         return specs.isEmpty ? fallbackSpecs(for: category) : specs
     }
 
-    /// Replaces tokens `{module}` and `{block}` in path templates
     public static func evaluateTokens(
         in pathTemplate: String,
         moduleName: String,
@@ -80,6 +163,8 @@ public struct BlockDiscoveryEngine {
         return pathTemplate
             .replacingOccurrences(of: "{module}", with: moduleLower)
             .replacingOccurrences(of: "{block}", with: blockLower)
+            .replacingOccurrences(of: "{{name}}", with: moduleName)
+            .replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
     }
 
     private func fallbackSpecs(for category: ModuleCategory) -> [BlockSpec] {

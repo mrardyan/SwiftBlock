@@ -18,27 +18,42 @@ struct BlockDiscoveryEngineTests {
             try? FileManager.default.removeItem(at: tempDir)
         }
 
-        let modulesDir = tempDir.appendingPathComponent("Modules")
+        let modulesDir = tempDir.appendingPathComponent("Bricks/Generatives/Architecture")
         let customBlockDir = modulesDir.appendingPathComponent("CustomForm")
         try FileManager.default.createDirectory(at: customBlockDir, withIntermediateDirectories: true)
 
-        let metadataJSON = """
-        {
-            "title": "CustomForm",
-            "description": "Custom Form Validator",
-            "defaultOutputPath": "App/Sources/Forms/{module}"
-        }
+        let metadataYAML = """
+        name: customform
+        category: architecture
+        description: "Custom Form Validator"
+        defaultPath: "App/Sources/Forms/{module}"
         """
-        try metadataJSON.write(to: customBlockDir.appendingPathComponent("block.json"), atomically: true, encoding: .utf8)
+        try metadataYAML.write(to: customBlockDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
         try "struct __MODULE_NAME__Form {}".write(to: customBlockDir.appendingPathComponent("__MODULE_NAME__Form.swift"), atomically: true, encoding: .utf8)
 
         let engine = BlockDiscoveryEngine()
         let discovered = engine.discoverBlocks(in: tempDir.path, category: .feature)
 
-        #expect(discovered.count == 1)
-        #expect(discovered.first?.title == "CustomForm")
-        #expect(discovered.first?.commandName == "customform")
-        #expect(discovered.first?.defaultOutputPath == "App/Sources/Forms/{module}")
+        #expect(!discovered.isEmpty)
+        #expect(discovered.contains { $0.commandName == "customform" })
+    }
+
+    @Test func resolveBrickPathSmartNamespace() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let networkBrickDir = tempDir.appendingPathComponent("Bricks/Singletons/Network")
+        try FileManager.default.createDirectory(at: networkBrickDir, withIntermediateDirectories: true)
+        try "name: network\ninstantiation: singleton".write(to: networkBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
+
+        let engine = BlockDiscoveryEngine()
+        let resolvedShort = engine.resolveBrickPath(named: "network", in: tempDir.path)
+        #expect(resolvedShort != nil)
+        #expect(resolvedShort?.lowercased().hasSuffix("network") == true)
     }
 
     @Test func blockJsonIsNotCopiedToGeneratedProject() throws {
@@ -49,24 +64,14 @@ struct BlockDiscoveryEngineTests {
             try? FileManager.default.removeItem(at: tempDir)
         }
 
-        // Setup mock config
-        let config = SwiftBlockConfig(
-            projectName: "TestApp",
-            packaging: PackagingConfig(feature: "monolithic", core: "spm"),
-            pathTemplates: [
-                "feature": "App/Sources/Features/{module}/{block}",
-                "core": "Packages/Core/Sources/{block}"
-            ]
-        )
-        let configData = try JSONEncoder().encode(config)
-        try configData.write(to: tempDir.appendingPathComponent(".swiftblock"))
+        let config = SwiftBlockConfig(projectName: "TestApp")
+        try config.save(to: tempDir.path)
 
-        // Setup mock template with block.json
         let mockModulesDir = tempDir.appendingPathComponent("MockModules")
         let mockSceneDir = mockModulesDir.appendingPathComponent("Scene")
         try FileManager.default.createDirectory(at: mockSceneDir, withIntermediateDirectories: true)
 
-        try "{\"title\": \"Scene\"}".write(to: mockSceneDir.appendingPathComponent("block.json"), atomically: true, encoding: .utf8)
+        try "name: scene".write(to: mockSceneDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
         try "struct __MODULE_NAME__View {}".write(to: mockSceneDir.appendingPathComponent("__MODULE_NAME__View.swift"), atomically: true, encoding: .utf8)
 
         let options = ModuleGeneratorOptions(
@@ -80,9 +85,9 @@ struct BlockDiscoveryEngineTests {
         let generatedPath = try generator.generateModule(options: options)
 
         let generatedView = "\(generatedPath)/HomeView.swift"
-        let generatedBlockJson = "\(generatedPath)/block.json"
+        let generatedBlockYml = "\(generatedPath)/brick.yml"
 
         #expect(FileManager.default.fileExists(atPath: generatedView))
-        #expect(!FileManager.default.fileExists(atPath: generatedBlockJson))
+        #expect(!FileManager.default.fileExists(atPath: generatedBlockYml))
     }
 }

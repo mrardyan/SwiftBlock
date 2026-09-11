@@ -1,0 +1,6 @@
+name: auth
+category: infrastructure
+instantiation: singleton
+description: "Auth session & keychain token management"
+defaultPath: "App/Sources/Core/Auth"
+requiresNameArgument: false

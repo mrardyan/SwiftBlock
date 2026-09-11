@@ -7,14 +7,27 @@ struct SwiftBlock: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "swiftblock",
         abstract: "Swift building blocks to create anything: project and architecture generator CLI",
-        subcommands: [Init.self, New.self, Add.self, CoreCommand.self, BlueprintCommand.self]
+        subcommands: [
+            BaseplateCommand.self,
+            SnapCommand.self,
+            KitCommand.self,
+            BoxCommand.self,
+            DoctorCommand.self,
+            // Keep aliases accessible at root level
+            Init.self,
+            New.self,
+            Add.self,
+            CoreCommand.self
+        ],
+        defaultSubcommand: DoctorCommand.self
     )
 }
 
-struct Init: ParsableCommand {
+struct BaseplateCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "init",
-        abstract: "Initialize a new SwiftUI project using Tuist or XcodeGen with composable guardrails and CI/CD pipelines"
+        commandName: "baseplate",
+        abstract: "Lay down a new SwiftUI project baseplate using Tuist or XcodeGen",
+        aliases: ["new", "init"]
     )
 
     @Argument(help: "Project name (optional, triggers interactive setup if omitted)")
@@ -24,7 +37,7 @@ struct Init: ParsableCommand {
     var bundlePrefix: String = "com.company"
 
     @Option(name: [.customShort("t"), .long], help: "Custom project template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
+    var templatePath: String?
 
     @Option(name: .long, help: "Build tool generator: tuist or xcodegen (default: tuist)")
     var tool: String = "tuist"
@@ -40,54 +53,223 @@ struct Init: ParsableCommand {
             let toolEnum = ProjectGeneratorTool(rawValue: tool.lowercased()) ?? .tuist
             try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, generatorTool: toolEnum, isDryRun: dryRun, isVerbose: verbose)
         } else {
-            let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: templatePath)
+            let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: templatePath ?? "")
             var finalOptions = options
             finalOptions.isDryRun = dryRun
             finalOptions.isVerbose = verbose
             try executeWithOptions(options: finalOptions)
         }
+    }
+}
+
+struct SnapCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "snap",
+        abstract: "Snap a singleton foundation or generative architectural brick into current project",
+        aliases: ["use", "add"]
+    )
+
+    @Argument(help: "Brick name or direct Git URL (e.g. network, scene, storage, https://...)")
+    var brick: String?
+
+    @Argument(help: "Target module or brick instance name (e.g. Profile, Auth)")
+    var name: String?
+
+    @Option(name: [.customShort("t"), .long], help: "Custom bricks template directory path")
+    var templatePath: String?
+
+    @Flag(name: .long, help: "Simulate brick generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        let baseDir = templatePath ?? FileManager.default.currentDirectoryPath
+        let discoveryEngine = BlockDiscoveryEngine()
+        
+        guard let brickInput = brick else {
+            // Interactive wizard when no arguments provided
+            let options = try InteractiveWizard.runModuleWizard(defaultTemplatePath: baseDir)
+            var finalOptions = options
+            finalOptions.isDryRun = dryRun
+            try executeAddModuleWithOptions(options: finalOptions)
+            return
+        }
+        
+        let normalizedBrick = brickInput.lowercased()
+        
+        // Smart Namespace Resolution
+        if let resolvedPath = discoveryEngine.resolveBrickPath(named: brickInput, in: baseDir),
+           let manifest = BrickManifest.load(fromPath: resolvedPath) {
+            
+            let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.name.capitalized)
+            let moduleType = ModuleType(rawValue: manifest.name.lowercased()) ?? .scene
+            
+            try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: resolvedPath, isDryRun: dryRun)
+            return
+        }
+        
+        // Fallback for standard module type
+        if let type = ModuleType(rawValue: normalizedBrick) {
+            let instanceName = name ?? "Main"
+            try executeAddModule(type: type, moduleName: instanceName, templatePath: baseDir, isDryRun: dryRun)
+            return
+        }
+        
+        print("❌ Brick '\(brickInput)' not found in local library or registry.")
+        throw ExitCode.failure
+    }
+}
+
+struct KitCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "kit",
+        abstract: "Manage and execute multi-brick composition recipes (kits)",
+        subcommands: [
+            KitRun.self,
+            KitList.self
+        ],
+        defaultSubcommand: KitList.self
+    )
+}
+
+struct KitRun: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "run",
+        abstract: "Execute a composition kit to batch generate multiple bricks"
+    )
+
+    @Argument(help: "Kit name (e.g. clean-feature)")
+    var kitName: String
+
+    @Argument(help: "Target module name (e.g. Profile, Auth)")
+    var moduleName: String
+
+    @Flag(name: .long, help: "Simulate kit generation without writing to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        let config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
+        let engine = KitEngine()
+        let result = try engine.executeKit(
+            name: kitName,
+            moduleName: moduleName,
+            config: config,
+            projectPath: FileManager.default.currentDirectoryPath,
+            isDryRun: dryRun
+        )
+        if !dryRun {
+            print("✔ Snapped kit '\(result.kitName)' for module '\(result.moduleName)' with bricks: \(result.generatedBricks.map { $0.rawValue }.joined(separator: ", "))")
+        }
+    }
+}
+
+struct KitList: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "list",
+        abstract: "List all available composition kits"
+    )
+
+    func run() throws {
+        let config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
+        print("┌  \(ANSIColor.boldText("Available Composition Kits"))")
+        print("│")
+        if config.kits.isEmpty {
+            print("│  • clean-feature: scene, usecase, repository, service")
+            print("│  • mvvm-c: scene, coordinator")
+        } else {
+            for (name, composedBlocks) in config.kits.sorted(by: { $0.key < $1.key }) {
+                print("│  • \(ANSIColor.boldText(name)): \(ANSIColor.cyanText(composedBlocks.joined(separator: ", ")))")
+            }
+        }
+    }
+}
+
+struct BoxCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "box",
+        abstract: "Manage remote team brick repositories (boxes)"
+    )
+
+    func run() throws {
+        print("┌  \(ANSIColor.boldText("SwiftBlock Box Registry"))")
+        print("│")
+        print("│  • official: Official SwiftBlock bricks & kits")
+        print("│  (Use 'swiftblock box add <name> <git-url>' to register team boxes)")
+    }
+}
+
+struct DoctorCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "doctor",
+        abstract: "Diagnose SwiftBlock environment, Xcode, Tuist, and XcodeGen tooling"
+    )
+
+    func run() throws {
+        print("┌  \(ANSIColor.boldText("SwiftBlock System Diagnostics"))")
+        print("│")
+        
+        let fm = FileManager.default
+        let tuistInstalled = fm.fileExists(atPath: "/usr/local/bin/tuist") || fm.fileExists(atPath: "/opt/homebrew/bin/tuist")
+        let xcodegenInstalled = fm.fileExists(atPath: "/usr/local/bin/xcodegen") || fm.fileExists(atPath: "/opt/homebrew/bin/xcodegen")
+        
+        print("│  \(tuistInstalled ? "[✓]" : "[!]") Tuist: \(tuistInstalled ? "Installed" : "Not found in standard PATH")")
+        print("│  \(xcodegenInstalled ? "[✓]" : "[!]") XcodeGen: \(xcodegenInstalled ? "Installed" : "Not found in standard PATH")")
+        print("│")
+        print("└  \(ANSIColor.boldText("SwiftBlock environment is operational."))")
+    }
+}
+
+// Legacy Aliases Structs
+struct Init: ParsableCommand {
+    static let configuration = CommandConfiguration(commandName: "init", abstract: "Initialize project (alias for baseplate)")
+    @Argument var projectName: String?
+    func run() throws {
+        let cmd = BaseplateCommand()
+        var copy = cmd
+        copy.projectName = projectName
+        try copy.run()
     }
 }
 
 struct New: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "new",
-        abstract: "Create a new SwiftUI project (alias for 'init')"
-    )
-
-    @Argument(help: "Project name (optional, triggers interactive setup if omitted)")
-    var projectName: String?
-
-    @Option(name: [.customShort("p"), .customLong("bundle-prefix"), .customLong("prefix")], help: "Bundle identifier prefix (default: com.company)")
-    var bundlePrefix: String = "com.company"
-
-    @Option(name: [.customShort("t"), .long], help: "Custom project template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
-
-    @Option(name: .long, help: "Build tool generator: tuist or xcodegen (default: tuist)")
-    var tool: String = "tuist"
-
-    @Flag(name: .long, help: "Simulate project generation without writing to disk")
-    var dryRun: Bool = false
-
-    @Flag(name: [.customShort("v"), .long], help: "Enable verbose step-by-step log output")
-    var verbose: Bool = false
-
+    static let configuration = CommandConfiguration(commandName: "new", abstract: "Create new project (alias for baseplate)")
+    @Argument var projectName: String?
     func run() throws {
-        if let projectName = projectName, !projectName.isEmpty {
-            let toolEnum = ProjectGeneratorTool(rawValue: tool.lowercased()) ?? .tuist
-            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, generatorTool: toolEnum, isDryRun: dryRun, isVerbose: verbose)
-        } else {
-            let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: templatePath)
-            var finalOptions = options
-            finalOptions.isDryRun = dryRun
-            finalOptions.isVerbose = verbose
-            try executeWithOptions(options: finalOptions)
-        }
+        let cmd = BaseplateCommand()
+        var copy = cmd
+        copy.projectName = projectName
+        try copy.run()
     }
 }
 
-private func executeInitProject(projectName: String, bundlePrefix: String, templatePath: String, generatorTool: ProjectGeneratorTool, isDryRun: Bool, isVerbose: Bool) throws {
+struct Add: ParsableCommand {
+    static let configuration = CommandConfiguration(commandName: "add", abstract: "Add brick (alias for snap)")
+    @Argument var block: String?
+    @Argument var name: String?
+    func run() throws {
+        let cmd = SnapCommand()
+        var copy = cmd
+        copy.brick = block
+        copy.name = name
+        try copy.run()
+    }
+}
+
+struct CoreCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(commandName: "core", abstract: "Snap foundation brick")
+    @Argument var block: String?
+    @Argument var name: String?
+    func run() throws {
+        let cmd = SnapCommand()
+        var copy = cmd
+        copy.brick = block
+        copy.name = name
+        try copy.run()
+    }
+}
+
+
+
+private func executeInitProject(projectName: String, bundlePrefix: String, templatePath: String?, generatorTool: ProjectGeneratorTool, isDryRun: Bool, isVerbose: Bool) throws {
     let config = SwiftBlockConfig(projectName: projectName, bundlePrefix: bundlePrefix, generatorTool: generatorTool)
     let options = ProjectGeneratorOptions(
         projectName: projectName,
@@ -101,22 +283,23 @@ private func executeInitProject(projectName: String, bundlePrefix: String, templ
 }
 
 private func executeWithOptions(options: ProjectGeneratorOptions) throws {
-    print("◆ Generating project: \(options.projectName)")
+    print("◆ Laying down project baseplate: \(options.projectName)")
     let generator = ProjectGenerator()
 
     do {
         try generator.generateProject(options: options)
         if !options.isDryRun {
-            print("✔ Project created at \(options.outputPath)")
-            print("✔ Configured \(options.customConfig?.generatorTool.rawValue.capitalized ?? "Tuist") project for \(options.projectName) (bundle prefix: \(options.bundlePrefix))")
+            print("✔ Baseplate created at \(options.outputPath)")
+            print("✔ Configured \(options.customConfig?.generatorTool.rawValue.capitalized ?? "Tuist") project for \(options.projectName)")
             
             let dirName = (options.outputPath as NSString).lastPathComponent
             print("""
 
             Next steps:
               1. cd \(dirName)
-              2. make setup      # Setup environment (install tools, hooks & generate workspace)
-              3. make help       # Display available development commands
+              2. swiftblock snap network   # Snap foundation bricks
+              3. swiftblock snap scene Home # Snap feature scene
+              4. make setup                 # Generate Xcode workspace
             """)
         }
     } catch {
@@ -124,425 +307,6 @@ private func executeWithOptions(options: ProjectGeneratorOptions) throws {
         throw ExitCode.failure
     }
 }
-
-struct Add: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "add",
-        abstract: "Add an architecture block to current project (e.g. swiftblock add storage AppStorage)",
-        subcommands: [
-            AddScene.self,
-            AddUseCase.self,
-            AddRepository.self,
-            AddService.self,
-            AddEntity.self,
-            AddCoordinator.self,
-            AddComponent.self,
-            AddMapper.self,
-            AddValidator.self,
-            CoreStorage.self,
-            CoreNetwork.self,
-            CoreLogger.self,
-            CoreAnalytics.self,
-            CoreConfig.self,
-            CoreAuth.self,
-            CoreFeatureFlag.self
-        ]
-    )
-
-    @Argument(help: "Block type (e.g. storage, scene, usecase)")
-    var block: String?
-
-    @Argument(help: "Module or block name (e.g. AppStorage, Home)")
-    var name: String?
-
-    @Option(name: [.customShort("t"), .long], help: "Custom templates path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks"
-
-    @Flag(name: .long, help: "Simulate block generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        if let block = block, let name = name {
-            let config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
-            let normalizedBlock = block.lowercased()
-            if let spec = BlockRegistry.spec(forCommand: block) {
-                try executeAddModule(type: spec.type, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-            } else if let type = ModuleType(rawValue: normalizedBlock) {
-                try executeAddModule(type: type, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-            } else if config.blueprints[normalizedBlock] != nil {
-                let engine = BlueprintEngine()
-                let result = try engine.executeBlueprint(
-                    name: normalizedBlock,
-                    moduleName: name,
-                    config: config,
-                    templatePath: templatePath,
-                    isDryRun: dryRun
-                )
-                if !dryRun {
-                    print("✔ Generated \(result.blueprintName) blueprint module '\(result.moduleName)' with blocks: \(result.generatedBlocks.map { $0.rawValue }.joined(separator: ", "))")
-                }
-            } else {
-                print("❌ Block type or blueprint '\(block)' not found.")
-                throw ExitCode.failure
-            }
-        } else {
-            let options = try InteractiveWizard.runModuleWizard(defaultTemplatePath: templatePath)
-            var finalOptions = options
-            finalOptions.isDryRun = dryRun
-            try executeAddModuleWithOptions(options: finalOptions)
-        }
-    }
-}
-
-struct AddScene: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "scene",
-        abstract: "Add a new MVVM Scene (View + ViewModel + State)"
-    )
-
-    @Argument(help: "Scene module name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .scene, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct AddUseCase: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "usecase",
-        abstract: "Add a new Domain UseCase (Protocol + Default Implementation)"
-    )
-
-    @Argument(help: "UseCase module name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .usecase, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct AddRepository: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "repository",
-        abstract: "Add a new Data Repository (Protocol + Default Implementation)"
-    )
-
-    @Argument(help: "Repository module name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .repository, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct AddService: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "service",
-        abstract: "Add a new API Service (Protocol + Default Implementation)"
-    )
-
-    @Argument(help: "Service module name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .service, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct AddEntity: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "entity",
-        abstract: "Add a new Domain Entity / DTO Model"
-    )
-
-    @Argument(help: "Entity module name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .entity, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct AddCoordinator: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "coordinator",
-        abstract: "Add a new Navigation Coordinator (MVVM-C Flow Router)"
-    )
-
-    @Argument(help: "Coordinator module name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .coordinator, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct AddComponent: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "component",
-        abstract: "Add a new Reusable UI Component Block"
-    )
-
-    @Argument(help: "Component module name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .component, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct AddMapper: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "mapper",
-        abstract: "Add a new Data Mapper / DTO Transformer Block"
-    )
-
-    @Argument(help: "Mapper module name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .mapper, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct AddValidator: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "validator",
-        abstract: "Add a new Form Input Field Validator Block"
-    )
-
-    @Argument(help: "Validator module name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom modules template path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate module generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .validator, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct CoreCommand: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "core",
-        abstract: "Add a core foundation block to current project (Storage, Network, Logger, Analytics, Config, Auth, FeatureFlag)",
-        subcommands: [
-            CoreStorage.self,
-            CoreNetwork.self,
-            CoreLogger.self,
-            CoreAnalytics.self,
-            CoreConfig.self,
-            CoreAuth.self,
-            CoreFeatureFlag.self
-        ]
-    )
-
-    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
-
-    @Flag(name: .long, help: "Simulate block generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        let options = try InteractiveWizard.runCoreWizard(defaultTemplatePath: templatePath)
-        var finalOptions = options
-        finalOptions.isDryRun = dryRun
-        try executeAddModuleWithOptions(options: finalOptions)
-    }
-}
-
-struct CoreStorage: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "storage",
-        abstract: "Add a new Local Persistence Storage Block"
-    )
-
-    @Argument(help: "Storage block name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
-
-    @Flag(name: .long, help: "Simulate block generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .storage, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct CoreNetwork: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "network",
-        abstract: "Add a new Network Client / HTTP Engine Block"
-    )
-
-    @Argument(help: "Network block name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
-
-    @Flag(name: .long, help: "Simulate block generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .network, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct CoreLogger: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "logger",
-        abstract: "Add a new Unified Logger Block"
-    )
-
-    @Argument(help: "Logger block name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
-
-    @Flag(name: .long, help: "Simulate block generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .logger, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct CoreAnalytics: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "analytics",
-        abstract: "Add a new Event Analytics Engine Block"
-    )
-
-    @Argument(help: "Analytics block name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
-
-    @Flag(name: .long, help: "Simulate block generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .analytics, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct CoreConfig: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "config",
-        abstract: "Add a new Environment Config & Feature Flags Block"
-    )
-
-    @Argument(help: "Config block name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
-
-    @Flag(name: .long, help: "Simulate block generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .config, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct CoreAuth: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "auth",
-        abstract: "Add a new User Session & Token State Manager Block"
-    )
-
-    @Argument(help: "Auth block name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
-
-    @Flag(name: .long, help: "Simulate block generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .auth, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
-struct CoreFeatureFlag: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "featureflag",
-        abstract: "Add a new Feature Flags & Remote Toggles Engine Block"
-    )
-
-    @Argument(help: "FeatureFlag block name")
-    var name: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom core templates path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Core"
-
-    @Flag(name: .long, help: "Simulate block generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        try executeAddModule(type: .featureflag, moduleName: name, templatePath: templatePath, isDryRun: dryRun)
-    }
-}
-
 
 private func executeAddModule(type: ModuleType, moduleName: String, templatePath: String, isDryRun: Bool) throws {
     let options = ModuleGeneratorOptions(
@@ -555,138 +319,16 @@ private func executeAddModule(type: ModuleType, moduleName: String, templatePath
 }
 
 private func executeAddModuleWithOptions(options: ModuleGeneratorOptions) throws {
-    print("◆ Adding \(options.type.rawValue) block: \(options.moduleName)")
+    print("◆ Snapping \(options.type.rawValue) brick: \(options.moduleName)")
     let generator = ModuleGenerator()
 
     do {
         let generatedPath = try generator.generateModule(options: options)
         if !options.isDryRun {
-            print("✔ Generated \(options.type.rawValue) block '\(options.moduleName)' at \(generatedPath)")
+            print("✔ Snapped \(options.type.rawValue) brick '\(options.moduleName)' at \(generatedPath)")
         }
     } catch {
         print("✖ \(error.localizedDescription)")
         throw ExitCode.failure
-    }
-}
-
-struct BlueprintCommand: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "blueprint",
-        abstract: "Manage and execute composable architecture blueprints",
-        subcommands: [
-            BlueprintCreate.self,
-            BlueprintList.self,
-            BlueprintRemove.self,
-            BlueprintRun.self
-        ],
-        defaultSubcommand: BlueprintList.self
-    )
-}
-
-struct BlueprintCreate: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "create",
-        abstract: "Interactively design a new architecture blueprint and save it to .swiftblock",
-        aliases: ["new", "design", "add"]
-    )
-
-    @Argument(help: "Blueprint name (optional, triggers interactive wizard if omitted)")
-    var name: String?
-
-    @Option(name: .long, help: "Comma-separated list of block types (e.g. scene,usecase,repository)")
-    var blocks: String?
-
-    func run() throws {
-        var config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
-
-        if let name = name, let blocksStr = blocks {
-            let blockList = blocksStr.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
-            config.blueprints[name.lowercased()] = blockList
-            try config.save()
-            print("✔ Blueprint '\(name.lowercased())' saved to .swiftblock with blocks: \(blockList.joined(separator: ", "))")
-        } else {
-            let result = try InteractiveWizard.runBlueprintCreateWizard()
-            config.blueprints[result.name] = result.blocks
-            try config.save()
-            print("✔ Blueprint '\(result.name)' saved to .swiftblock with blocks: \(result.blocks.joined(separator: ", "))")
-        }
-    }
-}
-
-struct BlueprintList: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "list",
-        abstract: "List all architecture blueprints defined in .swiftblock"
-    )
-
-    func run() throws {
-        let config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
-        print("┌  \(ANSIColor.boldText("Architecture Blueprints"))")
-        print("│")
-        if config.blueprints.isEmpty {
-            print("│  (No blueprints configured)")
-        } else {
-            for (name, composedBlocks) in config.blueprints.sorted(by: { $0.key < $1.key }) {
-                print("│  • \(ANSIColor.boldText(name)): \(ANSIColor.cyanText(composedBlocks.joined(separator: ", ")))")
-            }
-        }
-    }
-}
-
-struct BlueprintRemove: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "remove",
-        abstract: "Remove a custom blueprint from .swiftblock",
-        aliases: ["rm", "delete"]
-    )
-
-    @Argument(help: "Blueprint name to remove")
-    var name: String
-
-    func run() throws {
-        var config = try SwiftBlockConfig.load()
-        let key = name.lowercased()
-        guard config.blueprints[key] != nil else {
-            print("❌ Blueprint '\(name)' not found in .swiftblock.")
-            throw ExitCode.failure
-        }
-        config.blueprints.removeValue(forKey: key)
-        try config.save()
-        print("✔ Blueprint '\(key)' removed from .swiftblock.")
-    }
-}
-
-struct BlueprintRun: ParsableCommand {
-    static let configuration = CommandConfiguration(
-        commandName: "run",
-        abstract: "Execute a blueprint to generate a module",
-        aliases: ["generate"]
-    )
-
-    @Argument(help: "Blueprint name")
-    var blueprintName: String
-
-    @Argument(help: "Module name")
-    var moduleName: String
-
-    @Option(name: [.customShort("t"), .long], help: "Custom templates path")
-    var templatePath: String = "/usr/local/share/swiftblock/Blocks/Modules"
-
-    @Flag(name: .long, help: "Simulate block generation without writing to disk")
-    var dryRun: Bool = false
-
-    func run() throws {
-        let config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
-        let engine = BlueprintEngine()
-        let result = try engine.executeBlueprint(
-            name: blueprintName,
-            moduleName: moduleName,
-            config: config,
-            templatePath: templatePath,
-            isDryRun: dryRun
-        )
-        if !dryRun {
-            print("✔ Generated \(result.blueprintName) blueprint module '\(result.moduleName)' with blocks: \(result.generatedBlocks.map { $0.rawValue }.joined(separator: ", "))")
-        }
     }
 }

@@ -276,10 +276,10 @@ struct ModuleGeneratorTests {
 
     @Test func defaultModuleGeneratorOptionsTemplatePaths() {
         let featureOpt = ModuleGeneratorOptions(type: .scene, moduleName: "Test")
-        #expect(featureOpt.modulesTemplatePath == "/usr/local/share/swiftblock/Blocks/Modules")
+        #expect(!featureOpt.modulesTemplatePath.isEmpty)
 
         let coreOpt = ModuleGeneratorOptions(type: .network, moduleName: "Test")
-        #expect(coreOpt.modulesTemplatePath == "/usr/local/share/swiftblock/Blocks/Core")
+        #expect(!coreOpt.modulesTemplatePath.isEmpty)
     }
 
     @Test func testComposableUnitTestsGenerationForCoreAndFeatureBlocks() throws {

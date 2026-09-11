@@ -5,13 +5,13 @@ run_scenario() {
 
     cd "$TEST_DIR/TestNewApp"
 
-    "$SWIFTBLOCK_BIN" core storage Database -t "$CORE_PATH"
-    "$SWIFTBLOCK_BIN" core network HTTPClient -t "$CORE_PATH"
-    "$SWIFTBLOCK_BIN" core logger OSLogger -t "$CORE_PATH"
-    "$SWIFTBLOCK_BIN" core analytics Telemetry -t "$CORE_PATH"
-    "$SWIFTBLOCK_BIN" core config EnvConfig -t "$CORE_PATH"
-    "$SWIFTBLOCK_BIN" core auth UserSession -t "$CORE_PATH"
-    "$SWIFTBLOCK_BIN" core featureflag RemoteToggles -t "$CORE_PATH"
+    "$SWIFTBLOCK_BIN" snap storage Database
+    "$SWIFTBLOCK_BIN" snap network HTTPClient
+    "$SWIFTBLOCK_BIN" snap logger OSLogger
+    "$SWIFTBLOCK_BIN" snap analytics Telemetry
+    "$SWIFTBLOCK_BIN" snap config EnvConfig
+    "$SWIFTBLOCK_BIN" snap auth UserSession
+    "$SWIFTBLOCK_BIN" snap featureflag RemoteToggles
 
     assert_file_exists "Packages/Core/Sources/Core/storage/Database.swift" "Core storage block present"
     assert_file_exists "Packages/Core/Sources/Core/network/HTTPClient.swift" "Core network block present"

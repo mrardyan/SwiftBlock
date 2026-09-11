@@ -8,7 +8,7 @@ run_scenario() {
     printf "InteractivePipedApp\ncom.piped.app\n1\n1\n1\n1\n1\ny\ny\n" | "$SWIFTBLOCK_BIN" init --template-path "$TEMPLATE_PATH" > /dev/null 2>&1
 
     assert_dir_exists "InteractivePipedApp" "InteractivePipedApp generated via piped stdin"
-    assert_file_exists "InteractivePipedApp/.swiftblock" ".swiftblock config generated"
+    assert_file_exists "InteractivePipedApp/.swiftblock/config.yml" ".swiftblock/config.yml generated"
 
     cd "$TEST_DIR"
 }

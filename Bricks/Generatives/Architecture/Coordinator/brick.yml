@@ -1,0 +1,8 @@
+name: coordinator
+category: architecture
+instantiation: generative
+description: "MVVM-C Router Coordinator flow"
+defaultPath: "App/Sources/Features"
+requiresNameArgument: true
+namingConvention:
+  postfix: "Coordinator"

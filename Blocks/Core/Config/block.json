@@ -1,5 +1,0 @@
-{
-  "title": "Config",
-  "description": "Environment Config & Feature Flags",
-  "defaultOutputPath": "App/Sources/Core/Config"
-}

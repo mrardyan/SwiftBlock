@@ -22,8 +22,8 @@ run_scenario_11() {
     printf "TestTechFirstApp\ncom.company.techfirst\n1\n1\n1\n2\ny\n1\ny\ny\n" | "$SWIFTBLOCK_BIN" init --template-path "$TEMPLATE_PATH" > /dev/null 2>&1
 
     assert_dir_exists "TestTechFirstApp" "TestTechFirstApp directory created"
-    assert_file_exists "TestTechFirstApp/.swiftblock" ".swiftblock exists"
-    assert_file_contains "TestTechFirstApp/.swiftblock" "technical-first" ".swiftblock contains technical-first strategy"
+    assert_file_exists "TestTechFirstApp/.swiftblock/config.yml" ".swiftblock/config.yml exists"
+    assert_file_contains "TestTechFirstApp/.swiftblock/config.yml" "technical-first" ".swiftblock/config.yml contains technical-first strategy"
 
     log_success "Scenario 11 matrix combinations completed successfully!"
 }

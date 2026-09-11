@@ -5,7 +5,7 @@ run_scenario() {
 
     cd "$TEST_DIR"
 
-    if "$SWIFTBLOCK_BIN" new TestNewApp --template-path "$TEMPLATE_PATH" 2>/dev/null; then
+    if "$SWIFTBLOCK_BIN" baseplate TestNewApp --template-path "$TEMPLATE_PATH" 2>/dev/null; then
         log_error "Overwriting existing directory should have failed!"
         exit 1
     else

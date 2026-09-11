@@ -1,5 +1,0 @@
-{
-  "title": "Mapper",
-  "description": "DTO to Domain Entity Transformer",
-  "defaultOutputPath": "App/Sources/Features/{module}/Mapper"
-}

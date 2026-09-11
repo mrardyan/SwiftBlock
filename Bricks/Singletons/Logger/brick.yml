@@ -1,0 +1,6 @@
+name: logger
+category: infrastructure
+instantiation: singleton
+description: "Unified OSLog logger wrapper"
+defaultPath: "App/Sources/Core/Logger"
+requiresNameArgument: false

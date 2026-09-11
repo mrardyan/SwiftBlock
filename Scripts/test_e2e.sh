@@ -17,9 +17,9 @@ log_info "Step 1: Compiling SwiftBlock release binary..."
 swift build -c release
 
 export SWIFTBLOCK_BIN="$ORIGINAL_DIR/.build/release/swiftblock"
-export TEMPLATE_PATH="$ORIGINAL_DIR/Blocks/Projects/BaseProject-SwiftUI"
-export MODULES_PATH="$ORIGINAL_DIR/Blocks/Modules"
-export CORE_PATH="$ORIGINAL_DIR/Blocks/Core"
+export TEMPLATE_PATH="$ORIGINAL_DIR/Baseplates/Baseplate-SwiftUI"
+export MODULES_PATH="$ORIGINAL_DIR/Bricks/Generatives/Architecture"
+export SWIFTBLOCK_ROOT="$ORIGINAL_DIR"
 
 if [[ ! -f "$SWIFTBLOCK_BIN" ]]; then
     log_error "SwiftBlock binary not found at $SWIFTBLOCK_BIN"

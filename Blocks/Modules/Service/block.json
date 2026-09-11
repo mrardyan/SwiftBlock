@@ -1,5 +1,0 @@
-{
-  "title": "Service",
-  "description": "API Service Protocol + Implementation",
-  "defaultOutputPath": "App/Sources/Features/{module}/Service"
-}

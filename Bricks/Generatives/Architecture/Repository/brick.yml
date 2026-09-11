@@ -1,0 +1,8 @@
+name: repository
+category: architecture
+instantiation: generative
+description: "Data Repository protocol and implementation"
+defaultPath: "App/Sources/Features"
+requiresNameArgument: true
+namingConvention:
+  postfix: "Repository"

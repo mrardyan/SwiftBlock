@@ -20,8 +20,23 @@ public struct ModuleGeneratorOptions {
         if let templatePath = modulesTemplatePath, !templatePath.isEmpty {
             self.modulesTemplatePath = templatePath
         } else {
-            let subFolder = type.category == .core ? "Core" : "Modules"
-            self.modulesTemplatePath = "/usr/local/share/swiftblock/Blocks/\(subFolder)"
+            let envRoot = ProcessInfo.processInfo.environment["SWIFTBLOCK_ROOT"]
+            let envBricks = envRoot != nil ? "\(envRoot!)/Bricks" : ""
+            let localBricks = "\(FileManager.default.currentDirectoryPath)/Bricks"
+            let shareBricks = "/usr/local/share/swiftblock/Bricks"
+
+            if !envBricks.isEmpty && FileManager.default.fileExists(atPath: envBricks) {
+                self.modulesTemplatePath = envBricks
+            } else if FileManager.default.fileExists(atPath: localBricks) {
+                self.modulesTemplatePath = localBricks
+            } else if FileManager.default.fileExists(atPath: shareBricks) {
+                self.modulesTemplatePath = shareBricks
+            } else if let envRoot = envRoot, FileManager.default.fileExists(atPath: envRoot) {
+                self.modulesTemplatePath = envRoot
+            } else {
+                let subFolder = type.category == .core ? "Bricks/Singletons" : "Bricks/Generatives/Architecture"
+                self.modulesTemplatePath = "/usr/local/share/swiftblock/\(subFolder)"
+            }
         }
         self.isDryRun = isDryRun
     }
@@ -64,11 +79,19 @@ public class ModuleGenerator {
             destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)/\(options.moduleName)"
         }
 
-        var templateTypeFolderPath = "\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)"
-        if !fileManager.fileExists(atPath: templateTypeFolderPath) {
-            let lastComponent = (options.modulesTemplatePath as NSString).lastPathComponent.lowercased()
-            if lastComponent == options.type.rawValue.lowercased() {
-                templateTypeFolderPath = options.modulesTemplatePath
+        let discoveryEngine = BlockDiscoveryEngine(fileManager: fileManager)
+        let resolvedTemplate = discoveryEngine.resolveBrickPath(named: options.type.rawValue, in: options.modulesTemplatePath)
+
+        var templateTypeFolderPath: String
+        if let resolved = resolvedTemplate, (resolved.hasPrefix(options.modulesTemplatePath) || options.modulesTemplatePath.contains("Bricks") || options.modulesTemplatePath.contains("Blocks")) {
+            templateTypeFolderPath = resolved
+        } else {
+            templateTypeFolderPath = "\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)"
+            if !fileManager.fileExists(atPath: templateTypeFolderPath) {
+                let lastComponent = (options.modulesTemplatePath as NSString).lastPathComponent.lowercased()
+                if lastComponent == options.type.rawValue.lowercased() {
+                    templateTypeFolderPath = options.modulesTemplatePath
+                }
             }
         }
 
@@ -117,8 +140,9 @@ public class ModuleGenerator {
         let enumerator = fileManager.enumerator(atPath: sourcePath)
 
         while let item = enumerator?.nextObject() as? String {
-            // NEVER copy template metadata (block.json) to output projects
-            if (item as NSString).lastPathComponent == "block.json" {
+            // NEVER copy template metadata (brick.yml, block.json) to output projects
+            let fileName = (item as NSString).lastPathComponent
+            if fileName == "block.json" || fileName == "brick.yml" || fileName == "brick.yaml" {
                 continue
             }
 

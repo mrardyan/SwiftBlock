@@ -1,5 +1,0 @@
-{
-  "title": "Network",
-  "description": "Network Client / HTTP Request Engine",
-  "defaultOutputPath": "App/Sources/Core/Network"
-}

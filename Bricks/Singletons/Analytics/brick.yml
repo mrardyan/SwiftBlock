@@ -1,0 +1,6 @@
+name: analytics
+category: infrastructure
+instantiation: singleton
+description: "Analytics event tracking & engine integration"
+defaultPath: "App/Sources/Core/Analytics"
+requiresNameArgument: false

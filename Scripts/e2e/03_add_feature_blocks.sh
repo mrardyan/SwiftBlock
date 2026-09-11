@@ -5,15 +5,15 @@ run_scenario() {
 
     cd "$TEST_DIR/TestNewApp"
 
-    "$SWIFTBLOCK_BIN" add scene Profile -t "$MODULES_PATH"
-    "$SWIFTBLOCK_BIN" add usecase FetchProfile -t "$MODULES_PATH"
-    "$SWIFTBLOCK_BIN" add repository ProfileRepo -t "$MODULES_PATH"
-    "$SWIFTBLOCK_BIN" add service ProfileService -t "$MODULES_PATH"
-    "$SWIFTBLOCK_BIN" add entity ProfileDTO -t "$MODULES_PATH"
-    "$SWIFTBLOCK_BIN" add coordinator ProfileFlow -t "$MODULES_PATH"
-    "$SWIFTBLOCK_BIN" add component AvatarView -t "$MODULES_PATH"
-    "$SWIFTBLOCK_BIN" add mapper ProfileMapper -t "$MODULES_PATH"
-    "$SWIFTBLOCK_BIN" add validator EmailValidator -t "$MODULES_PATH"
+    "$SWIFTBLOCK_BIN" snap scene Profile
+    "$SWIFTBLOCK_BIN" snap usecase FetchProfile
+    "$SWIFTBLOCK_BIN" snap repository ProfileRepo
+    "$SWIFTBLOCK_BIN" snap service ProfileService
+    "$SWIFTBLOCK_BIN" snap entity ProfileDTO
+    "$SWIFTBLOCK_BIN" snap coordinator ProfileFlow
+    "$SWIFTBLOCK_BIN" snap component AvatarView
+    "$SWIFTBLOCK_BIN" snap mapper ProfileMapper
+    "$SWIFTBLOCK_BIN" snap validator EmailValidator
 
     assert_file_exists "App/Sources/Features/profile/scene/ProfileView.swift" "Scene block ProfileView.swift present"
     assert_file_exists "App/Sources/Features/fetchprofile/usecase/FetchProfileUseCase.swift" "UseCase block FetchProfileUseCase.swift present"

@@ -1,5 +1,0 @@
-{
-  "title": "Logger",
-  "description": "Unified OSLog / Crash Logger Engine",
-  "defaultOutputPath": "App/Sources/Core/Logger"
-}

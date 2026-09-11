@@ -1,5 +1,0 @@
-{
-  "title": "Repository",
-  "description": "Data Protocol + Implementation",
-  "defaultOutputPath": "App/Sources/Features/{module}/Repository"
-}

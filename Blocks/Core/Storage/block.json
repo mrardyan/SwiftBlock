@@ -1,5 +1,0 @@
-{
-  "title": "Storage",
-  "description": "Local Persistence Storage Engine",
-  "defaultOutputPath": "App/Sources/Core/Storage"
-}

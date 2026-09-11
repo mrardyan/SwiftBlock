@@ -1,0 +1,8 @@
+name: usecase
+category: architecture
+instantiation: generative
+description: "Domain UseCase protocol and implementation"
+defaultPath: "App/Sources/Features"
+requiresNameArgument: true
+namingConvention:
+  postfix: "UseCase"
