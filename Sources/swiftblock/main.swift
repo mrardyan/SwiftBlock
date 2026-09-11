@@ -78,8 +78,22 @@ struct SnapCommand: ParsableCommand {
     @Option(name: [.customShort("t"), .long], help: "Custom bricks template directory path")
     var templatePath: String?
 
+    @Option(name: [.customShort("v"), .customLong("var")], help: "Key-value template variable (e.g. --var timeout=60)")
+    var variables: [String] = []
+
     @Flag(name: .long, help: "Simulate brick generation without writing to disk")
     var dryRun: Bool = false
+
+    private func parseVariables() -> [String: String] {
+        var dict: [String: String] = [:]
+        for item in variables {
+            let parts = item.split(separator: "=", maxSplits: 1).map(String.init)
+            if parts.count == 2 {
+                dict[parts[0].trimmingCharacters(in: .whitespaces)] = parts[1].trimmingCharacters(in: .whitespaces)
+            }
+        }
+        return dict
+    }
 
     func run() throws {
         let baseDir = templatePath ?? FileManager.default.currentDirectoryPath
@@ -95,6 +109,7 @@ struct SnapCommand: ParsableCommand {
         }
         
         let normalizedBrick = brickInput.lowercased()
+        var resolvedVars = parseVariables()
 
         // Direct Git URL Resolution
         if BoxManager.isGitURL(brickInput) {
@@ -103,9 +118,12 @@ struct SnapCommand: ParsableCommand {
             var targetPath = fetched.cachedPath
 
             if let manifest = BrickManifest.load(fromPath: targetPath) {
+                if !manifest.variables.isEmpty {
+                    resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
+                }
                 let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.name.capitalized)
                 let moduleType = ModuleType(rawValue: manifest.name.lowercased()) ?? .scene
-                try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: targetPath, isDryRun: dryRun)
+                try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: targetPath, isDryRun: dryRun, variables: resolvedVars)
                 return
             }
 
@@ -118,9 +136,12 @@ struct SnapCommand: ParsableCommand {
                     selected = try InteractiveWizard.runMonorepoSelectionWizard(bricks: discovered)
                 }
                 let selectedPath = "\(targetPath)/\(selected.relativePath)"
+                if !selected.manifest.variables.isEmpty {
+                    resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: selected.manifest, providedValues: resolvedVars)
+                }
                 let instanceName = name ?? (selected.manifest.instantiation == .generative ? "Main" : selected.manifest.name.capitalized)
                 let moduleType = ModuleType(rawValue: selected.manifest.name.lowercased()) ?? .scene
-                try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: selectedPath, isDryRun: dryRun)
+                try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: selectedPath, isDryRun: dryRun, variables: resolvedVars)
                 return
             }
         }
@@ -129,17 +150,20 @@ struct SnapCommand: ParsableCommand {
         if let resolvedPath = discoveryEngine.resolveBrickPath(named: brickInput, in: baseDir),
            let manifest = BrickManifest.load(fromPath: resolvedPath) {
             
+            if !manifest.variables.isEmpty {
+                resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
+            }
             let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.name.capitalized)
             let moduleType = ModuleType(rawValue: manifest.name.lowercased()) ?? .scene
             
-            try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: resolvedPath, isDryRun: dryRun)
+            try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: resolvedPath, isDryRun: dryRun, variables: resolvedVars)
             return
         }
         
         // Fallback for standard module type
         if let type = ModuleType(rawValue: normalizedBrick) {
             let instanceName = name ?? "Main"
-            try executeAddModule(type: type, moduleName: instanceName, templatePath: baseDir, isDryRun: dryRun)
+            try executeAddModule(type: type, moduleName: instanceName, templatePath: baseDir, isDryRun: dryRun, variables: resolvedVars)
             return
         }
         
@@ -417,12 +441,13 @@ private func executeWithOptions(options: ProjectGeneratorOptions) throws {
     }
 }
 
-private func executeAddModule(type: ModuleType, moduleName: String, templatePath: String, isDryRun: Bool) throws {
+private func executeAddModule(type: ModuleType, moduleName: String, templatePath: String, isDryRun: Bool, variables: [String: String] = [:]) throws {
     let options = ModuleGeneratorOptions(
         type: type,
         moduleName: moduleName,
         modulesTemplatePath: templatePath,
-        isDryRun: isDryRun
+        isDryRun: isDryRun,
+        variables: variables
     )
     try executeAddModuleWithOptions(options: options)
 }

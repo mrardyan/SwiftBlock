@@ -462,6 +462,60 @@ public class InteractiveWizard {
         let selectedIndex = promptChoiceWithOptions(title: "Select brick to snap", options: options, readLine: readLine)
         return bricks[selectedIndex]
     }
+
+    public static func runBrickVariablesWizard(
+        manifest: BrickManifest,
+        providedValues: [String: String] = [:],
+        readLine: () -> String? = { InteractiveWizard.readLine() }
+    ) throws -> [String: String] {
+        var resolved = providedValues
+
+        if manifest.variables.isEmpty {
+            return resolved
+        }
+
+        print("┌  \(ANSIColor.boldText("Configure Variables for '\(manifest.name)'"))")
+        print("│")
+
+        for variable in manifest.variables {
+            if resolved[variable.name] != nil {
+                continue
+            }
+
+            if variable.type == "confirm" || variable.type == "bool" {
+                let defaultBool = (variable.defaultValue?.lowercased() == "true" || variable.defaultValue == "1")
+                let answer = promptConfirm(message: variable.prompt, defaultYes: defaultBool, readLine: readLine)
+                resolved[variable.name] = answer ? "true" : "false"
+            } else if variable.type == "select", let options = variable.options, !options.isEmpty {
+                let choices = options.map { ChoiceOption(title: $0) }
+                let idx = promptChoiceWithOptions(title: variable.prompt, options: choices, readLine: readLine)
+                resolved[variable.name] = options[idx]
+            } else {
+                var value = ""
+                while value.isEmpty {
+                    let promptMsg: String
+                    if let def = variable.defaultValue {
+                        promptMsg = "\(variable.prompt) (default: \(def))"
+                    } else {
+                        promptMsg = variable.prompt
+                    }
+                    let input = prompt(message: promptMsg, readLine: readLine)
+                    if input.isEmpty, let def = variable.defaultValue {
+                        value = def
+                    } else {
+                        value = input
+                    }
+
+                    if value.isEmpty {
+                        print("  \(ANSIColor.yellowText("⚠️"))  Value for '\(variable.name)' cannot be empty.")
+                    }
+                }
+                resolved[variable.name] = value
+            }
+        }
+
+        return resolved
+    }
 }
 
 public enum InteractiveWizardError: Error, LocalizedError, Equatable {

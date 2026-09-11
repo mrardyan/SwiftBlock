@@ -6,13 +6,15 @@ public struct ModuleGeneratorOptions {
     public var projectRootPath: String
     public var modulesTemplatePath: String
     public var isDryRun: Bool
+    public var variables: [String: String]
 
     public init(
         type: ModuleType,
         moduleName: String,
         projectRootPath: String = FileManager.default.currentDirectoryPath,
         modulesTemplatePath: String? = nil,
-        isDryRun: Bool = false
+        isDryRun: Bool = false,
+        variables: [String: String] = [:]
     ) {
         self.type = type
         self.moduleName = moduleName
@@ -39,6 +41,7 @@ public struct ModuleGeneratorOptions {
             }
         }
         self.isDryRun = isDryRun
+        self.variables = variables
     }
 }
 
@@ -118,7 +121,9 @@ public class ModuleGenerator {
                 moduleName: options.moduleName,
                 projectName: config.projectName,
                 projectRootPath: options.projectRootPath,
-                moduleType: options.type
+                moduleType: options.type,
+                variables: options.variables,
+                config: config
             )
             return destinationFolderPath
         } catch {
@@ -135,7 +140,9 @@ public class ModuleGenerator {
         moduleName: String,
         projectName: String,
         projectRootPath: String,
-        moduleType: ModuleType
+        moduleType: ModuleType,
+        variables: [String: String] = [:],
+        config: SwiftBlockConfig? = nil
     ) throws {
         let enumerator = fileManager.enumerator(atPath: sourcePath)
 
@@ -147,9 +154,13 @@ public class ModuleGenerator {
             }
 
             let itemSourcePath = "\(sourcePath)/\(item)"
-            let itemRelativePath = item
-                .replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
-                .replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
+            let itemRelativePath = TemplateRenderer.renderPath(
+                pathTemplate: item,
+                variables: variables,
+                moduleName: moduleName,
+                blockName: moduleType.rawValue,
+                config: config
+            )
 
             let itemTargetPath: String
             if itemRelativePath.hasSuffix("Tests.swift") {
@@ -172,10 +183,15 @@ public class ModuleGenerator {
                         try fileManager.createDirectory(atPath: parentDir, withIntermediateDirectories: true)
                     }
 
-                    // Text files are processed with placeholder replacement; binary files copied raw
+                    // Text files are processed with template rendering; binary files copied raw
                     if let content = try? String(contentsOfFile: itemSourcePath, encoding: .utf8) {
-                        var processed = content.replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
-                        processed = processed.replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
+                        let processed = TemplateRenderer.render(
+                            template: content,
+                            variables: variables,
+                            config: config,
+                            moduleName: moduleName,
+                            projectName: projectName
+                        )
                         let trimmedProcessed = processed.trimmingCharacters(in: .newlines) + "\n"
                         try trimmedProcessed.write(toFile: itemTargetPath, atomically: true, encoding: .utf8)
                     } else {
