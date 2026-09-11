@@ -165,6 +165,10 @@ public class ProjectGenerator {
                 let gitGen = GitRepositoryInitializer(fileManager: fileManager)
                 try gitGen.initializeRepository(at: options.outputPath, config: config, isVerbose: options.isVerbose)
             }
+
+            // 7. Setup IDE Tasks & Shortcuts (.vscode/tasks.json & Makefile)
+            let ideGen = IDEConfigGenerator(fileManager: fileManager)
+            try ideGen.setupAll(projectPath: options.outputPath, config: config)
         } catch {
             // Clean up partially copied project folder ONLY if created during generation
             if didCreateDestination && fileManager.fileExists(atPath: options.outputPath) {

@@ -13,6 +13,7 @@ struct SwiftBlock: ParsableCommand {
             KitCommand.self,
             BoxCommand.self,
             DoctorCommand.self,
+            IDECommand.self,
             // Keep aliases accessible at root level
             Init.self,
             New.self,
@@ -339,6 +340,43 @@ struct DoctorCommand: ParsableCommand {
     func run() throws {
         let engine = DoctorEngine()
         engine.printDiagnosticsReport()
+    }
+}
+
+struct IDECommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "ide",
+        abstract: "Generate and configure IDE tasks (VS Code tasks.json and Makefile shortcuts)",
+        subcommands: [IDESetup.self],
+        defaultSubcommand: IDESetup.self
+    )
+}
+
+struct IDESetup: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "setup",
+        abstract: "Generate .vscode/tasks.json and Makefile shortcuts"
+    )
+
+    @Flag(name: .long, help: "Generate VS Code tasks")
+    var vscode: Bool = false
+
+    @Flag(name: .long, help: "Generate Xcode & Makefile shortcuts")
+    var xcode: Bool = false
+
+    func run() throws {
+        let rootPath = FileManager.default.currentDirectoryPath
+        let config = (try? SwiftBlockConfig.load(from: rootPath)) ?? SwiftBlockConfig(projectName: "App")
+
+        let generator = IDEConfigGenerator()
+        if vscode || (!vscode && !xcode) {
+            try generator.generateVSCodeTasks(projectPath: rootPath, config: config)
+            print("✔ Generated VS Code tasks at .vscode/tasks.json")
+        }
+        if xcode || (!vscode && !xcode) {
+            try generator.updateMakefileShortcuts(projectPath: rootPath)
+            print("✔ Updated Makefile shortcuts")
+        }
     }
 }
 
