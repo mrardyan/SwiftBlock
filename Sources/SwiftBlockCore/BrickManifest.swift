@@ -48,6 +48,7 @@ public struct BrickManifest {
     public let files: [FileSpec]
     public let preSnapHooks: [String]
     public let postSnapHooks: [String]
+    public let injections: [InjectionSpec]
     
     public init(
         name: String,
@@ -61,7 +62,8 @@ public struct BrickManifest {
         variables: [VariableSpec] = [],
         files: [FileSpec] = [],
         preSnapHooks: [String] = [],
-        postSnapHooks: [String] = []
+        postSnapHooks: [String] = [],
+        injections: [InjectionSpec] = []
     ) {
         self.name = name
         self.category = category
@@ -75,6 +77,7 @@ public struct BrickManifest {
         self.files = files
         self.preSnapHooks = preSnapHooks
         self.postSnapHooks = postSnapHooks
+        self.injections = injections
     }
     
     public static func load(fromPath path: String) -> BrickManifest? {
@@ -144,16 +147,31 @@ public struct BrickManifest {
         var preSnapHooks: [String] = []
         var postSnapHooks: [String] = []
         if let hooksDict = dict["hooks"] as? [String: Any] {
-            if let pre = hooksDict["pre_snap"] as? [String] {
-                preSnapHooks = pre
+            if let pre = hooksDict["pre_snap"] as? [Any] {
+                preSnapHooks = pre.map { "\($0)" }
+            } else if let pre = hooksDict["pre-snap"] as? [Any] {
+                preSnapHooks = pre.map { "\($0)" }
             } else if let preStr = hooksDict["pre_snap"] as? String {
                 preSnapHooks = [preStr]
             }
             
-            if let post = hooksDict["post_snap"] as? [String] {
-                postSnapHooks = post
+            if let post = hooksDict["post_snap"] as? [Any] {
+                postSnapHooks = post.map { "\($0)" }
+            } else if let post = hooksDict["post-snap"] as? [Any] {
+                postSnapHooks = post.map { "\($0)" }
             } else if let postStr = hooksDict["post_snap"] as? String {
                 postSnapHooks = [postStr]
+            }
+        }
+        
+        var injections: [InjectionSpec] = []
+        if let injList = dict["injections"] as? [[String: Any]] {
+            for item in injList {
+                if let target = item["target"] as? String, let content = item["content"] as? String {
+                    let marker = item["marker"] as? String
+                    let condition = item["condition"] as? String
+                    injections.append(InjectionSpec(target: target, marker: marker, content: content, condition: condition))
+                }
             }
         }
         
@@ -169,7 +187,8 @@ public struct BrickManifest {
             variables: variables,
             files: files,
             preSnapHooks: preSnapHooks,
-            postSnapHooks: postSnapHooks
+            postSnapHooks: postSnapHooks,
+            injections: injections
         )
     }
 }

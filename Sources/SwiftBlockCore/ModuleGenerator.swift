@@ -86,7 +86,9 @@ public class ModuleGenerator {
         let resolvedTemplate = discoveryEngine.resolveBrickPath(named: options.type.rawValue, in: options.modulesTemplatePath)
 
         var templateTypeFolderPath: String
-        if let resolved = resolvedTemplate, (resolved.hasPrefix(options.modulesTemplatePath) || options.modulesTemplatePath.contains("Bricks") || options.modulesTemplatePath.contains("Blocks")) {
+        if fileManager.fileExists(atPath: "\(options.modulesTemplatePath)/brick.yml") || fileManager.fileExists(atPath: "\(options.modulesTemplatePath)/block.json") {
+            templateTypeFolderPath = options.modulesTemplatePath
+        } else if let resolved = resolvedTemplate, (resolved.hasPrefix(options.modulesTemplatePath) || options.modulesTemplatePath.contains("Bricks") || options.modulesTemplatePath.contains("Blocks")) {
             templateTypeFolderPath = resolved
         } else {
             templateTypeFolderPath = "\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)"
@@ -147,6 +149,16 @@ public class ModuleGenerator {
             )
 
             if let manifest = manifest {
+                try CodeInjector.injectAll(
+                    specs: manifest.injections,
+                    variables: options.variables,
+                    projectName: config.projectName,
+                    moduleName: options.moduleName,
+                    projectRootPath: options.projectRootPath,
+                    config: config,
+                    isDryRun: options.isDryRun
+                )
+
                 try HooksEngine.executeHooks(
                     manifest.postSnapHooks,
                     variables: options.variables,

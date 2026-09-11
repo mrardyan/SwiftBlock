@@ -41,7 +41,8 @@ public struct SimpleYAMLParser {
             
             if trimmed.hasPrefix("- ") {
                 let itemStr = String(trimmed.dropFirst(2)).trimmingCharacters(in: .whitespaces)
-                if itemStr.contains(":") {
+                let isQuoted = (itemStr.hasPrefix("\"") && itemStr.hasSuffix("\"")) || (itemStr.hasPrefix("'") && itemStr.hasSuffix("'"))
+                if !isQuoted && itemStr.contains(":") {
                     let parts = itemStr.split(separator: ":", maxSplits: 1).map { String($0).trimmingCharacters(in: .whitespaces) }
                     let key = parts[0]
                     let value = parts.count > 1 ? parseValue(parts[1]) : ""
@@ -76,7 +77,12 @@ public struct SimpleYAMLParser {
                 } else {
                     let val = parseValue(valStr)
                     if !stack.isEmpty {
-                        stack[stack.count - 1].dict[key] = val
+                        if stack[stack.count - 1].isList, var lastDict = stack[stack.count - 1].list.last as? [String: Any] {
+                            lastDict[key] = val
+                            stack[stack.count - 1].list[stack[stack.count - 1].list.count - 1] = lastDict
+                        } else {
+                            stack[stack.count - 1].dict[key] = val
+                        }
                     } else {
                         result[key] = val
                     }

@@ -47,4 +47,17 @@ struct HooksEngineTests {
         let content = try String(contentsOfFile: targetFile, encoding: .utf8)
         #expect(content.trimmingCharacters(in: .newlines) == "HookExecuted")
     }
+
+    @Test func manifestHooksParsing() {
+        let yamlContent = """
+        name: customservice
+        hooks:
+          post_snap:
+            - "echo 'HookExecuted: {{moduleName}}' > hook_output.txt"
+        """
+
+        let manifest = BrickManifest.parseYAML(yamlContent, folderName: "customservice")
+        #expect(manifest.postSnapHooks.count == 1)
+        #expect(manifest.postSnapHooks[0].contains("HookExecuted"))
+    }
 }
