@@ -106,6 +106,18 @@ public class ModuleGenerator {
             throw ModuleGeneratorError.moduleAlreadyExists(destinationFolderPath)
         }
 
+        let manifest = BrickManifest.load(fromPath: templateTypeFolderPath)
+        if let manifest = manifest {
+            try HooksEngine.executeHooks(
+                manifest.preSnapHooks,
+                variables: options.variables,
+                projectName: config.projectName,
+                moduleName: options.moduleName,
+                projectRootPath: options.projectRootPath,
+                isDryRun: options.isDryRun
+            )
+        }
+
         if options.isDryRun {
             print("🔍 [DRY RUN] Would load module block from: \(templateTypeFolderPath)")
             print("🔍 [DRY RUN] Would generate \(options.type.rawValue) module '\(options.moduleName)' at: \(destinationFolderPath)")
@@ -125,6 +137,26 @@ public class ModuleGenerator {
                 variables: options.variables,
                 config: config
             )
+
+            let manifestGenerator = ProjectManifestGeneratorFactory.createGenerator(for: config.generatorTool)
+            try? manifestGenerator.addModuleDependency(
+                moduleName: options.moduleName,
+                type: options.type,
+                config: config,
+                projectPath: options.projectRootPath
+            )
+
+            if let manifest = manifest {
+                try HooksEngine.executeHooks(
+                    manifest.postSnapHooks,
+                    variables: options.variables,
+                    projectName: config.projectName,
+                    moduleName: options.moduleName,
+                    projectRootPath: options.projectRootPath,
+                    isDryRun: options.isDryRun
+                )
+            }
+
             return destinationFolderPath
         } catch {
             if fileManager.fileExists(atPath: destinationFolderPath) {

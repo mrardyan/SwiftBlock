@@ -46,6 +46,8 @@ public struct BrickManifest {
     public let namingPostfix: String?
     public let variables: [VariableSpec]
     public let files: [FileSpec]
+    public let preSnapHooks: [String]
+    public let postSnapHooks: [String]
     
     public init(
         name: String,
@@ -57,7 +59,9 @@ public struct BrickManifest {
         requiresNameArgument: Bool = true,
         namingPostfix: String? = nil,
         variables: [VariableSpec] = [],
-        files: [FileSpec] = []
+        files: [FileSpec] = [],
+        preSnapHooks: [String] = [],
+        postSnapHooks: [String] = []
     ) {
         self.name = name
         self.category = category
@@ -69,6 +73,8 @@ public struct BrickManifest {
         self.namingPostfix = namingPostfix
         self.variables = variables
         self.files = files
+        self.preSnapHooks = preSnapHooks
+        self.postSnapHooks = postSnapHooks
     }
     
     public static func load(fromPath path: String) -> BrickManifest? {
@@ -135,6 +141,22 @@ public struct BrickManifest {
             }
         }
         
+        var preSnapHooks: [String] = []
+        var postSnapHooks: [String] = []
+        if let hooksDict = dict["hooks"] as? [String: Any] {
+            if let pre = hooksDict["pre_snap"] as? [String] {
+                preSnapHooks = pre
+            } else if let preStr = hooksDict["pre_snap"] as? String {
+                preSnapHooks = [preStr]
+            }
+            
+            if let post = hooksDict["post_snap"] as? [String] {
+                postSnapHooks = post
+            } else if let postStr = hooksDict["post_snap"] as? String {
+                postSnapHooks = [postStr]
+            }
+        }
+        
         return BrickManifest(
             name: name,
             category: category,
@@ -145,7 +167,9 @@ public struct BrickManifest {
             requiresNameArgument: requiresName,
             namingPostfix: namingPostfix,
             variables: variables,
-            files: files
+            files: files,
+            preSnapHooks: preSnapHooks,
+            postSnapHooks: postSnapHooks
         )
     }
 }
