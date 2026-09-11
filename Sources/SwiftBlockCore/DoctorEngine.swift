@@ -36,10 +36,14 @@ public class DoctorEngine {
         let pipe = Pipe()
         process.standardOutput = pipe
 
+        defer {
+            try? pipe.fileHandleForReading.close()
+        }
+
         do {
             try process.run()
-            process.waitUntilExit()
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
             let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .newlines) ?? ""
 
             if process.terminationStatus == 0 && !path.isEmpty {
@@ -59,10 +63,14 @@ public class DoctorEngine {
         let pipe = Pipe()
         process.standardOutput = pipe
 
+        defer {
+            try? pipe.fileHandleForReading.close()
+        }
+
         do {
             try process.run()
-            process.waitUntilExit()
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
             let versionStr = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
             if let versionStr = versionStr, !versionStr.isEmpty, versionStr.count < 30 {
                 return versionStr
@@ -155,7 +163,7 @@ public class DoctorEngine {
         for check in report.toolChecks {
             let icon = check.isInstalled ? "✔" : "!"
             let colorIcon = check.isInstalled ? ANSIColor.greenText(icon) : ANSIColor.yellowText(icon)
-            let versionInfo = check.version != nil ? "(\(check.version!))" : ""
+            let versionInfo = check.version.map { "(\($0))" } ?? ""
             let status = check.isInstalled ? "Installed \(versionInfo)" : "Not installed"
             print("│    [\(colorIcon)] \(check.name): \(status)")
         }

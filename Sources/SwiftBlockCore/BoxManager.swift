@@ -77,7 +77,8 @@ public class BoxManager {
     }
 
     public func addBox(name: String, gitURL: String, isVerbose: Bool = false) throws {
-        let normalizedName = name.lowercased().trimmingCharacters(in: .whitespaces)
+        let rawName = (name as NSString).lastPathComponent
+        let normalizedName = rawName.lowercased().replacingOccurrences(of: "..", with: "").trimmingCharacters(in: .whitespaces)
         guard !normalizedName.isEmpty else {
             throw BoxManagerError.invalidGitURL("Box name cannot be empty")
         }
@@ -106,7 +107,8 @@ public class BoxManager {
     }
 
     public func removeBox(name: String) throws {
-        let normalizedName = name.lowercased().trimmingCharacters(in: .whitespaces)
+        let rawName = (name as NSString).lastPathComponent
+        let normalizedName = rawName.lowercased().replacingOccurrences(of: "..", with: "").trimmingCharacters(in: .whitespaces)
         let targetBoxPath = "\(boxesDirectory)/\(normalizedName)"
         if fileManager.fileExists(atPath: targetBoxPath) {
             try? fileManager.removeItem(atPath: targetBoxPath)

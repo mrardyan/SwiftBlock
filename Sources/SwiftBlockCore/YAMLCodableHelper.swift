@@ -9,10 +9,19 @@ public struct SimpleYAMLParser {
         var currentDict: [String: Any] = [:]
         
         for rawLine in lines {
-            // Strip comments
-            var line = rawLine
-            if let commentIndex = line.firstIndex(of: "#") {
-                line = String(line[..<commentIndex])
+            // Strip comments (preserving # inside double or single quotes)
+            var line = ""
+            var inDoubleQuote = false
+            var inSingleQuote = false
+            for char in rawLine {
+                if char == "\"" && !inSingleQuote {
+                    inDoubleQuote.toggle()
+                } else if char == "'" && !inDoubleQuote {
+                    inSingleQuote.toggle()
+                } else if char == "#" && !inDoubleQuote && !inSingleQuote {
+                    break
+                }
+                line.append(char)
             }
             
             let trimmed = line.trimmingCharacters(in: .whitespaces)

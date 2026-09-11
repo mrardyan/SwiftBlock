@@ -53,4 +53,16 @@ struct SwiftBlockConfigTests {
         #expect(decoded.paths.path(for: .usecase) == "Legacy/Domain")
         #expect(decoded.paths.path(for: .repository) == "App/Sources/Data/Repositories")
     }
+
+    @Test func yamlQuotedHashTagParsing() {
+        let yamlContent = """
+        projectName: "HashtagApp #1"
+        bundlePrefix: "#com.company"
+        url: "https://example.com/#tag"
+        """
+        let parsed = SimpleYAMLParser.parse(yamlContent)
+        #expect(parsed["projectName"] as? String == "HashtagApp #1")
+        #expect(parsed["bundlePrefix"] as? String == "#com.company")
+        #expect(parsed["url"] as? String == "https://example.com/#tag")
+    }
 }

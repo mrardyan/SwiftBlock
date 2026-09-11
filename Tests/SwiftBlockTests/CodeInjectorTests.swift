@@ -152,4 +152,32 @@ struct CodeInjectorTests {
         let contentUnchanged = try String(contentsOfFile: targetFile, encoding: .utf8)
         #expect(contentUnchanged == initialContent)
     }
+
+    @Test func pathTraversalRejection() throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
+        let projectDir = "\(tempDir)/Project"
+        try FileManager.default.createDirectory(atPath: projectDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: tempDir) }
+
+        let outsideFile = "\(tempDir)/outside.txt"
+        try "sensitive content".write(toFile: outsideFile, atomically: true, encoding: .utf8)
+
+        let spec = InjectionSpec(
+            target: "../outside.txt",
+            marker: nil,
+            content: "injected text"
+        )
+
+        let injected = try CodeInjector.inject(
+            spec: spec,
+            variables: [:],
+            projectName: "TestApp",
+            moduleName: nil,
+            projectRootPath: projectDir
+        )
+
+        #expect(injected == false)
+        let contentUnchanged = try String(contentsOfFile: outsideFile, encoding: .utf8)
+        #expect(contentUnchanged == "sensitive content")
+    }
 }

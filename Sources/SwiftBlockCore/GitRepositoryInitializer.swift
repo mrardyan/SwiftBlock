@@ -62,10 +62,14 @@ DerivedData/
         process.arguments = arguments
         process.standardOutput = pipe
 
+        defer {
+            try? pipe.fileHandleForReading.close()
+        }
+
         try? process.run()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
 
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
         return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 }

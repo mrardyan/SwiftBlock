@@ -33,8 +33,14 @@ public struct CodeInjector {
         )
 
         let absoluteTargetPath = (resolvedTargetPath as NSString).isAbsolutePath
-            ? resolvedTargetPath
-            : "\(projectRootPath)/\(resolvedTargetPath)"
+            ? (resolvedTargetPath as NSString).standardizingPath
+            : ("\(projectRootPath)/\(resolvedTargetPath)" as NSString).standardizingPath
+        let standardizedRoot = (projectRootPath as NSString).standardizingPath
+
+        guard absoluteTargetPath.hasPrefix(standardizedRoot) else {
+            print("⚠️ Path traversal blocked: Target path '\(absoluteTargetPath)' is outside project root '\(standardizedRoot)'")
+            return false
+        }
 
         let fileManager = FileManager.default
         guard fileManager.fileExists(atPath: absoluteTargetPath) else {

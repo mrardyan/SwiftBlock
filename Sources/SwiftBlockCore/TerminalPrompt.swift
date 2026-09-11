@@ -522,7 +522,12 @@ public class TerminalPrompt {
         defaultValue: String? = nil,
         readLineFallback: () -> String? = { InteractiveWizard.readLine() }
     ) -> String {
-        let defaultHint = (defaultValue != nil && !defaultValue!.isEmpty) ? " \(ANSIColor.dimText("(default: \(defaultValue!))"))" : ""
+        let defaultHint: String
+        if let val = defaultValue, !val.isEmpty {
+            defaultHint = " \(ANSIColor.dimText("(default: \(val))"))"
+        } else {
+            defaultHint = ""
+        }
         print("│  \(ANSIColor.cyanText("?"))  \(ANSIColor.boldText(title))\(defaultHint): ", terminator: "")
         fflush(stdout)
 

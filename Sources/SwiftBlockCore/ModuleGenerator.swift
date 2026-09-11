@@ -23,7 +23,7 @@ public struct ModuleGeneratorOptions {
             self.modulesTemplatePath = templatePath
         } else {
             let envRoot = ProcessInfo.processInfo.environment["SWIFTBLOCK_ROOT"]
-            let envBricks = envRoot != nil ? "\(envRoot!)/Bricks" : ""
+            let envBricks = envRoot.map { "\($0)/Bricks" } ?? ""
             let localBricks = "\(FileManager.default.currentDirectoryPath)/Bricks"
             let shareBricks = "/usr/local/share/swiftblock/Bricks"
 
