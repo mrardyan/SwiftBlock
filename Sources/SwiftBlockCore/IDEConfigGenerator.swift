@@ -81,6 +81,9 @@ public class IDEConfigGenerator {
             let shortcuts = """
 
 # SwiftBlock IDE & Developer Shortcuts
+open:
+	open *.xcworkspace 2>/dev/null || open *.xcodeproj 2>/dev/null || tuist generate
+
 snap-scene:
 	swiftblock snap scene $(NAME)
 

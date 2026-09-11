@@ -1,4 +1,4 @@
-.PHONY: setup generate clean lint format test edit help
+.PHONY: setup generate open clean lint format test edit help
 
 # Default target
 .DEFAULT_GOAL := help
@@ -14,6 +14,9 @@ setup: ## Install dependencies, Tuist, SwiftLint, SwiftFormat, and pre-commit ho
 
 generate: ## Generate Xcode project and workspace using Tuist
 	@tuist generate --no-open
+
+open: ## Open generated Xcode workspace or project in Xcode
+	@open *.xcworkspace 2>/dev/null || open *.xcodeproj 2>/dev/null || tuist generate
 
 clean: ## Clean Tuist cache and build artifacts
 	@tuist clean

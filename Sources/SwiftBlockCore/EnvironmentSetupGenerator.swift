@@ -63,6 +63,18 @@ generate:
 	@\(generateCmd)
 """)
 
+        helpLines.append("  make open              Open project in Xcode")
+        let openCmd = config.generatorTool == .tuist
+            ? "open \(config.projectName).xcworkspace 2>/dev/null || open \(config.projectName).xcodeproj 2>/dev/null || tuist generate"
+            : "open \(config.projectName).xcodeproj 2>/dev/null || open \(config.projectName).xcworkspace 2>/dev/null || xcodegen generate"
+
+        targets.append("""
+.PHONY: open
+open:
+	@echo "◆ Opening \(config.projectName) in Xcode..."
+	@\(openCmd)
+""")
+
         if config.guardrails.swiftformat {
             helpLines.append("  make format            Format Swift code via SwiftFormat")
             targets.append("""
