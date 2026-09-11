@@ -245,7 +245,9 @@ struct BoxCommand: ParsableCommand {
             BoxAdd.self,
             BoxList.self,
             BoxRemove.self,
-            BoxUpdate.self
+            BoxUpdate.self,
+            BoxValidate.self,
+            BoxPublish.self
         ],
         defaultSubcommand: BoxList.self
     )
@@ -328,6 +330,78 @@ struct BoxUpdate: ParsableCommand {
         let manager = BoxManager()
         try manager.updateBoxes(name: name, isVerbose: true)
         print("✔ Box repositories updated successfully.")
+    }
+}
+
+struct BoxValidate: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "validate",
+        abstract: "Validate brick/kit manifest syntax, variable definitions, and template integrity"
+    )
+
+    @Argument(help: "Path to brick directory (default: current directory)")
+    var path: String?
+
+    func run() throws {
+        let targetPath = path ?? FileManager.default.currentDirectoryPath
+        let publisher = BoxPublisher()
+        let report = try publisher.validateBox(at: targetPath)
+
+        print("┌  \(ANSIColor.boldText("SwiftBlock Box Validation Result"))")
+        print("│")
+        if let manifest = report.manifest {
+            print("│  Brick Name: \(ANSIColor.boldText(manifest.name)) (\(manifest.instantiation.rawValue))")
+        }
+
+        for warning in report.warnings {
+            print("│  [\(ANSIColor.yellowText("!"))] Warning: \(warning)")
+        }
+
+        if report.isValid {
+            print("└  \(ANSIColor.greenText("✔ Box manifest and templates are valid and ready to publish."))")
+        } else {
+            for error in report.errors {
+                print("│  [\(ANSIColor.redText("✖"))] Error: \(error)")
+            }
+            print("└  \(ANSIColor.redText("✖ Box validation failed with \(report.errors.count) error(s)."))")
+            throw ExitCode.failure
+        }
+    }
+}
+
+struct BoxPublish: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "publish",
+        abstract: "Validate, version tag, and publish box brick/kit to remote Git repository"
+    )
+
+    @Argument(help: "Path to brick directory (default: current directory)")
+    var path: String?
+
+    @Option(name: [.customShort("t"), .long], help: "Release semantic version tag (e.g. v1.0.0)")
+    var tag: String?
+
+    @Option(name: [.customShort("r"), .long], help: "Git remote target name (default: origin)")
+    var remote: String = "origin"
+
+    @Flag(name: .long, help: "Simulate publish workflow without pushing to remote")
+    var dryRun: Bool = false
+
+    func run() throws {
+        let targetPath = path ?? FileManager.default.currentDirectoryPath
+        let publisher = BoxPublisher()
+
+        do {
+            let result = try publisher.publishBox(at: targetPath, tag: tag, remote: remote, isDryRun: dryRun)
+            if dryRun {
+                print("✔ [DRY RUN] Box '\(result.boxName)' validation passed. Target release tag: \(result.tag)")
+            } else {
+                print("✔ Successfully tagged and published box '\(result.boxName)' (\(result.tag)) to remote '\(result.remote)'.")
+            }
+        } catch {
+            print("✖ \(error.localizedDescription)")
+            throw ExitCode.failure
+        }
     }
 }
 
