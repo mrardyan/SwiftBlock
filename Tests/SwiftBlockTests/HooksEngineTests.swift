@@ -1,8 +1,9 @@
-import XCTest
+import Foundation
+import Testing
 @testable import SwiftBlockCore
 
-final class HooksEngineTests: XCTestCase {
-    func testCommandRendering() {
+struct HooksEngineTests {
+    @Test func commandRendering() {
         let command = "echo 'Module {{moduleName}} for project {{projectName}} with timeout {{timeout}}'"
         let rendered = HooksEngine.renderCommand(
             command,
@@ -11,23 +12,21 @@ final class HooksEngineTests: XCTestCase {
             moduleName: "Profile"
         )
         
-        XCTAssertEqual(rendered, "echo 'Module Profile for project TestApp with timeout 60'")
+        #expect(rendered == "echo 'Module Profile for project TestApp with timeout 60'")
     }
 
-    func testDryRunHookExecution() throws {
+    @Test func dryRunHookExecution() throws {
         let command = "echo 'hello world'"
-        XCTAssertNoThrow(
-            try HooksEngine.executeHook(
-                command,
-                variables: [:],
-                projectName: "TestApp",
-                moduleName: "Profile",
-                isDryRun: true
-            )
+        try HooksEngine.executeHook(
+            command,
+            variables: [:],
+            projectName: "TestApp",
+            moduleName: "Profile",
+            isDryRun: true
         )
     }
 
-    func testRealHookExecution() throws {
+    @Test func realHookExecution() throws {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: tempDir) }
@@ -44,8 +43,8 @@ final class HooksEngineTests: XCTestCase {
             isDryRun: false
         )
 
-        XCTAssertTrue(FileManager.default.fileExists(atPath: targetFile))
+        #expect(FileManager.default.fileExists(atPath: targetFile))
         let content = try String(contentsOfFile: targetFile, encoding: .utf8)
-        XCTAssertEqual(content.trimmingCharacters(in: .newlines), "HookExecuted")
+        #expect(content.trimmingCharacters(in: .newlines) == "HookExecuted")
     }
 }
