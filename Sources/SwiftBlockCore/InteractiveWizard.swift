@@ -444,6 +444,24 @@ public class InteractiveWizard {
 
         return (name: kitName, blocks: selectedBlockIds)
     }
+
+    public static func runMonorepoSelectionWizard(
+        bricks: [(relativePath: String, manifest: BrickManifest)],
+        readLine: () -> String? = { InteractiveWizard.readLine() }
+    ) throws -> (relativePath: String, manifest: BrickManifest) {
+        print("┌  \(ANSIColor.boldText("Monorepo Git Repository Detected"))")
+        print("│  Multiple bricks found in repository:")
+        
+        let options = bricks.map { item in
+            ChoiceOption(
+                title: "\(item.manifest.name) (\(item.manifest.instantiation.rawValue.capitalized))",
+                subtitle: item.relativePath
+            )
+        }
+        
+        let selectedIndex = promptChoiceWithOptions(title: "Select brick to snap", options: options, readLine: readLine)
+        return bricks[selectedIndex]
+    }
 }
 
 public enum InteractiveWizardError: Error, LocalizedError, Equatable {

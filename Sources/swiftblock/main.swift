@@ -95,6 +95,35 @@ struct SnapCommand: ParsableCommand {
         }
         
         let normalizedBrick = brickInput.lowercased()
+
+        // Direct Git URL Resolution
+        if BoxManager.isGitURL(brickInput) {
+            let boxManager = BoxManager()
+            let fetched = try boxManager.fetchGitRepository(urlString: brickInput, isVerbose: true)
+            var targetPath = fetched.cachedPath
+
+            if let manifest = BrickManifest.load(fromPath: targetPath) {
+                let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.name.capitalized)
+                let moduleType = ModuleType(rawValue: manifest.name.lowercased()) ?? .scene
+                try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: targetPath, isDryRun: dryRun)
+                return
+            }
+
+            let discovered = boxManager.discoverMonorepoBricks(at: targetPath)
+            if !discovered.isEmpty {
+                let selected: (relativePath: String, manifest: BrickManifest)
+                if discovered.count == 1 {
+                    selected = discovered[0]
+                } else {
+                    selected = try InteractiveWizard.runMonorepoSelectionWizard(bricks: discovered)
+                }
+                let selectedPath = "\(targetPath)/\(selected.relativePath)"
+                let instanceName = name ?? (selected.manifest.instantiation == .generative ? "Main" : selected.manifest.name.capitalized)
+                let moduleType = ModuleType(rawValue: selected.manifest.name.lowercased()) ?? .scene
+                try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: selectedPath, isDryRun: dryRun)
+                return
+            }
+        }
         
         // Smart Namespace Resolution
         if let resolvedPath = discoveryEngine.resolveBrickPath(named: brickInput, in: baseDir),
@@ -186,14 +215,94 @@ struct KitList: ParsableCommand {
 struct BoxCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "box",
-        abstract: "Manage remote team brick repositories (boxes)"
+        abstract: "Manage remote team brick repositories (boxes)",
+        subcommands: [
+            BoxAdd.self,
+            BoxList.self,
+            BoxRemove.self,
+            BoxUpdate.self
+        ],
+        defaultSubcommand: BoxList.self
+    )
+}
+
+struct BoxAdd: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "add",
+        abstract: "Register and clone a remote team box repository"
+    )
+
+    @Argument(help: "Box name (e.g. company, core)")
+    var name: String
+
+    @Argument(help: "Git repository URL (e.g. https://github.com/company/ios-bricks.git)")
+    var gitUrl: String
+
+    func run() throws {
+        let manager = BoxManager()
+        try manager.addBox(name: name, gitURL: gitUrl, isVerbose: true)
+        print("✔ Successfully registered box '\(name.lowercased())' from \(gitUrl)")
+    }
+}
+
+struct BoxList: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "list",
+        abstract: "List all registered boxes and cached bricks"
     )
 
     func run() throws {
+        let manager = BoxManager()
+        let boxes = manager.listBoxes()
+
         print("┌  \(ANSIColor.boldText("SwiftBlock Box Registry"))")
         print("│")
-        print("│  • official: Official SwiftBlock bricks & kits")
-        print("│  (Use 'swiftblock box add <name> <git-url>' to register team boxes)")
+        if boxes.isEmpty {
+            print("│  • official: Official SwiftBlock built-in library")
+            print("│  (Use 'swiftblock box add <name> <git-url>' to register team boxes)")
+        } else {
+            print("│  • official: Official SwiftBlock built-in library")
+            for (boxName, url) in boxes.sorted(by: { $0.key < $1.key }) {
+                print("│  • \(ANSIColor.boldText(boxName)): \(ANSIColor.cyanText(url))")
+                let boxPath = "\(manager.boxesDirectory)/\(boxName)"
+                let discovered = manager.discoverMonorepoBricks(at: boxPath)
+                for item in discovered {
+                    print("│    └── \(item.manifest.name) (\(item.manifest.instantiation.rawValue))")
+                }
+            }
+        }
+    }
+}
+
+struct BoxRemove: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "remove",
+        abstract: "Remove a registered box repository"
+    )
+
+    @Argument(help: "Box name to remove")
+    var name: String
+
+    func run() throws {
+        let manager = BoxManager()
+        try manager.removeBox(name: name)
+        print("✔ Removed box '\(name.lowercased())'")
+    }
+}
+
+struct BoxUpdate: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "update",
+        abstract: "Pull latest changes for registered box repositories"
+    )
+
+    @Argument(help: "Optional box name to update")
+    var name: String?
+
+    func run() throws {
+        let manager = BoxManager()
+        try manager.updateBoxes(name: name, isVerbose: true)
+        print("✔ Box repositories updated successfully.")
     }
 }
 

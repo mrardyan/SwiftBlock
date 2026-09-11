@@ -27,6 +27,14 @@ EOF
     assert_file_exists "App/Sources/Features/checkout/usecase/CheckoutUseCase.swift" "Kit usecase CheckoutUseCase.swift present"
     assert_file_exists "App/Sources/Features/checkout/service/CheckoutService.swift" "Kit service CheckoutService.swift present"
 
+    # 3. Test Box Registry CLI List
+    BOX_OUTPUT=$("$SWIFTBLOCK_BIN" box list)
+    if [[ "$BOX_OUTPUT" != *"SwiftBlock Box Registry"* ]]; then
+        log_error "Box list output invalid: $BOX_OUTPUT"
+        exit 1
+    fi
+    log_success "Box list output verified"
+
     cd "$TEST_DIR"
 }
 

@@ -35,7 +35,20 @@ public struct BlockDiscoveryEngine {
             return candidatePath
         }
         
-        // 3. Search under Bricks/ Singletons, Generatives/Architecture, Generatives/UI
+        // 3. Check local project overrides (.swiftblock/blocks/)
+        let localOverride = "\(baseDir)/.swiftblock/blocks/\(nameOrPath)"
+        if fileManager.fileExists(atPath: localOverride) {
+            return localOverride
+        }
+
+        // 4. Check registered Box store (~/.swiftblock/store/v1/boxes/<nameOrPath>)
+        let boxManager = BoxManager()
+        let boxPath = "\(boxManager.boxesDirectory)/\(nameOrPath)"
+        if fileManager.fileExists(atPath: boxPath) {
+            return boxPath
+        }
+
+        // 5. Search under Bricks/ Singletons, Generatives/Architecture, Generatives/UI
         let searchSubdirs = [
             "Bricks/Singletons",
             "Bricks/Generatives/Architecture",
@@ -65,11 +78,12 @@ public struct BlockDiscoveryEngine {
             }
         }
         
-        // 4. Recursive scan for matching brick directory across standard search roots
+        // 6. Recursive scan for matching brick directory across standard search roots
         var searchRoots = [
             baseDir,
             "\(baseDir)/Bricks",
             "\(FileManager.default.currentDirectoryPath)/Bricks",
+            boxManager.boxesDirectory,
             "/usr/local/share/swiftblock/Bricks",
             "/usr/local/share/swiftblock/Blocks"
         ]
