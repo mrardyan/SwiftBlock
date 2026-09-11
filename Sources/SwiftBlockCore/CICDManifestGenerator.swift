@@ -27,7 +27,7 @@ public class CICDManifestGenerator {
         try fileManager.createDirectory(atPath: workflowsDir, withIntermediateDirectories: true)
 
         let ciPath = "\(workflowsDir)/ci.yml"
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate" : "xcodegen generate"
+        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
 
         var steps: [String] = [
             """
@@ -99,7 +99,7 @@ jobs:
 
     private func generateGitLabCI(in projectPath: String, config: SwiftBlockConfig) throws {
         let ciPath = "\(projectPath)/.gitlab-ci.yml"
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate" : "xcodegen generate"
+        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
 
         let content = """
 stages:
@@ -130,7 +130,7 @@ test_job:
 
     private func generateBitrise(in projectPath: String, config: SwiftBlockConfig) throws {
         let ciPath = "\(projectPath)/bitrise.yml"
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate" : "xcodegen generate"
+        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
 
         let content = """
 format_version: "11"
@@ -160,7 +160,7 @@ workflows:
         try fileManager.createDirectory(atPath: scriptsDir, withIntermediateDirectories: true)
 
         let scriptPath = "\(scriptsDir)/ci_post_clone.sh"
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate" : "xcodegen generate"
+        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
 
         let content = """
 #!/usr/bin/env bash

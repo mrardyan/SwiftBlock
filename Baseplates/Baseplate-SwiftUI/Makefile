@@ -13,7 +13,7 @@ setup: ## Install dependencies, Tuist, SwiftLint, SwiftFormat, and pre-commit ho
 	@bash ./Scripts/setup.sh
 
 generate: ## Generate Xcode project and workspace using Tuist
-	@tuist generate
+	@tuist generate --no-open
 
 clean: ## Clean Tuist cache and build artifacts
 	@tuist clean
