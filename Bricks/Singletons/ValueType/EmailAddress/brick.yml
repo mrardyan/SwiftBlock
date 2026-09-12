@@ -1,0 +1,6 @@
+name: email_address
+category: value_type
+instantiation: singleton
+description: "Semantic email address value type with RawRepresentable and validation"
+defaultPath: "App/Sources/Core/ValueTypes/EmailAddress"
+requiresNameArgument: false

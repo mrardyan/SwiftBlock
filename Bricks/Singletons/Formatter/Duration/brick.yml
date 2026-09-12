@@ -1,0 +1,6 @@
+name: DurationFormatter
+description: Thread-safe media and time period duration formatter singleton using DateComponentsFormatter.
+type: singleton
+category: core/formatter/duration
+options:
+  name: DurationFormatter

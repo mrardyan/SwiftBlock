@@ -1,0 +1,6 @@
+name: PasswordValidator
+description: Password strength validator supporting customizable policy rules.
+type: singleton
+category: core/validator/password
+options:
+  name: PasswordValidator

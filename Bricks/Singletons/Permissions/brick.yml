@@ -1,0 +1,6 @@
+name: SystemPermissionManager
+description: Unified system permissions manager for Camera, Photos, Location, Notifications, and Microphone.
+type: singleton
+category: core/permissions
+options:
+  name: SystemPermissionManager

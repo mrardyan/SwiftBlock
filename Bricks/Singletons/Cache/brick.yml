@@ -1,0 +1,6 @@
+name: cache
+category: infrastructure
+instantiation: singleton
+description: "Thread-safe in-memory cache engine with expiration (TTL) policies and entry count limits"
+defaultPath: "App/Sources/Core/Cache"
+requiresNameArgument: false

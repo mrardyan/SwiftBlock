@@ -1,0 +1,6 @@
+name: connectivity
+category: infrastructure
+instantiation: singleton
+description: "Network connectivity and interface reachability monitor using NWPathMonitor"
+defaultPath: "App/Sources/Core/Connectivity"
+requiresNameArgument: false

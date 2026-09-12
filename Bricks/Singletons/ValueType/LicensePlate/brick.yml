@@ -1,0 +1,6 @@
+name: license_plate
+category: value_type
+instantiation: singleton
+description: "Type-safe representation of vehicle license plate numbers with uppercase sanitization and space formatting"
+defaultPath: "App/Sources/Core/ValueTypes/LicensePlate"
+requiresNameArgument: false

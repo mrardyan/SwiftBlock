@@ -1,0 +1,6 @@
+name: point
+category: value_type
+instantiation: singleton
+description: "Loyalty/reward points value type with integer literal conformance"
+defaultPath: "App/Sources/Core/ValueTypes/Point"
+requiresNameArgument: false

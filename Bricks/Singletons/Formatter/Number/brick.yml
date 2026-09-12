@@ -1,0 +1,6 @@
+name: NumberFormatter
+description: Flexible number formatting singleton supporting decimal, percent, and ordinal styles.
+type: singleton
+category: core/formatter/number
+options:
+  name: NumberFormatter

@@ -1,0 +1,6 @@
+name: calorie
+category: value_type
+instantiation: singleton
+description: "Type-safe representation of food/active energy in kilocalories (kCal) and kilojoules (kJ)"
+defaultPath: "App/Sources/Core/ValueTypes/Calorie"
+requiresNameArgument: false

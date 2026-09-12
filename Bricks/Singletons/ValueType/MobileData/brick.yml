@@ -1,0 +1,6 @@
+name: mobile_data
+category: value_type
+instantiation: singleton
+description: "Telecommunication internet mobile data value type (Bytes, MB, GB) with conversions"
+defaultPath: "App/Sources/Core/ValueTypes/MobileData"
+requiresNameArgument: false

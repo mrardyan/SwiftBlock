@@ -82,6 +82,32 @@ struct BrickDiscoveryEngineTests {
         #expect(resolvedFeatureScene?.lowercased().hasSuffix("scene") == true)
     }
 
+    @Test func resolveNestedSubpathNamespace() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let emailBrickDir = tempDir.appendingPathComponent("Bricks/Singletons/Validator/Email")
+        try FileManager.default.createDirectory(at: emailBrickDir, withIntermediateDirectories: true)
+        try "name: email\ninstantiation: singleton".write(to: emailBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
+
+        let currencyBrickDir = tempDir.appendingPathComponent("Bricks/Singletons/Formatter/Currency")
+        try FileManager.default.createDirectory(at: currencyBrickDir, withIntermediateDirectories: true)
+        try "name: currency\ninstantiation: singleton".write(to: currencyBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
+
+        let engine = BrickDiscoveryEngine()
+        let resolvedEmail = engine.resolveBrickPath(named: "core/validator/email", in: tempDir.path)
+        #expect(resolvedEmail != nil)
+        #expect(resolvedEmail?.lowercased().hasSuffix("validator/email") == true)
+
+        let resolvedCurrency = engine.resolveBrickPath(named: "core/formatter/currency", in: tempDir.path)
+        #expect(resolvedCurrency != nil)
+        #expect(resolvedCurrency?.lowercased().hasSuffix("formatter/currency") == true)
+    }
+
     @Test func brickYmlIsNotCopiedToGeneratedProject() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)

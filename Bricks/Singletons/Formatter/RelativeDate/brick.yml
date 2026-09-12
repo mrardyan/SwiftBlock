@@ -1,0 +1,6 @@
+name: RelativeDateFormatter
+description: Thread-safe relative date formatter singleton using RelativeDateTimeFormatter.
+type: singleton
+category: core/formatter/relative-date
+options:
+  name: RelativeDateFormatter

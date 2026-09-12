@@ -1,0 +1,6 @@
+name: secure_storage
+category: infrastructure
+instantiation: singleton
+description: "Thread-safe secure storage engine wrapping Keychain with accessibility options and String/Codable support"
+defaultPath: "App/Sources/Core/SecureStorage"
+requiresNameArgument: false

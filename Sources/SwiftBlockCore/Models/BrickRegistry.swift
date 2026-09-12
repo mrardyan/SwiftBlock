@@ -176,6 +176,60 @@ public struct BrickRegistry {
             category: .core,
             defaultOutputPath: "App/Sources/Core/FeatureFlag",
             defaultTemplateSubpath: "Core/FeatureFlag"
+        ),
+        BrickSpec(
+            type: .formatter,
+            commandName: "formatter",
+            title: "Formatter",
+            description: "Currency, Date, and Number Formatting Engine",
+            category: .core,
+            defaultOutputPath: "App/Sources/Core/Formatter",
+            defaultTemplateSubpath: "Core/Formatter"
+        ),
+        BrickSpec(
+            type: .biometrics,
+            commandName: "biometrics",
+            title: "Biometrics",
+            description: "Face ID & Touch ID LocalAuthentication Manager",
+            category: .core,
+            defaultOutputPath: "App/Sources/Core/Biometrics",
+            defaultTemplateSubpath: "Core/Biometrics"
+        ),
+        BrickSpec(
+            type: .deeplink,
+            commandName: "deeplink",
+            title: "DeepLink",
+            description: "URL Scheme & Universal Link Routing Engine",
+            category: .core,
+            defaultOutputPath: "App/Sources/Core/DeepLink",
+            defaultTemplateSubpath: "Core/DeepLink"
+        ),
+        BrickSpec(
+            type: .permissions,
+            commandName: "permissions",
+            title: "Permissions",
+            description: "Unified System Permissions Manager",
+            category: .core,
+            defaultOutputPath: "App/Sources/Core/Permissions",
+            defaultTemplateSubpath: "Core/Permissions"
+        ),
+        BrickSpec(
+            type: .location,
+            commandName: "location",
+            title: "Location",
+            description: "CoreLocation Service & Location Stream Manager",
+            category: .core,
+            defaultOutputPath: "App/Sources/Core/Location",
+            defaultTemplateSubpath: "Core/Location"
+        ),
+        BrickSpec(
+            type: .notification,
+            commandName: "notification",
+            title: "Notification",
+            description: "Local & Push Notification Scheduler",
+            category: .core,
+            defaultOutputPath: "App/Sources/Core/Notification",
+            defaultTemplateSubpath: "Core/Notification"
         )
     ]
 
@@ -231,6 +285,13 @@ extension Brick {
         public static let config: Brick = "config"
         public static let auth: Brick = "auth"
         public static let featureflag: Brick = "featureflag"
+        public static let validator: Brick = "validator"
+        public static let formatter: Brick = "formatter"
+        public static let biometrics: Brick = "biometrics"
+        public static let deeplink: Brick = "deeplink"
+        public static let permissions: Brick = "permissions"
+        public static let location: Brick = "location"
+        public static let notification: Brick = "notification"
     }
 
     // Conveniences
@@ -251,12 +312,19 @@ extension Brick {
     public static let config = Core.config
     public static let auth = Core.auth
     public static let featureflag = Core.featureflag
+    public static let formatter = Core.formatter
+    public static let biometrics = Core.biometrics
+    public static let deeplink = Core.deeplink
+    public static let permissions = Core.permissions
+    public static let location = Core.location
+    public static let notification = Core.notification
 
     public static var allCases: [Brick] {
         [
             Feature.scene, Feature.usecase, Feature.repository, Feature.service, Feature.entity,
             Feature.coordinator, Feature.component, Feature.mapper, Feature.validator,
-            Core.storage, Core.network, Core.logger, Core.analytics, Core.config, Core.auth, Core.featureflag
+            Core.storage, Core.network, Core.logger, Core.analytics, Core.config, Core.auth, Core.featureflag, Core.formatter,
+            Core.biometrics, Core.deeplink, Core.permissions, Core.location, Core.notification
         ]
     }
 }

@@ -1,0 +1,6 @@
+name: ByteFormatter
+description: Thread-safe human readable byte count formatter singleton using ByteCountFormatter.
+type: singleton
+category: core/formatter/byte
+options:
+  name: ByteFormatter

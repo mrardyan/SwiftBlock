@@ -1,0 +1,6 @@
+name: LocationService
+description: CoreLocation manager wrapper supporting one-shot location requests and continuous location updates via AsyncStream.
+type: singleton
+category: core/location
+options:
+  name: LocationService

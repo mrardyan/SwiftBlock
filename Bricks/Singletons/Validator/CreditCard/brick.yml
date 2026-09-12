@@ -1,0 +1,6 @@
+name: CreditCardValidator
+description: Credit card number validator supporting ISO/IEC 7812-1 Luhn algorithm and brand detection.
+type: singleton
+category: core/validator/card
+options:
+  name: CreditCardValidator

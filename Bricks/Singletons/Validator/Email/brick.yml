@@ -1,0 +1,6 @@
+name: EmailValidator
+description: Email address validation utility with customizable regex rules.
+type: singleton
+category: core/validator/email
+options:
+  name: EmailValidator

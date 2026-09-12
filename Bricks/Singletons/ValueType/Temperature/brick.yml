@@ -1,0 +1,6 @@
+name: temperature
+category: value_type
+instantiation: singleton
+description: "Type-safe representation of temperature in Celsius with Fahrenheit and Kelvin conversions"
+defaultPath: "App/Sources/Core/ValueTypes/Temperature"
+requiresNameArgument: false

@@ -1,0 +1,6 @@
+name: CurrencyFormatter
+description: High-performance currency formatting singleton using NumberFormatter.
+type: singleton
+category: core/formatter/currency
+options:
+  name: CurrencyFormatter

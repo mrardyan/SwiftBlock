@@ -1,0 +1,6 @@
+name: DateFormatter
+description: Thread-safe, cached DateFormatter utility for high performance date string operations.
+type: singleton
+category: core/formatter/date
+options:
+  name: DateFormatter

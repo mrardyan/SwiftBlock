@@ -1,0 +1,6 @@
+name: sku
+category: value_type
+instantiation: singleton
+description: "Type-safe representation of Stock Keeping Unit (SKU) code with uppercase normalization and alphanumeric validation"
+defaultPath: "App/Sources/Core/ValueTypes/SKU"
+requiresNameArgument: false

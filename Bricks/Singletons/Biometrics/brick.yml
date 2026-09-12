@@ -1,0 +1,6 @@
+name: BiometricAuthManager
+description: LocalAuthentication (Face ID / Touch ID) authentication manager.
+type: singleton
+category: core/biometrics
+options:
+  name: BiometricAuthManager

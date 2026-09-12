@@ -65,12 +65,25 @@ public struct BrickDiscoveryEngine {
             "Generatives/UI"
         ]
         
+        var relativePathClean = nameOrPath
+        let prefixesToStrip = ["core/", "feature/", "infrastructure/", "architecture/", "singletons/", "generatives/"]
+        for p in prefixesToStrip {
+            if relativePathClean.lowercased().hasPrefix(p) {
+                relativePathClean = String(relativePathClean.dropFirst(p.count))
+            }
+        }
+
         for subdir in searchSubdirs {
             let direct = "\(baseDir)/\(subdir)/\(nameOrPath)"
             if fileManager.fileExists(atPath: direct) {
                 return direct
             }
-            
+
+            let directClean = "\(baseDir)/\(subdir)/\(relativePathClean)"
+            if fileManager.fileExists(atPath: directClean) {
+                return directClean
+            }
+
             // Check case-insensitive folder names
             let parentDir = "\(baseDir)/\(subdir)"
             if let items = try? fileManager.contentsOfDirectory(atPath: parentDir) {

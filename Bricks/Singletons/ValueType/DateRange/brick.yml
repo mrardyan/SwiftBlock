@@ -1,0 +1,6 @@
+name: date_range
+category: value_type
+instantiation: singleton
+description: "Type-safe representation of a date range (start date to end date) with duration and containment checks"
+defaultPath: "App/Sources/Core/ValueTypes/DateRange"
+requiresNameArgument: false

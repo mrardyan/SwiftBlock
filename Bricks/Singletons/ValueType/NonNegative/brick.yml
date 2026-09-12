@@ -1,0 +1,6 @@
+name: non_negative
+category: value_type
+instantiation: singleton
+description: "Generic non-negative numeric value type wrapper (>= 0)"
+defaultPath: "App/Sources/Core/ValueTypes/NonNegative"
+requiresNameArgument: false

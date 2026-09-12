@@ -1,0 +1,6 @@
+name: HealthValidator
+description: Physiological and health metrics range validator for physiological inputs.
+type: singleton
+category: core/validator/health
+options:
+  name: HealthValidator

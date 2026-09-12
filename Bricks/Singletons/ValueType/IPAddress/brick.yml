@@ -1,0 +1,6 @@
+name: ip_address
+category: value_type
+instantiation: singleton
+description: "Type-safe representation of IP addresses (IPv4 and IPv6) with validation and private/loopback checks"
+defaultPath: "App/Sources/Core/ValueTypes/IPAddress"
+requiresNameArgument: false

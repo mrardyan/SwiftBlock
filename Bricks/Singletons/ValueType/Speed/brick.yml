@@ -1,0 +1,6 @@
+name: speed
+category: value_type
+instantiation: singleton
+description: "Type-safe representation of speed in kilometers per hour (km/h) with mph and m/s conversions"
+defaultPath: "App/Sources/Core/ValueTypes/Speed"
+requiresNameArgument: false

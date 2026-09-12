@@ -6,12 +6,12 @@ struct BrickRegistryTests {
 
     @Test func allBricksNotEmpty() {
         #expect(!BrickRegistry.allBricks.isEmpty)
-        #expect(BrickRegistry.allBricks.count == 16)
+        #expect(BrickRegistry.allBricks.count == 22)
     }
 
     @Test func featureAndCoreBlocksCount() {
         #expect(BrickRegistry.featureBricks.count == 9)
-        #expect(BrickRegistry.coreBricks.count == 7)
+        #expect(BrickRegistry.coreBricks.count == 13)
     }
 
     @Test func specForType() {

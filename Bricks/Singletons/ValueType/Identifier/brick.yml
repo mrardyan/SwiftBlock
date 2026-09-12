@@ -1,0 +1,6 @@
+name: identifier
+category: value_type
+instantiation: singleton
+description: "Type-safe Phantom Type Identifier wrapper to prevent entity ID mixing bugs at compile time"
+defaultPath: "App/Sources/Core/ValueTypes/Identifier"
+requiresNameArgument: false

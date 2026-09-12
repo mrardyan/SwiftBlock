@@ -1,7 +1,7 @@
 import Foundation
 
 /// Result of an input validation check.
-public enum ValidationResult: Equatable {
+public enum ValidationResult: Equatable, Sendable {
     case valid
     case invalid(reason: String)
 
@@ -12,19 +12,20 @@ public enum ValidationResult: Equatable {
 }
 
 /// Interface for input validation.
-public protocol __MODULE_NAME__Validating {
-    func validate(_ input: String) -> ValidationResult
+public protocol __MODULE_NAME__Validating: Sendable {
+    associatedtype Input
+    func validate(_ input: Input) -> ValidationResult
 }
 
-/// Form input validator for `__MODULE_NAME__`.
-public struct __MODULE_NAME__Validator: __MODULE_NAME__Validating {
-    public init() {}
+/// Generic input validator implementation for `__MODULE_NAME__`.
+public struct __MODULE_NAME__Validator<Input>: __MODULE_NAME__Validating {
+    private let validateHandler: @Sendable (Input) -> ValidationResult
 
-    public func validate(_ input: String) -> ValidationResult {
-        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return .invalid(reason: "Input cannot be empty.")
-        }
-        return .valid
+    public init(validateHandler: @escaping @Sendable (Input) -> ValidationResult) {
+        self.validateHandler = validateHandler
+    }
+
+    public func validate(_ input: Input) -> ValidationResult {
+        validateHandler(input)
     }
 }

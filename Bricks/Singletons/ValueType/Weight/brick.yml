@@ -1,0 +1,6 @@
+name: weight
+category: value_type
+instantiation: singleton
+description: "Type-safe representation of physical weight in grams with kilogram and pound conversions"
+defaultPath: "App/Sources/Core/ValueTypes/Weight"
+requiresNameArgument: false

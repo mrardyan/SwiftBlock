@@ -1,0 +1,6 @@
+name: URLValidator
+description: RFC 3986 compliant URL validator with customizable scheme and HTTPS rules.
+type: singleton
+category: core/validator/url
+options:
+  name: URLValidator

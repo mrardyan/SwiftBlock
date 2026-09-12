@@ -1,0 +1,6 @@
+name: HealthFormatter
+description: Thread-safe health and fitness metrics formatting singleton using Foundation MeasurementFormatters.
+type: singleton
+category: core/formatter/health
+options:
+  name: HealthFormatter

@@ -1,0 +1,6 @@
+name: AppNotificationScheduler
+description: Local and push notification manager using UNUserNotificationCenter.
+type: singleton
+category: core/notification
+options:
+  name: AppNotificationScheduler

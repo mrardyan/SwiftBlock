@@ -1,0 +1,6 @@
+name: PhoneValidator
+description: E.164 and international phone number validation utility.
+type: singleton
+category: core/validator/phone
+options:
+  name: PhoneValidator

@@ -1,0 +1,6 @@
+name: national_id
+category: value_type
+instantiation: singleton
+description: "Type-safe representation of national identity numbers (e.g. NIK 16-digit / SSN) with sanitization and validation"
+defaultPath: "App/Sources/Core/ValueTypes/NationalID"
+requiresNameArgument: false

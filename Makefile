@@ -6,7 +6,7 @@ SHAREDIR ?= $(PREFIX)/share/swiftblock
 CLI_NAME = swiftblock
 BUILD_PATH = .build/release/$(CLI_NAME)
 
-.PHONY: all build install uninstall test test-e2e clean
+.PHONY: all build install uninstall test test-templates test-e2e clean
 
 all: build
 
@@ -51,6 +51,9 @@ uninstall:
 
 test:
 	swift test
+
+test-templates:
+	./Scripts/test_templates.sh
 
 test-e2e:
 	./Scripts/test_e2e.sh
