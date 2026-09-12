@@ -14,6 +14,7 @@ struct SwiftBlock: ParsableCommand {
             BoxCommand.self,
             DoctorCommand.self,
             IDECommand.self,
+            RenameCommand.self,
             // Keep aliases accessible at root level
             Init.self,
             New.self,
@@ -450,6 +451,40 @@ struct IDESetup: ParsableCommand {
         if xcode || (!vscode && !xcode) {
             try generator.updateMakefileShortcuts(projectPath: rootPath)
             print("✔ Updated Makefile shortcuts")
+        }
+    }
+}
+
+struct RenameCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "rename",
+        abstract: "Safely refactor and rename current project without breaking targets, manifests, or tests"
+    )
+
+    @Argument(help: "New project name (e.g. MyAwesomeApp)")
+    var newName: String
+
+    @Option(name: [.customShort("p"), .long], help: "Path to project root directory (default: current directory)")
+    var path: String?
+
+    @Flag(name: .long, help: "Simulate project rename without writing changes to disk")
+    var dryRun: Bool = false
+
+    func run() throws {
+        let rootPath = path ?? FileManager.default.currentDirectoryPath
+        let engine = ProjectRefactoringEngine()
+
+        do {
+            let result = try engine.renameProject(projectPath: rootPath, newName: newName, isDryRun: dryRun)
+            if dryRun {
+                print("✔ [DRY RUN] Would rename project '\(result.oldName)' -> '\(result.newName)'")
+            } else {
+                print("✔ Refactored project '\(result.oldName)' to '\(result.newName)' successfully.")
+                print("✔ Updated \(result.modifiedFiles.count) file(s) and renamed \(result.renamedFiles.count) test file(s).")
+            }
+        } catch {
+            print("✖ \(error.localizedDescription)")
+            throw ExitCode.failure
         }
     }
 }
