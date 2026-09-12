@@ -45,21 +45,12 @@
 brew install mrardyan/tap/swiftblock
 ```
 
-#### Via Makefile (Convenience Command)
+#### Via Makefile (From Source)
 
 ```bash
 git clone https://github.com/mrardyan/swiftblock.git
 cd swiftblock
 make install
-```
-
-#### Via Install Script
-
-```bash
-git clone https://github.com/mrardyan/swiftblock.git
-cd swiftblock
-chmod +x Scripts/install.sh
-./Scripts/install.sh
 ```
 
 ---
