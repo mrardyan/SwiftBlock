@@ -52,21 +52,21 @@ public struct BrickDiscoveryEngine {
             return boxPath
         }
 
-        // 5. Search under Bricks/ Singletons, Generatives/Architecture, Generatives/UI
+        // 5. Search under Bricks/ Config, Core, Feature, Utils
         let searchSubdirs = [
-            "Bricks/Singletons",
-            "Bricks/Generatives/Architecture",
-            "Bricks/Generatives/UI",
+            "Bricks/Config",
+            "Bricks/Core",
+            "Bricks/Feature",
+            "Bricks/Utils",
             "Bricks",
-            "Blocks/Core",
-            "Blocks/Modules",
-            "Singletons",
-            "Generatives/Architecture",
-            "Generatives/UI"
+            "Config",
+            "Core",
+            "Feature",
+            "Utils"
         ]
         
         var relativePathClean = nameOrPath
-        let prefixesToStrip = ["core/", "feature/", "infrastructure/", "architecture/", "singletons/", "generatives/"]
+        let prefixesToStrip = ["config/", "core/", "feature/", "utils/", "utility/", "infrastructure/", "architecture/", "singletons/", "generatives/"]
         for p in prefixesToStrip {
             if relativePathClean.lowercased().hasPrefix(p) {
                 relativePathClean = String(relativePathClean.dropFirst(p.count))
@@ -143,7 +143,17 @@ public struct BrickDiscoveryEngine {
     }
 
     public func discoverBricks(in baseTemplatePath: String, category: Brick.Category) -> [BrickSpec] {
-        let searchDirs = category == .feature ? ["Bricks/Generatives/Architecture", "Bricks/Generatives/UI", "Blocks/Modules"] : ["Bricks/Singletons", "Blocks/Core"]
+        let searchDirs: [String]
+        switch category.rawValue {
+        case "config":
+            searchDirs = ["Bricks/Config", "Config"]
+        case "feature":
+            searchDirs = ["Bricks/Feature", "Feature", "Blocks/Modules"]
+        case "utils", "utility":
+            searchDirs = ["Bricks/Utils", "Utils", "Utility"]
+        default:
+            searchDirs = ["Bricks/Core", "Core", "Blocks/Core"]
+        }
         
         var specs: [BrickSpec] = []
         for dir in searchDirs {

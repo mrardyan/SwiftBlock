@@ -1,0 +1,12 @@
+# file options
+--header "© {year} __PROJECT_NAME__. All rights reserved."
+--exclude .build,Scripts
+
+# options
+--swiftversion 5.10
+--self remove
+--importgrouping testable-bottom
+--commas always
+--trimwhitespace always
+--indent 2
+--maxwidth 130

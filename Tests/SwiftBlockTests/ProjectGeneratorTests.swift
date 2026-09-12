@@ -222,12 +222,43 @@ struct ProjectGeneratorTests {
         #expect(content.contains("AppConfig()"))
     }
 
-    @Test func baseProjectTemplateContainsSceneAndAppDelegate() {
-        let templateBaseDir = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI/App/Sources"
-        if FileManager.default.fileExists(atPath: templateBaseDir) {
-            #expect(FileManager.default.fileExists(atPath: "\(templateBaseDir)/AppDelegate.swift"))
-            #expect(FileManager.default.fileExists(atPath: "\(templateBaseDir)/SceneDelegate.swift"))
-            #expect(FileManager.default.fileExists(atPath: "\(templateBaseDir)/Main.swift"))
+    @Test func generateVaporBaseplate() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
         }
+
+        let localVaporDir = "\(FileManager.default.currentDirectoryPath)/Baseplates/Vapor"
+        guard FileManager.default.fileExists(atPath: localVaporDir) else {
+            return
+        }
+
+        let outputURL = tempDir.appendingPathComponent("MyVaporServer")
+        let options = ProjectGeneratorOptions(
+            projectName: "MyVaporServer",
+            bundlePrefix: "com.company.vapor",
+            templatePath: localVaporDir,
+            outputPath: outputURL.path,
+            baseplateName: "vapor"
+        )
+
+        let generator = ProjectGenerator()
+        try generator.generateProject(options: options)
+
+        #expect(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Package.swift").path))
+        #expect(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Dockerfile").path))
+        #expect(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("docker-compose.yml").path))
+        #expect(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Sources/App/entrypoint.swift").path))
+        #expect(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Sources/App/Controllers/HealthController.swift").path))
+
+        let packageContent = try String(contentsOfFile: outputURL.appendingPathComponent("Package.swift").path, encoding: .utf8)
+        #expect(packageContent.contains("MyVaporServer"))
+        #expect(!packageContent.contains("__PROJECT_NAME__"))
+
+        let healthContent = try String(contentsOfFile: outputURL.appendingPathComponent("Sources/App/Controllers/HealthController.swift").path, encoding: .utf8)
+        #expect(healthContent.contains("MyVaporServer"))
+        #expect(!healthContent.contains("__PROJECT_NAME__"))
     }
 }

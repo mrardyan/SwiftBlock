@@ -1,0 +1,19 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# OS Metadata
+.DS_Store
+Thumbs.db

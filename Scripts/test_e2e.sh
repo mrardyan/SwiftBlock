@@ -17,8 +17,8 @@ log_info "Step 1: Compiling SwiftBlock release binary..."
 swift build -c release
 
 export SWIFTBLOCK_BIN="$ORIGINAL_DIR/.build/release/swiftblock"
-export TEMPLATE_PATH="$ORIGINAL_DIR/Baseplates/Baseplate-SwiftUI"
-export MODULES_PATH="$ORIGINAL_DIR/Bricks/Generatives/Architecture"
+export TEMPLATE_PATH="$ORIGINAL_DIR/Baseplates/SwiftUI"
+export MODULES_PATH="$ORIGINAL_DIR/Bricks/Feature"
 export SWIFTBLOCK_ROOT="$ORIGINAL_DIR"
 
 if [[ ! -f "$SWIFTBLOCK_BIN" ]]; then

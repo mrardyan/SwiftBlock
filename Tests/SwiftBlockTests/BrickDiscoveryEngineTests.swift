@@ -18,13 +18,13 @@ struct BrickDiscoveryEngineTests {
             try? FileManager.default.removeItem(at: tempDir)
         }
 
-        let modulesDir = tempDir.appendingPathComponent("Bricks/Generatives/Architecture")
+        let modulesDir = tempDir.appendingPathComponent("Bricks/Feature")
         let customBlockDir = modulesDir.appendingPathComponent("CustomForm")
         try FileManager.default.createDirectory(at: customBlockDir, withIntermediateDirectories: true)
 
         let metadataYAML = """
         name: customform
-        category: architecture
+        category: feature
         description: "Custom Form Validator"
         defaultPath: "App/Sources/Forms/{module}"
         """
@@ -46,7 +46,7 @@ struct BrickDiscoveryEngineTests {
             try? FileManager.default.removeItem(at: tempDir)
         }
 
-        let networkBrickDir = tempDir.appendingPathComponent("Bricks/Singletons/Network")
+        let networkBrickDir = tempDir.appendingPathComponent("Bricks/Core/Network")
         try FileManager.default.createDirectory(at: networkBrickDir, withIntermediateDirectories: true)
         try "name: network\ninstantiation: singleton".write(to: networkBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
 
@@ -64,11 +64,11 @@ struct BrickDiscoveryEngineTests {
             try? FileManager.default.removeItem(at: tempDir)
         }
 
-        let networkBrickDir = tempDir.appendingPathComponent("Bricks/Singletons/Network")
+        let networkBrickDir = tempDir.appendingPathComponent("Bricks/Core/Network")
         try FileManager.default.createDirectory(at: networkBrickDir, withIntermediateDirectories: true)
         try "name: network\ninstantiation: singleton".write(to: networkBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
 
-        let sceneBrickDir = tempDir.appendingPathComponent("Bricks/Generatives/Architecture/Scene")
+        let sceneBrickDir = tempDir.appendingPathComponent("Bricks/Feature/Scene")
         try FileManager.default.createDirectory(at: sceneBrickDir, withIntermediateDirectories: true)
         try "name: scene\ninstantiation: generative".write(to: sceneBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
 
@@ -90,20 +90,20 @@ struct BrickDiscoveryEngineTests {
             try? FileManager.default.removeItem(at: tempDir)
         }
 
-        let emailBrickDir = tempDir.appendingPathComponent("Bricks/Singletons/Validator/Email")
+        let emailBrickDir = tempDir.appendingPathComponent("Bricks/Utils/Validator/Email")
         try FileManager.default.createDirectory(at: emailBrickDir, withIntermediateDirectories: true)
         try "name: email\ninstantiation: singleton".write(to: emailBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
 
-        let currencyBrickDir = tempDir.appendingPathComponent("Bricks/Singletons/Formatter/Currency")
+        let currencyBrickDir = tempDir.appendingPathComponent("Bricks/Utils/Formatter/Currency")
         try FileManager.default.createDirectory(at: currencyBrickDir, withIntermediateDirectories: true)
         try "name: currency\ninstantiation: singleton".write(to: currencyBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
 
         let engine = BrickDiscoveryEngine()
-        let resolvedEmail = engine.resolveBrickPath(named: "core/validator/email", in: tempDir.path)
+        let resolvedEmail = engine.resolveBrickPath(named: "utils/validator/email", in: tempDir.path)
         #expect(resolvedEmail != nil)
         #expect(resolvedEmail?.lowercased().hasSuffix("validator/email") == true)
 
-        let resolvedCurrency = engine.resolveBrickPath(named: "core/formatter/currency", in: tempDir.path)
+        let resolvedCurrency = engine.resolveBrickPath(named: "utils/formatter/currency", in: tempDir.path)
         #expect(resolvedCurrency != nil)
         #expect(resolvedCurrency?.lowercased().hasSuffix("formatter/currency") == true)
     }

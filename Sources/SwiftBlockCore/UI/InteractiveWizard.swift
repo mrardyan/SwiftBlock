@@ -220,11 +220,24 @@ public class InteractiveWizard {
         let bundlePrefix = prompt(message: "Enter Bundle Identifier Prefix", defaultValue: "com.company", readLine: readLine)
 
         print("│")
-        print("◇  \(ANSIColor.boldText("Build Tool & Architecture Strategy"))")
+        print("◇  \(ANSIColor.boldText("Project Baseplate Starter"))")
 
-        let toolChoices = ProjectGeneratorTool.allCases.map { ChoiceOption(title: $0.title) }
-        let toolChoiceIndex = promptChoiceWithOptions(title: "Select Build Tool Generator", options: toolChoices, readLine: readLine)
-        let selectedTool = ProjectGeneratorTool.allCases[toolChoiceIndex]
+        let baseplateChoices = [
+            ChoiceOption(title: "SwiftUI", subtitle: "Modular SwiftUI application with Tuist or XcodeGen"),
+            ChoiceOption(title: "Vapor", subtitle: "High-performance Swift backend web API service powered by Vapor")
+        ]
+        let baseplateChoiceIndex = promptChoiceWithOptions(title: "Select Project Baseplate Starter", options: baseplateChoices, readLine: readLine)
+        let selectedBaseplate = baseplateChoiceIndex == 1 ? "vapor" : "swiftui"
+
+        let selectedTool: ProjectGeneratorTool
+        if selectedBaseplate == "vapor" {
+            selectedTool = .spm
+        } else {
+            let availableTools = ProjectGeneratorTool.allCases.filter { $0 != .spm }
+            let toolChoices = availableTools.map { ChoiceOption(title: $0.title) }
+            let toolChoiceIndex = promptChoiceWithOptions(title: "Select Build Tool Generator", options: toolChoices, readLine: readLine)
+            selectedTool = availableTools[toolChoiceIndex]
+        }
 
         let corePkgChoices = [
             ChoiceOption(title: "Monolithic Main Target", subtitle: "e.g. App/Sources/Core/Storage/..."),
@@ -352,7 +365,8 @@ public class InteractiveWizard {
             projectName: projectName,
             bundlePrefix: bundlePrefix,
             templatePath: defaultTemplatePath,
-            customConfig: config
+            customConfig: config,
+            baseplateName: selectedBaseplate
         )
     }
 

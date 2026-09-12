@@ -23,7 +23,7 @@ struct SwiftBlock: ParsableCommand {
 struct BaseplateCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "baseplate",
-        abstract: "Lay down a new SwiftUI project baseplate using Tuist or XcodeGen",
+        abstract: "Lay down a new SwiftUI or Vapor project baseplate using Tuist, XcodeGen, or SPM",
         aliases: ["new", "init"]
     )
 
@@ -32,6 +32,9 @@ struct BaseplateCommand: ParsableCommand {
 
     @Option(name: [.customShort("p"), .customLong("bundle-prefix"), .customLong("prefix")], help: "Bundle identifier prefix (default: com.company)")
     var bundlePrefix: String = "com.company"
+
+    @Option(name: [.customShort("b"), .customLong("baseplate"), .customLong("template-name")], help: "Baseplate starter template: swiftui or vapor (default: swiftui)")
+    var baseplate: String = "swiftui"
 
     @Option(name: [.customShort("t"), .long], help: "Custom project template path")
     var templatePath: String?
@@ -48,7 +51,7 @@ struct BaseplateCommand: ParsableCommand {
     func run() throws {
         if let projectName = projectName, !projectName.isEmpty {
             let toolEnum = ProjectGeneratorTool(rawValue: tool.lowercased()) ?? .tuist
-            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, templatePath: templatePath, generatorTool: toolEnum, isDryRun: dryRun, isVerbose: verbose)
+            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, baseplateName: baseplate, templatePath: templatePath, generatorTool: toolEnum, isDryRun: dryRun, isVerbose: verbose)
         } else {
             let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: templatePath ?? "")
             var finalOptions = options
@@ -572,15 +575,17 @@ struct RenameCommand: ParsableCommand {
 
 
 
-private func executeInitProject(projectName: String, bundlePrefix: String, templatePath: String?, generatorTool: ProjectGeneratorTool, isDryRun: Bool, isVerbose: Bool) throws {
-    let config = SwiftBlockConfig(projectName: projectName, bundlePrefix: bundlePrefix, generatorTool: generatorTool)
+private func executeInitProject(projectName: String, bundlePrefix: String, baseplateName: String = "swiftui", templatePath: String?, generatorTool: ProjectGeneratorTool, isDryRun: Bool, isVerbose: Bool) throws {
+    let resolvedTool: ProjectGeneratorTool = baseplateName.lowercased().contains("vapor") ? .spm : generatorTool
+    let config = SwiftBlockConfig(projectName: projectName, bundlePrefix: bundlePrefix, generatorTool: resolvedTool)
     let options = ProjectGeneratorOptions(
         projectName: projectName,
         bundlePrefix: bundlePrefix,
         templatePath: templatePath,
         isDryRun: isDryRun,
         isVerbose: isVerbose,
-        customConfig: config
+        customConfig: config,
+        baseplateName: baseplateName
     )
     try executeWithOptions(options: options)
 }

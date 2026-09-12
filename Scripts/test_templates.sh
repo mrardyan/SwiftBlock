@@ -54,26 +54,31 @@ copy_brick_folder() {
     done
 }
 
-echo "📦 Collecting singleton brick templates..."
+echo "📦 Collecting standalone brick templates (Config, Core, Utils)..."
 
-for category_dir in "$ROOT_DIR/Bricks/Singletons"/*; do
-    if [ -d "$category_dir" ]; then
-        category_name="$(basename "$category_dir")"
-        
-        has_subbricks=false
-        for sub_dir in "$category_dir"/*; do
-            if [ -d "$sub_dir" ] && [ -f "$sub_dir/brick.yml" ]; then
-                has_subbricks=true
-                sub_name="$(basename "$sub_dir")"
-                prefix="Test${category_name}${sub_name}"
-                copy_brick_folder "$sub_dir" "$prefix"
+for cat in Config Core Utils; do
+    cat_group="$ROOT_DIR/Bricks/$cat"
+    if [ -d "$cat_group" ]; then
+        for category_dir in "$cat_group"/*; do
+            if [ -d "$category_dir" ]; then
+                category_name="$(basename "$category_dir")"
+                
+                has_subbricks=false
+                for sub_dir in "$category_dir"/*; do
+                    if [ -d "$sub_dir" ] && [ -f "$sub_dir/brick.yml" ]; then
+                        has_subbricks=true
+                        sub_name="$(basename "$sub_dir")"
+                        prefix="Test${category_name}${sub_name}"
+                        copy_brick_folder "$sub_dir" "$prefix"
+                    fi
+                done
+
+                if [ "$has_subbricks" = false ] && [ -f "$category_dir/brick.yml" ]; then
+                    prefix="Test${category_name}"
+                    copy_brick_folder "$category_dir" "$prefix"
+                fi
             fi
         done
-
-        if [ "$has_subbricks" = false ] && [ -f "$category_dir/brick.yml" ]; then
-            prefix="Test${category_name}"
-            copy_brick_folder "$category_dir" "$prefix"
-        fi
     fi
 done
 

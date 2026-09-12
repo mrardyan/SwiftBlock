@@ -16,21 +16,23 @@ public struct ProjectGeneratorOptions {
         outputPath: String? = nil,
         isDryRun: Bool = false,
         isVerbose: Bool = false,
-        customConfig: SwiftBlockConfig? = nil
+        customConfig: SwiftBlockConfig? = nil,
+        baseplateName: String = "swiftui"
     ) {
         self.projectName = projectName
         self.bundlePrefix = bundlePrefix
         
-        let defaultShare = "/usr/local/share/swiftblock/Baseplates/Baseplate-SwiftUI"
-        let localDir = "\(FileManager.default.currentDirectoryPath)/Baseplates/Baseplate-SwiftUI"
+        let folderName = baseplateName.lowercased().contains("vapor") ? "Vapor" : "SwiftUI"
+        let defaultShare = "/usr/local/share/swiftblock/Baseplates/\(folderName)"
+        let localDir = "\(FileManager.default.currentDirectoryPath)/Baseplates/\(folderName)"
         let fallbackOld = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
         
         if let custom = templatePath, !custom.isEmpty {
             self.templatePath = custom
-        } else if FileManager.default.fileExists(atPath: defaultShare) {
-            self.templatePath = defaultShare
         } else if FileManager.default.fileExists(atPath: localDir) {
             self.templatePath = localDir
+        } else if FileManager.default.fileExists(atPath: defaultShare) {
+            self.templatePath = defaultShare
         } else {
             self.templatePath = fallbackOld
         }
@@ -180,8 +182,8 @@ public class ProjectGenerator {
     public func replacePlaceholders(in folderPath: String, projectName: String, bundlePrefix: String) throws {
         let enumerator = fileManager.enumerator(atPath: folderPath)
 
-        let allowedExtensions = ["swift", "xcodeproj", "pbxproj", "plist", "md", "yaml", "yml", "txt", "sh", "json"]
-        let allowedExactFilenames = [".swiftformat", ".gitignore", ".editorconfig", "Makefile", ".swiftblock"]
+        let allowedExtensions = ["swift", "xcodeproj", "pbxproj", "plist", "md", "yaml", "yml", "txt", "sh", "json", "toml"]
+        let allowedExactFilenames = [".swiftformat", ".gitignore", ".editorconfig", "Makefile", ".swiftblock", "Package.swift", "Dockerfile", "docker-compose.yml", ".mise.toml"]
 
         while let file = enumerator?.nextObject() as? String {
             let filePath = "\(folderPath)/\(file)"

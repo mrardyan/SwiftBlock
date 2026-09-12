@@ -1,6 +1,6 @@
 # Bricks Catalog
 
-This catalog details all **28 built-in Bricks** (19 Core/Singleton Bricks + 9 Feature/Generative Bricks) provided out-of-the-box by **SwiftBlock**. Bricks are categorized into 4 functional layers: **App & Configuration**, **Core Infrastructure**, **Feature Architecture**, and **Utilities & Value Types**.
+This catalog details all **28 built-in Bricks** provided out-of-the-box by **SwiftBlock**. Bricks are categorized into 4 User-First functional layers: **Config**, **Core**, **Feature**, and **Utils**.
 
 ---
 

@@ -36,7 +36,7 @@ public struct BrickGeneratorOptions {
             } else if let envRoot = envRoot, FileManager.default.fileExists(atPath: envRoot) {
                 self.modulesTemplatePath = envRoot
             } else {
-                let subFolder = type.category == .core ? "Bricks/Singletons" : "Bricks/Generatives/Architecture"
+                let subFolder = "Bricks/\(type.category.rawValue.capitalized)"
                 self.modulesTemplatePath = "/usr/local/share/swiftblock/\(subFolder)"
             }
         }
