@@ -50,7 +50,7 @@ public struct CodeInjector {
             return false
         }
 
-        guard var existingContent = try? String(contentsOfFile: absoluteTargetPath, encoding: .utf8) else {
+        guard let existingContent = try? String(contentsOfFile: absoluteTargetPath, encoding: .utf8) else {
             return false
         }
 

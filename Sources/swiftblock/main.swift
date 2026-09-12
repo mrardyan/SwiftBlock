@@ -117,7 +117,7 @@ struct SnapCommand: ParsableCommand {
         if BoxManager.isGitURL(brickInput) {
             let boxManager = BoxManager()
             let fetched = try boxManager.fetchGitRepository(urlString: brickInput, isVerbose: true)
-            var targetPath = fetched.cachedPath
+            let targetPath = fetched.cachedPath
 
             if let manifest = BrickManifest.load(fromPath: targetPath) {
                 if !manifest.variables.isEmpty {

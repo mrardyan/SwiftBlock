@@ -150,7 +150,7 @@ public class BrickGenerator {
             )
 
             let manifestGenerator = ProjectManifestGeneratorFactory.createGenerator(for: config.generatorTool)
-            try? manifestGenerator.addBrickDependency(
+            _ = try? manifestGenerator.addBrickDependency(
                 name: options.name,
                 type: options.type,
                 config: config,
@@ -159,7 +159,7 @@ public class BrickGenerator {
 
             if options.type.category == .feature {
                 let targetWiringEngine = ProjectTargetWiringEngine(fileManager: fileManager)
-                try? targetWiringEngine.wireFeatureTarget(
+                _ = try? targetWiringEngine.wireFeatureTarget(
                     moduleName: options.name,
                     projectPath: options.projectRootPath,
                     config: config,

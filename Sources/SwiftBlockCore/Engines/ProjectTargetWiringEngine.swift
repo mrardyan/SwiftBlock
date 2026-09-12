@@ -49,7 +49,7 @@ public class ProjectTargetWiringEngine {
     }
 
     private func wireTuistManifest(manifestPath: String, moduleName: String, isDryRun: Bool) throws -> Bool {
-        guard var content = try? String(contentsOfFile: manifestPath, encoding: .utf8) else {
+        guard let content = try? String(contentsOfFile: manifestPath, encoding: .utf8) else {
             return false
         }
 
@@ -99,7 +99,7 @@ public class ProjectTargetWiringEngine {
     }
 
     private func wireXcodeGenManifest(manifestPath: String, moduleName: String, isDryRun: Bool) throws -> Bool {
-        guard var content = try? String(contentsOfFile: manifestPath, encoding: .utf8) else {
+        guard let content = try? String(contentsOfFile: manifestPath, encoding: .utf8) else {
             return false
         }
 
