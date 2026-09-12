@@ -45,18 +45,18 @@ public class ProjectRefactoringEngine {
         newName: String,
         isDryRun: Bool = false
     ) throws -> RefactoringResult {
-        let absolutePath = (projectPath as NSString).isAbsolutePath
+        let startPath = (projectPath as NSString).isAbsolutePath
             ? (projectPath as NSString).standardizingPath
             : ("\(fileManager.currentDirectoryPath)/\(projectPath)" as NSString).standardizingPath
+
+        let absolutePath = SwiftBlockConfig.findProjectRoot(from: startPath) ?? startPath
 
         let sanitizedNewName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard isValidProjectName(sanitizedNewName) else {
             throw ProjectRefactoringError.invalidProjectName(newName)
         }
 
-        let configPath = "\(absolutePath)/.swiftblock/config.yml"
-        guard fileManager.fileExists(atPath: configPath),
-              var config = try? SwiftBlockConfig.load(from: absolutePath) else {
+        guard var config = try? SwiftBlockConfig.load(from: absolutePath) else {
             throw ProjectRefactoringError.configNotFound(absolutePath)
         }
 

@@ -190,11 +190,30 @@ public struct SwiftBlockConfig: Codable, Equatable {
         return paths.path(for: type)
     }
 
+    public static func findProjectRoot(from startPath: String = FileManager.default.currentDirectoryPath) -> String? {
+        let fileManager = FileManager.default
+        var current = (startPath as NSString).standardizingPath
+
+        while !current.isEmpty && current != "/" {
+            let yml = "\(current)/.swiftblock/config.yml"
+            let yaml = "\(current)/.swiftblock/config.yaml"
+            let dotConfig = "\(current)/.swiftblock"
+            if fileManager.fileExists(atPath: yml) || fileManager.fileExists(atPath: yaml) || fileManager.fileExists(atPath: dotConfig) {
+                return current
+            }
+            let parent = (current as NSString).deletingLastPathComponent
+            if parent == current { break }
+            current = parent
+        }
+        return nil
+    }
+
     public static func load(from directoryPath: String = FileManager.default.currentDirectoryPath) throws -> SwiftBlockConfig {
         let fileManager = FileManager.default
-        let ymlConfigPath = "\(directoryPath)/.swiftblock/config.yml"
-        let yamlConfigPath = "\(directoryPath)/.swiftblock/config.yaml"
-        let rootConfigPath = "\(directoryPath)/.swiftblock"
+        let resolvedDirectory = findProjectRoot(from: directoryPath) ?? directoryPath
+        let ymlConfigPath = "\(resolvedDirectory)/.swiftblock/config.yml"
+        let yamlConfigPath = "\(resolvedDirectory)/.swiftblock/config.yaml"
+        let rootConfigPath = "\(resolvedDirectory)/.swiftblock"
         
         var targetPath: String?
         if fileManager.fileExists(atPath: ymlConfigPath) {

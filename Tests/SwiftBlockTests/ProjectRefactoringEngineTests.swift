@@ -109,4 +109,26 @@ struct ProjectRefactoringEngineTests {
             try engine.renameProject(newName: "123 Invalid Name!")
         }
     }
+
+    @Test func renameFromSubdirectoryFallback() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("RenameSubdir_\(UUID().uuidString)", isDirectory: true).path
+        try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: tempDir) }
+
+        let config = SwiftBlockConfig(projectName: "NestedApp", bundlePrefix: "com.test")
+        try config.save(to: tempDir)
+
+        let subDir = "\(tempDir)/App/Sources/Features/Home"
+        try FileManager.default.createDirectory(atPath: subDir, withIntermediateDirectories: true)
+
+        let engine = ProjectRefactoringEngine()
+        let result = try engine.renameProject(projectPath: subDir, newName: "RenamedNestedApp")
+
+        #expect(result.oldName == "NestedApp")
+        #expect(result.newName == "RenamedNestedApp")
+
+        let updatedConfig = try SwiftBlockConfig.load(from: tempDir)
+        #expect(updatedConfig.projectName == "RenamedNestedApp")
+    }
 }
