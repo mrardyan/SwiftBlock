@@ -24,8 +24,6 @@ public struct BrickDiscoveryEngine {
     /// Smart Namespace Resolution (`[box/][category/]<brick>`)
     /// Resolves brick name or path to the full file directory path containing brick.yml
     public func resolveBrickPath(named nameOrPath: String, in baseDir: String) -> String? {
-        let nameLower = nameOrPath.lowercased()
-        
         // 1. Direct path check
         if fileManager.fileExists(atPath: nameOrPath) {
             return nameOrPath
@@ -42,6 +40,10 @@ public struct BrickDiscoveryEngine {
         if fileManager.fileExists(atPath: localOverride) {
             return localOverride
         }
+
+        let targetName = nameOrPath.contains("/") ? String(nameOrPath.split(separator: "/").last!) :
+                         (nameOrPath.contains(".") ? String(nameOrPath.split(separator: ".").last!) : nameOrPath)
+        let nameLower = targetName.lowercased()
 
         // 4. Check registered Box store (~/.swiftblock/store/v1/boxes/<nameOrPath>)
         let boxManager = BoxManager()

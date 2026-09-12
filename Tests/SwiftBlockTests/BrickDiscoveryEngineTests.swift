@@ -56,6 +56,32 @@ struct BrickDiscoveryEngineTests {
         #expect(resolvedShort?.lowercased().hasSuffix("network") == true)
     }
 
+    @Test func resolveBrickPathCategorySlashNamespace() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let networkBrickDir = tempDir.appendingPathComponent("Bricks/Singletons/Network")
+        try FileManager.default.createDirectory(at: networkBrickDir, withIntermediateDirectories: true)
+        try "name: network\ninstantiation: singleton".write(to: networkBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
+
+        let sceneBrickDir = tempDir.appendingPathComponent("Bricks/Generatives/Architecture/Scene")
+        try FileManager.default.createDirectory(at: sceneBrickDir, withIntermediateDirectories: true)
+        try "name: scene\ninstantiation: generative".write(to: sceneBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
+
+        let engine = BrickDiscoveryEngine()
+        let resolvedCoreNetwork = engine.resolveBrickPath(named: "core/network", in: tempDir.path)
+        #expect(resolvedCoreNetwork != nil)
+        #expect(resolvedCoreNetwork?.lowercased().hasSuffix("network") == true)
+
+        let resolvedFeatureScene = engine.resolveBrickPath(named: "feature/scene", in: tempDir.path)
+        #expect(resolvedFeatureScene != nil)
+        #expect(resolvedFeatureScene?.lowercased().hasSuffix("scene") == true)
+    }
+
     @Test func brickYmlIsNotCopiedToGeneratedProject() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
