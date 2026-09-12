@@ -8,6 +8,7 @@ public struct ProjectGeneratorOptions {
     public var isDryRun: Bool
     public var isVerbose: Bool
     public var customConfig: SwiftBlockConfig?
+    public var baseplateName: String
 
     public init(
         projectName: String,
@@ -21,6 +22,7 @@ public struct ProjectGeneratorOptions {
     ) {
         self.projectName = projectName
         self.bundlePrefix = bundlePrefix
+        self.baseplateName = baseplateName
         
         let folderName = baseplateName.lowercased().contains("vapor") ? "Vapor" : "SwiftUI"
         let defaultShare = "/usr/local/share/swiftblock/Baseplates/\(folderName)"

@@ -207,7 +207,27 @@ public class InteractiveWizard {
     ) throws -> ProjectGeneratorOptions {
         print("┌  \(ANSIColor.boldText("Create New Project"))")
         print("│")
-        print("◇  \(ANSIColor.boldText("Project Configuration"))")
+        print("◇  \(ANSIColor.boldText("Project Baseplate Starter"))")
+
+        let baseplateChoices = [
+            ChoiceOption(title: "SwiftUI App", subtitle: "Apple platform application (iOS, macOS) with Tuist or XcodeGen"),
+            ChoiceOption(title: "Vapor Backend API", subtitle: "High-performance Swift backend web API service powered by Vapor & SPM")
+        ]
+        let baseplateChoiceIndex = promptChoiceWithOptions(title: "What do you want to create?", options: baseplateChoices, readLine: readLine)
+
+        if baseplateChoiceIndex == 0 {
+            return try runSwiftUIProjectWizard(defaultTemplatePath: defaultTemplatePath, readLine: readLine)
+        } else {
+            return try runVaporProjectWizard(defaultTemplatePath: defaultTemplatePath, readLine: readLine)
+        }
+    }
+
+    private static func runSwiftUIProjectWizard(
+        defaultTemplatePath: String,
+        readLine: () -> String?
+    ) throws -> ProjectGeneratorOptions {
+        print("│")
+        print("◇  \(ANSIColor.boldText("SwiftUI App Configuration"))")
 
         var projectName = ""
         while projectName.isEmpty {
@@ -220,24 +240,12 @@ public class InteractiveWizard {
         let bundlePrefix = prompt(message: "Enter Bundle Identifier Prefix", defaultValue: "com.company", readLine: readLine)
 
         print("│")
-        print("◇  \(ANSIColor.boldText("Project Baseplate Starter"))")
+        print("◇  \(ANSIColor.boldText("Build Tool & Architecture Strategy"))")
 
-        let baseplateChoices = [
-            ChoiceOption(title: "SwiftUI", subtitle: "Modular SwiftUI application with Tuist or XcodeGen"),
-            ChoiceOption(title: "Vapor", subtitle: "High-performance Swift backend web API service powered by Vapor")
-        ]
-        let baseplateChoiceIndex = promptChoiceWithOptions(title: "Select Project Baseplate Starter", options: baseplateChoices, readLine: readLine)
-        let selectedBaseplate = baseplateChoiceIndex == 1 ? "vapor" : "swiftui"
-
-        let selectedTool: ProjectGeneratorTool
-        if selectedBaseplate == "vapor" {
-            selectedTool = .spm
-        } else {
-            let availableTools = ProjectGeneratorTool.allCases.filter { $0 != .spm }
-            let toolChoices = availableTools.map { ChoiceOption(title: $0.title) }
-            let toolChoiceIndex = promptChoiceWithOptions(title: "Select Build Tool Generator", options: toolChoices, readLine: readLine)
-            selectedTool = availableTools[toolChoiceIndex]
-        }
+        let availableTools = ProjectGeneratorTool.allCases.filter { $0 != .spm }
+        let toolChoices = availableTools.map { ChoiceOption(title: $0.title) }
+        let toolChoiceIndex = promptChoiceWithOptions(title: "Select Build Tool Generator", options: toolChoices, readLine: readLine)
+        let selectedTool = availableTools[toolChoiceIndex]
 
         let corePkgChoices = [
             ChoiceOption(title: "Monolithic Main Target", subtitle: "e.g. App/Sources/Core/Storage/..."),
@@ -323,7 +331,7 @@ public class InteractiveWizard {
         let gitInitConfirm = promptConfirm(message: "Initialize Git repository & setup hooks?", defaultYes: true, readLine: readLine)
 
         print("│")
-        let confirm = promptConfirm(message: "Create project '\(projectName)' with prefix '\(bundlePrefix)'?", readLine: readLine)
+        let confirm = promptConfirm(message: "Create SwiftUI project '\(projectName)' with prefix '\(bundlePrefix)'?", readLine: readLine)
         guard confirm else {
             print("└  \(ANSIColor.redText("✖ Project creation cancelled."))")
             throw InteractiveWizardError.cancelled
@@ -366,7 +374,100 @@ public class InteractiveWizard {
             bundlePrefix: bundlePrefix,
             templatePath: defaultTemplatePath,
             customConfig: config,
-            baseplateName: selectedBaseplate
+            baseplateName: "swiftui"
+        )
+    }
+
+    private static func runVaporProjectWizard(
+        defaultTemplatePath: String,
+        readLine: () -> String?
+    ) throws -> ProjectGeneratorOptions {
+        print("│")
+        print("◇  \(ANSIColor.boldText("Vapor Backend API Configuration"))")
+
+        var projectName = ""
+        while projectName.isEmpty {
+            projectName = prompt(message: "Enter Backend Server Project Name", readLine: readLine)
+            if projectName.isEmpty {
+                print("  \(ANSIColor.yellowText("⚠️"))  Project name cannot be empty.")
+            }
+        }
+
+        let bundlePrefix = prompt(message: "Enter Module / Reverse Domain Prefix", defaultValue: "com.company.api", readLine: readLine)
+
+        print("│")
+        print("◇  \(ANSIColor.boldText("Backend Guardrails & Developer Tooling"))")
+
+        let guardrailOptions = [
+            TerminalPrompt.MultiChoiceOption(id: "swiftlint", title: "SwiftLint", subtitle: "Swift server code style analyzer", isSelected: true),
+            TerminalPrompt.MultiChoiceOption(id: "swiftformat", title: "SwiftFormat", subtitle: "Automated code formatter & make target", isSelected: true),
+            TerminalPrompt.MultiChoiceOption(id: "precommit", title: "Pre-commit Hooks", subtitle: "Git pre-commit framework integration", isSelected: true),
+            TerminalPrompt.MultiChoiceOption(id: "gitleaks", title: "Gitleaks", subtitle: "Secret & API key leak scanner", isSelected: true)
+        ]
+        let selectedGuardrailIds = TerminalPrompt.selectMultiChoice(title: "Select Server Guardrails (Space: toggle, Enter: submit)", options: guardrailOptions, readLineFallback: readLine)
+
+        let activeGuardrails = GuardrailsConfig(
+            swiftlint: selectedGuardrailIds.contains("swiftlint"),
+            swiftformat: selectedGuardrailIds.contains("swiftformat"),
+            precommit: selectedGuardrailIds.contains("precommit"),
+            periphery: false,
+            gitleaks: selectedGuardrailIds.contains("gitleaks"),
+            danger: false,
+            swiftgen: false,
+            licenseplist: false
+        )
+
+        print("│")
+        print("◇  \(ANSIColor.boldText("Server Core Services"))")
+
+        let serverBlockOptions = [
+            TerminalPrompt.MultiChoiceOption(id: "network", title: "Network", subtitle: "Vapor Async HTTP Client engine", isSelected: true),
+            TerminalPrompt.MultiChoiceOption(id: "logger", title: "Logger", subtitle: "Structured SwiftLog server logger", isSelected: true),
+            TerminalPrompt.MultiChoiceOption(id: "config", title: "Config", subtitle: "Environment variables & dotenv manager", isSelected: true),
+            TerminalPrompt.MultiChoiceOption(id: "auth", title: "Auth", subtitle: "JWT & Session Auth Manager", isSelected: true),
+            TerminalPrompt.MultiChoiceOption(id: "storage", title: "Storage", subtitle: "Database & Fluent ORM persistence", isSelected: false)
+        ]
+        let selectedServerBlockIds = TerminalPrompt.selectMultiChoice(title: "Select Server Services to include", options: serverBlockOptions, readLineFallback: readLine)
+        let selectedCoreBlocks = selectedServerBlockIds.compactMap { Brick(rawValue: $0) }
+
+        print("│")
+        print("◇  \(ANSIColor.boldText("CI/CD Pipeline & Git Repository"))")
+
+        let cicdChoices = CICDProvider.allCases.filter { $0 != .xcodeCloud }.map { ChoiceOption(title: $0.title) }
+        let cicdChoiceIndex = promptChoiceWithOptions(title: "Select CI/CD Pipeline Provider", options: cicdChoices, readLine: readLine)
+        let selectedCICD = CICDProvider.allCases.filter { $0 != .xcodeCloud }[cicdChoiceIndex]
+
+        let gitInitConfirm = promptConfirm(message: "Initialize Git repository & setup hooks?", defaultYes: true, readLine: readLine)
+
+        print("│")
+        let confirm = promptConfirm(message: "Create Vapor backend project '\(projectName)'?", readLine: readLine)
+        guard confirm else {
+            print("└  \(ANSIColor.redText("✖ Project creation cancelled."))")
+            throw InteractiveWizardError.cancelled
+        }
+
+        let config = SwiftBlockConfig(
+            projectName: projectName,
+            bundlePrefix: bundlePrefix,
+            packaging: PackagingConfig(feature: "monolithic", core: "spm"),
+            organization: "feature-first",
+            generatorTool: .spm,
+            guardrails: activeGuardrails,
+            cicd: CICDConfig(provider: selectedCICD),
+            coreBlocks: selectedCoreBlocks,
+            gitInit: gitInitConfirm,
+            pathTemplates: [
+                "feature": "Sources/App/Features/{module}/{block}",
+                "core": "Sources/App/Core/{block}"
+            ]
+        )
+
+        return ProjectGeneratorOptions(
+            projectName: projectName,
+            bundlePrefix: bundlePrefix,
+            templatePath: defaultTemplatePath,
+            customConfig: config,
+            baseplateName: "vapor"
         )
     }
 

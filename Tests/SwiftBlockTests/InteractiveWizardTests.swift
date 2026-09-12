@@ -43,7 +43,7 @@ struct InteractiveWizardTests {
     }
 
     @Test func runProjectWizardSuccess() throws {
-        var inputs = ["AwesomeApp", "com.mycompany", "1", "1", "1", "1", "1", "y", "1", "y", "y"]
+        var inputs = ["1", "AwesomeApp", "com.mycompany", "1", "1", "1", "1", "y", "1", "y", "y"]
         let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
@@ -51,10 +51,23 @@ struct InteractiveWizardTests {
         #expect(options.projectName == "AwesomeApp")
         #expect(options.bundlePrefix == "com.mycompany")
         #expect(options.templatePath == "/tmp/template")
+        #expect(options.baseplateName == "swiftui")
+    }
+
+    @Test func runVaporProjectWizardSuccess() throws {
+        var inputs = ["2", "MyVaporApi", "com.mycompany.api", "1", "y", "y"]
+        let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
+            inputs.isEmpty ? nil : inputs.removeFirst()
+        })
+
+        #expect(options.projectName == "MyVaporApi")
+        #expect(options.bundlePrefix == "com.mycompany.api")
+        #expect(options.templatePath == "/tmp/template")
+        #expect(options.baseplateName == "vapor")
     }
 
     @Test func runProjectWizardCancelled() {
-        var inputs = ["AwesomeApp", "com.mycompany", "1", "1", "1", "1", "1", "y", "1", "y", "n"]
+        var inputs = ["1", "AwesomeApp", "com.mycompany", "1", "1", "1", "1", "y", "1", "y", "n"]
         #expect(throws: InteractiveWizardError.cancelled) {
             try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
                 inputs.isEmpty ? nil : inputs.removeFirst()
