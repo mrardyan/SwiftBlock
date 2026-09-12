@@ -268,11 +268,24 @@ public struct SwiftBlockConfig: Codable, Equatable {
                 }
             }
             
+            var pathTemplatesDict: [String: String] = [:]
+            if let ptDict = parsed["pathTemplates"] as? [String: Any] {
+                for (k, v) in ptDict {
+                    if let str = v as? String { pathTemplatesDict[k] = str }
+                }
+            }
+            if pathTemplatesDict.isEmpty {
+                pathTemplatesDict = [
+                    "feature": "App/Sources/Features/{module}/{block}",
+                    "core": "Packages/Core/Sources/Core/{block}"
+                ]
+            }
+
             var kitsDict: [String: [String]] = SwiftBlockConfig.defaultKits
             if let kDict = parsed["kits"] as? [String: [String]] {
                 kitsDict = kDict
             }
-            
+
             return SwiftBlockConfig(
                 projectName: name,
                 bundlePrefix: prefix,
@@ -280,6 +293,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
                 organization: org,
                 generatorTool: tool,
                 cicd: cicdCfg,
+                pathTemplates: pathTemplatesDict,
                 overrides: overridesDict,
                 paths: ModulePaths(customPaths: customPaths),
                 kits: kitsDict
@@ -330,6 +344,13 @@ public struct SwiftBlockConfig: Codable, Equatable {
             }
         }
         
+        if !pathTemplates.isEmpty {
+            yaml += "\n\npathTemplates:"
+            for (key, val) in pathTemplates.sorted(by: { $0.key < $1.key }) {
+                yaml += "\n  \(key): \(val)"
+            }
+        }
+
         if !overrides.isEmpty {
             yaml += "\n\noverrides:"
             for (key, val) in overrides.sorted(by: { $0.key < $1.key }) {

@@ -451,7 +451,7 @@ public class InteractiveWizard {
         let config = SwiftBlockConfig(
             projectName: projectName,
             bundlePrefix: bundlePrefix,
-            packaging: PackagingConfig(feature: "monolithic", core: "spm"),
+            packaging: PackagingConfig(feature: "monolithic", core: "monolithic"),
             organization: "feature-first",
             generatorTool: .spm,
             guardrails: activeGuardrails,

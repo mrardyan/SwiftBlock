@@ -1,7 +1,6 @@
 import Logging
 import Vapor
 
-@main
 public enum Entrypoint {
     public static func main() async throws {
         var env = try Environment.detect()

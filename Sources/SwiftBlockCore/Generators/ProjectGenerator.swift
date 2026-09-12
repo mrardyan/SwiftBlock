@@ -114,8 +114,11 @@ public class ProjectGenerator {
                 if options.isVerbose { print("🔹 [Assembly] Assembling selected Core Foundation modules...") }
                 let moduleGen = BrickGenerator(fileManager: fileManager)
                 let bricksPath: String?
+                let parentRepo = ((options.templatePath as NSString).deletingLastPathComponent as NSString).deletingLastPathComponent
                 if fileManager.fileExists(atPath: "\(options.templatePath)/Bricks") || fileManager.fileExists(atPath: "\(options.templatePath)/Core") || fileManager.fileExists(atPath: "\(options.templatePath)/Config") {
                     bricksPath = options.templatePath
+                } else if fileManager.fileExists(atPath: "\(parentRepo)/Bricks") {
+                    bricksPath = parentRepo
                 } else {
                     bricksPath = nil
                 }
