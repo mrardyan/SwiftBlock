@@ -14,12 +14,7 @@ struct SwiftBlock: ParsableCommand {
             BoxCommand.self,
             DoctorCommand.self,
             IDECommand.self,
-            RenameCommand.self,
-            // Keep aliases accessible at root level
-            Init.self,
-            New.self,
-            Add.self,
-            CoreCommand.self
+            RenameCommand.self
         ],
         defaultSubcommand: DoctorCommand.self
     )
@@ -487,54 +482,7 @@ struct RenameCommand: ParsableCommand {
     }
 }
 
-// Legacy Aliases Structs
-struct Init: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "init", abstract: "Initialize project (alias for baseplate)")
-    @Argument var projectName: String?
-    func run() throws {
-        let cmd = BaseplateCommand()
-        var copy = cmd
-        copy.projectName = projectName
-        try copy.run()
-    }
-}
 
-struct New: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "new", abstract: "Create new project (alias for baseplate)")
-    @Argument var projectName: String?
-    func run() throws {
-        let cmd = BaseplateCommand()
-        var copy = cmd
-        copy.projectName = projectName
-        try copy.run()
-    }
-}
-
-struct Add: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "add", abstract: "Add brick (alias for snap)")
-    @Argument var block: String?
-    @Argument var name: String?
-    func run() throws {
-        let cmd = SnapCommand()
-        var copy = cmd
-        copy.brick = block
-        copy.name = name
-        try copy.run()
-    }
-}
-
-struct CoreCommand: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "core", abstract: "Snap foundation brick")
-    @Argument var block: String?
-    @Argument var name: String?
-    func run() throws {
-        let cmd = SnapCommand()
-        var copy = cmd
-        copy.brick = block
-        copy.name = name
-        try copy.run()
-    }
-}
 
 
 
