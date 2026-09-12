@@ -3,12 +3,14 @@ import Foundation
 public struct InjectionSpec {
     public let target: String
     public let marker: String?
+    public let scope: String?
     public let content: String
     public let condition: String?
 
-    public init(target: String, marker: String? = nil, content: String, condition: String? = nil) {
+    public init(target: String, marker: String? = nil, scope: String? = nil, content: String, condition: String? = nil) {
         self.target = target
         self.marker = marker
+        self.scope = scope
         self.content = content
         self.condition = condition
     }
@@ -79,7 +81,48 @@ public struct CodeInjector {
         var lines = existingContent.components(separatedBy: "\n")
         var injected = false
 
-        if let marker = spec.marker, !marker.isEmpty {
+        // 1. Structural Scope Injection (Method/Container body matching)
+        if let scope = spec.scope, !scope.isEmpty {
+            let renderedScope = TemplateRenderer.render(
+                template: scope,
+                variables: variables,
+                config: config,
+                moduleName: moduleName ?? "",
+                projectName: projectName
+            )
+
+            if let scopeIndex = lines.firstIndex(where: { $0.contains(renderedScope) }) {
+                // Find matching closing brace for this method/container
+                var braceCount = 0
+                var foundOpenBrace = false
+                var closingBraceIndex: Int?
+
+                for i in scopeIndex..<lines.count {
+                    let line = lines[i]
+                    for char in line {
+                        if char == "{" {
+                            braceCount += 1
+                            foundOpenBrace = true
+                        } else if char == "}" {
+                            braceCount -= 1
+                        }
+                    }
+                    if foundOpenBrace && braceCount == 0 {
+                        closingBraceIndex = i
+                        break
+                    }
+                }
+
+                if let targetIndex = closingBraceIndex {
+                    let indent = "        "
+                    lines.insert(indent + renderedSnippet, at: targetIndex)
+                    injected = true
+                }
+            }
+        }
+
+        // 2. Marker-based Injection
+        if !injected, let marker = spec.marker, !marker.isEmpty {
             let renderedMarker = TemplateRenderer.render(
                 template: marker,
                 variables: variables,
@@ -89,13 +132,13 @@ public struct CodeInjector {
             )
 
             if let markerIndex = lines.firstIndex(where: { $0.contains(renderedMarker) }) {
-                lines.insert(renderedSnippet, at: markerIndex + 1)
+                lines.insert("    " + renderedSnippet, at: markerIndex + 1)
                 injected = true
             }
         }
 
+        // 3. Fallback: Append before last closing brace or at end of file
         if !injected {
-            // Fallback: append before the last closing brace or at end of file
             if let lastBraceIndex = lines.rIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "}" }) {
                 lines.insert("    " + renderedSnippet, at: lastBraceIndex)
                 injected = true

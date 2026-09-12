@@ -148,6 +148,16 @@ public class ModuleGenerator {
                 projectPath: options.projectRootPath
             )
 
+            if options.type.category == .feature {
+                let targetWiringEngine = ProjectTargetWiringEngine(fileManager: fileManager)
+                try? targetWiringEngine.wireFeatureTarget(
+                    moduleName: options.moduleName,
+                    projectPath: options.projectRootPath,
+                    config: config,
+                    isDryRun: options.isDryRun
+                )
+            }
+
             if let manifest = manifest {
                 try CodeInjector.injectAll(
                     specs: manifest.injections,
