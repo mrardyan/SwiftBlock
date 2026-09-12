@@ -31,7 +31,7 @@ public struct TemplateRenderer {
             for (key, val) in config.paths.allCustomPaths {
                 result = result.replacingOccurrences(of: "{{paths.\(key)}}", with: val)
             }
-            for type in ModuleType.allCases {
+            for type in Brick.allCases {
                 let resolved = config.resolveOutputPath(for: type, moduleName: moduleName)
                 result = result.replacingOccurrences(of: "{{paths.\(type.rawValue.lowercased())}}", with: resolved)
             }
@@ -68,7 +68,7 @@ public struct TemplateRenderer {
             for (key, val) in config.paths.allCustomPaths {
                 path = path.replacingOccurrences(of: "{{paths.\(key)}}", with: val)
             }
-            for type in ModuleType.allCases {
+            for type in Brick.allCases {
                 let resolved = config.resolveOutputPath(for: type, moduleName: moduleName)
                 path = path.replacingOccurrences(of: "{{paths.\(type.rawValue.lowercased())}}", with: resolved)
             }

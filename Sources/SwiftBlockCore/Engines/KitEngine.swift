@@ -3,9 +3,9 @@ import Foundation
 public struct KitExecutionResult {
     public let kitName: String
     public let moduleName: String
-    public let generatedBricks: [ModuleType]
+    public let generatedBricks: [Brick]
 
-    public init(kitName: String, moduleName: String, generatedBricks: [ModuleType]) {
+    public init(kitName: String, moduleName: String, generatedBricks: [Brick]) {
         self.kitName = kitName
         self.moduleName = moduleName
         self.generatedBricks = generatedBricks
@@ -14,10 +14,10 @@ public struct KitExecutionResult {
 
 /// Execution engine for processing multi-brick composition kits.
 public class KitEngine {
-    private let moduleGenerator: ModuleGenerator
+    private let brickGenerator: BrickGenerator
 
-    public init(moduleGenerator: ModuleGenerator = ModuleGenerator()) {
-        self.moduleGenerator = moduleGenerator
+    public init(brickGenerator: BrickGenerator = BrickGenerator()) {
+        self.brickGenerator = brickGenerator
     }
 
     /// Resolves and executes a composition kit for a given module name.
@@ -34,24 +34,24 @@ public class KitEngine {
             throw KitEngineError.kitNotFound(kitName)
         }
 
-        var generatedBricks: [ModuleType] = []
+        var generatedBricks: [Brick] = []
 
         for brickName in brickNames {
-            let type: ModuleType
-            if let spec = BlockRegistry.spec(forCommand: brickName) {
+            let type: Brick
+            if let spec = BrickRegistry.spec(forCommand: brickName) {
                 type = spec.type
             } else {
-                type = ModuleType(rawValue: brickName.lowercased())
+                type = Brick(rawValue: brickName.lowercased())
             }
 
-            let options = ModuleGeneratorOptions(
+            let options = BrickGeneratorOptions(
                 type: type,
-                moduleName: moduleName,
+                name: moduleName,
                 projectRootPath: projectPath,
                 modulesTemplatePath: templatePath,
                 isDryRun: isDryRun
             )
-            _ = try moduleGenerator.generateModule(options: options)
+            _ = try brickGenerator.generateBrick(options: options)
             generatedBricks.append(type)
         }
 

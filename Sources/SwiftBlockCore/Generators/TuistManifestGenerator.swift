@@ -155,7 +155,7 @@ let project = Project(
         try trimmedContent.write(toFile: manifestPath, atomically: true, encoding: .utf8)
     }
 
-    public func addModuleDependency(moduleName: String, type: ModuleType, config: SwiftBlockConfig, projectPath: String) throws {
+    public func addBrickDependency(name: String, type: Brick, config: SwiftBlockConfig, projectPath: String) throws {
         // Tuist auto-resolves sources dynamically via "App/Sources/**" and "Packages/**"
     }
 }

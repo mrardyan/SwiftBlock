@@ -14,7 +14,7 @@ public enum ProjectGeneratorTool: String, Codable, CaseIterable {
 
 public protocol ProjectManifestGenerator {
     func generateManifest(config: SwiftBlockConfig, projectPath: String) throws
-    func addModuleDependency(moduleName: String, type: ModuleType, config: SwiftBlockConfig, projectPath: String) throws
+    func addBrickDependency(name: String, type: Brick, config: SwiftBlockConfig, projectPath: String) throws
 }
 
 public class ProjectManifestGeneratorFactory {

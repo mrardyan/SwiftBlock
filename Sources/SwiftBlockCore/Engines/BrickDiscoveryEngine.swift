@@ -1,6 +1,6 @@
 import Foundation
 
-public struct BlockMetadata: Codable {
+public struct BrickMetadata: Codable {
     public let title: String?
     public let description: String?
     public let defaultOutputPath: String?
@@ -12,7 +12,9 @@ public struct BlockMetadata: Codable {
     }
 }
 
-public struct BlockDiscoveryEngine {
+public typealias BlockMetadata = BrickMetadata
+
+public struct BrickDiscoveryEngine {
     private let fileManager: FileManager
 
     public init(fileManager: FileManager = .default) {
@@ -125,10 +127,10 @@ public struct BlockDiscoveryEngine {
         return nil
     }
 
-    public func discoverBlocks(in baseTemplatePath: String, category: ModuleCategory) -> [BlockSpec] {
+    public func discoverBricks(in baseTemplatePath: String, category: Brick.Category) -> [BrickSpec] {
         let searchDirs = category == .feature ? ["Bricks/Generatives/Architecture", "Bricks/Generatives/UI", "Blocks/Modules"] : ["Bricks/Singletons", "Blocks/Core"]
         
-        var specs: [BlockSpec] = []
+        var specs: [BrickSpec] = []
         for dir in searchDirs {
             let categoryDir = "\(baseTemplatePath)/\(dir)"
             guard fileManager.fileExists(atPath: categoryDir),
@@ -148,9 +150,9 @@ public struct BlockDiscoveryEngine {
                 let title = manifest?.name.capitalized ?? folderName
                 let description = manifest?.description ?? "\(folderName) Brick"
                 let defaultOutputPath = manifest?.defaultPath ?? (category == .feature ? "App/Sources/Features/{module}/\(folderName)" : "App/Sources/Core/\(folderName)")
-                let moduleType = ModuleType(rawValue: commandName) ?? .scene
+                let moduleType = Brick(rawValue: commandName)
                 
-                let spec = BlockSpec(
+                let spec = BrickSpec(
                     type: moduleType,
                     commandName: commandName,
                     title: title,
@@ -164,6 +166,10 @@ public struct BlockDiscoveryEngine {
         }
 
         return specs.isEmpty ? fallbackSpecs(for: category) : specs
+    }
+
+    public func discoverBlocks(in baseTemplatePath: String, category: Brick.Category) -> [BrickSpec] {
+        return discoverBricks(in: baseTemplatePath, category: category)
     }
 
     public static func evaluateTokens(
@@ -181,7 +187,9 @@ public struct BlockDiscoveryEngine {
             .replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
     }
 
-    private func fallbackSpecs(for category: ModuleCategory) -> [BlockSpec] {
-        BlockRegistry.allBlocks.filter { $0.category == category }
+    private func fallbackSpecs(for category: Brick.Category) -> [BrickSpec] {
+        BrickRegistry.allBricks.filter { $0.category == category }
     }
 }
+
+public typealias BlockDiscoveryEngine = BrickDiscoveryEngine

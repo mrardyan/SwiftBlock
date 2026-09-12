@@ -83,21 +83,21 @@ struct E2ETests {
         #expect(FileManager.default.fileExists(atPath: "\(projectPath)/.git"))
         #expect(FileManager.default.fileExists(atPath: "\(projectPath)/.gitignore"))
 
-        // 8. Test adding a Feature Module (Scene)
-        let moduleGen = ModuleGenerator()
+        // 8. Test adding a Feature Brick (Scene)
+        let brickGen = BrickGenerator()
         
         let mockModuleTemplate = tempDir.appendingPathComponent("MockModuleTemplate").path
         try FileManager.default.createDirectory(atPath: "\(mockModuleTemplate)/Scene", withIntermediateDirectories: true)
         try "// Scene View".write(toFile: "\(mockModuleTemplate)/Scene/__MODULE_NAME__View.swift", atomically: true, encoding: .utf8)
 
-        let moduleOptions = ModuleGeneratorOptions(
+        let brickOptions = BrickGeneratorOptions(
             type: .scene,
-            moduleName: "Home",
+            name: "Home",
             projectRootPath: projectPath,
             modulesTemplatePath: mockModuleTemplate
         )
-        let generatedModulePath = try moduleGen.generateModule(options: moduleOptions)
-        #expect(FileManager.default.fileExists(atPath: generatedModulePath))
+        let generatedBrickPath = try brickGen.generateBrick(options: brickOptions)
+        #expect(FileManager.default.fileExists(atPath: generatedBrickPath))
 
         // Validate SPM feature package if SPM strategy selected
         let pkgGen = LocalPackageGenerator()

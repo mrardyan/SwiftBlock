@@ -99,7 +99,7 @@ struct SnapCommand: ParsableCommand {
 
     func run() throws {
         let baseDir = templatePath ?? FileManager.default.currentDirectoryPath
-        let discoveryEngine = BlockDiscoveryEngine()
+        let discoveryEngine = BrickDiscoveryEngine()
         
         guard let brickInput = brick else {
             // Interactive wizard when no arguments provided
@@ -124,7 +124,7 @@ struct SnapCommand: ParsableCommand {
                     resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
                 }
                 let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.name.capitalized)
-                let moduleType = ModuleType(rawValue: manifest.name.lowercased())
+                let moduleType = Brick(rawValue: manifest.name.lowercased())
                 try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: targetPath, isDryRun: dryRun, variables: resolvedVars)
                 return
             }
@@ -142,7 +142,7 @@ struct SnapCommand: ParsableCommand {
                     resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: selected.manifest, providedValues: resolvedVars)
                 }
                 let instanceName = name ?? (selected.manifest.instantiation == .generative ? "Main" : selected.manifest.name.capitalized)
-                let moduleType = ModuleType(rawValue: selected.manifest.name.lowercased())
+                let moduleType = Brick(rawValue: selected.manifest.name.lowercased())
                 try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: selectedPath, isDryRun: dryRun, variables: resolvedVars)
                 return
             }
@@ -156,14 +156,14 @@ struct SnapCommand: ParsableCommand {
                 resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
             }
             let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.name.capitalized)
-            let moduleType = ModuleType(rawValue: manifest.name.lowercased())
+            let moduleType = Brick(rawValue: manifest.name.lowercased())
             
             try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: resolvedPath, isDryRun: dryRun, variables: resolvedVars)
             return
         }
         
         // Fallback for standard module type
-        let type = ModuleType(rawValue: normalizedBrick)
+        let type = Brick(rawValue: normalizedBrick)
         let instanceName = name ?? "Main"
         try executeAddModule(type: type, moduleName: instanceName, templatePath: baseDir, isDryRun: dryRun, variables: resolvedVars)
         
@@ -577,10 +577,10 @@ private func executeWithOptions(options: ProjectGeneratorOptions) throws {
     }
 }
 
-private func executeAddModule(type: ModuleType, moduleName: String, templatePath: String, isDryRun: Bool, variables: [String: String] = [:]) throws {
-    let options = ModuleGeneratorOptions(
+private func executeAddModule(type: Brick, moduleName: String, templatePath: String, isDryRun: Bool, variables: [String: String] = [:]) throws {
+    let options = BrickGeneratorOptions(
         type: type,
-        moduleName: moduleName,
+        name: moduleName,
         modulesTemplatePath: templatePath,
         isDryRun: isDryRun,
         variables: variables
@@ -588,14 +588,14 @@ private func executeAddModule(type: ModuleType, moduleName: String, templatePath
     try executeAddModuleWithOptions(options: options)
 }
 
-private func executeAddModuleWithOptions(options: ModuleGeneratorOptions) throws {
-    print("◆ Snapping \(options.type.rawValue) brick: \(options.moduleName)")
-    let generator = ModuleGenerator()
+private func executeAddModuleWithOptions(options: BrickGeneratorOptions) throws {
+    print("◆ Snapping \(options.type.rawValue) brick: \(options.name)")
+    let generator = BrickGenerator()
 
     do {
         let generatedPath = try generator.generateModule(options: options)
         if !options.isDryRun {
-            print("✔ Snapped \(options.type.rawValue) brick '\(options.moduleName)' at \(generatedPath)")
+            print("✔ Snapped \(options.type.rawValue) brick '\(options.name)' at \(generatedPath)")
         }
     } catch {
         print("✖ \(error.localizedDescription)")

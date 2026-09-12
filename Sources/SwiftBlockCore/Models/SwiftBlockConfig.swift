@@ -16,7 +16,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
     public var guardrails: GuardrailsConfig
     public var cicd: CICDConfig
     public var toolVersions: [String: String]
-    public var coreBlocks: [ModuleType]
+    public var coreBlocks: [Brick]
     public var gitInit: Bool
     public var pathTemplates: [String: String]
     public var overrides: [String: String]
@@ -51,7 +51,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         self.guardrails = (try? container.decode(GuardrailsConfig.self, forKey: .guardrails)) ?? GuardrailsConfig.all
         self.cicd = (try? container.decode(CICDConfig.self, forKey: .cicd)) ?? CICDConfig()
         self.toolVersions = (try? container.decode([String: String].self, forKey: .toolVersions)) ?? [:]
-        self.coreBlocks = (try? container.decode([ModuleType].self, forKey: .coreBlocks)) ?? [.storage, .network, .logger, .config]
+        self.coreBlocks = (try? container.decode([Brick].self, forKey: .coreBlocks)) ?? [.storage, .network, .logger, .config]
         self.gitInit = (try? container.decode(Bool.self, forKey: .gitInit)) ?? true
         self.pathTemplates = (try? container.decode([String: String].self, forKey: .pathTemplates)) ?? [
             "feature": "App/Sources/Features/{module}/{block}",
@@ -113,22 +113,24 @@ public struct SwiftBlockConfig: Codable, Equatable {
             try container.encode(customPaths)
         }
 
-        public func path(for type: ModuleType) -> String {
+        public func path(for type: Brick) -> String {
             if let custom = customPaths[type.rawValue] {
                 return custom
             }
-            return BlockRegistry.spec(for: type)?.defaultOutputPath ?? "App/Sources/\(type.rawValue.capitalized)"
+            return BrickRegistry.spec(for: type)?.defaultOutputPath ?? "App/Sources/\(type.rawValue.capitalized)"
         }
 
-        public mutating func setPath(_ path: String, for type: ModuleType) {
+        public mutating func setPath(_ path: String, for type: Brick) {
             customPaths[type.rawValue] = path
         }
 
-        public subscript(type: ModuleType) -> String {
+        public subscript(type: Brick) -> String {
             get { path(for: type) }
             set { setPath(newValue, for: type) }
         }
     }
+
+    public typealias BrickPaths = ModulePaths
 
     public init(
         projectName: String,
@@ -139,7 +141,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         guardrails: GuardrailsConfig = .all,
         cicd: CICDConfig = CICDConfig(),
         toolVersions: [String: String] = [:],
-        coreBlocks: [ModuleType] = [.storage, .network, .logger, .config],
+        coreBlocks: [Brick] = [.storage, .network, .logger, .config],
         gitInit: Bool = true,
         pathTemplates: [String: String] = [
             "feature": "App/Sources/Features/{module}/{block}",
@@ -165,23 +167,23 @@ public struct SwiftBlockConfig: Codable, Equatable {
         self.kits = kits
     }
 
-    public func resolveOutputPath(for type: ModuleType, moduleName: String) -> String {
+    public func resolveOutputPath(for type: Brick, moduleName: String) -> String {
         let blockName = type.rawValue.lowercased()
 
         // Priority 1: Check overrides in .swiftblock
         if let overridePath = overrides[blockName] {
-            return BlockDiscoveryEngine.evaluateTokens(in: overridePath, moduleName: moduleName, blockName: blockName)
+            return BrickDiscoveryEngine.evaluateTokens(in: overridePath, moduleName: moduleName, blockName: blockName)
         }
 
         // Priority 2: Check pathTemplates in .swiftblock
         let categoryKey = type.category.rawValue
         if let template = pathTemplates[categoryKey] {
-            return BlockDiscoveryEngine.evaluateTokens(in: template, moduleName: moduleName, blockName: blockName)
+            return BrickDiscoveryEngine.evaluateTokens(in: template, moduleName: moduleName, blockName: blockName)
         }
 
         // Priority 3: Check block.json metadata or fallback
-        if let defaultPath = BlockRegistry.spec(for: type)?.defaultOutputPath {
-            return BlockDiscoveryEngine.evaluateTokens(in: defaultPath, moduleName: moduleName, blockName: blockName)
+        if let defaultPath = BrickRegistry.spec(for: type)?.defaultOutputPath {
+            return BrickDiscoveryEngine.evaluateTokens(in: defaultPath, moduleName: moduleName, blockName: blockName)
         }
 
         // Priority 4: Standard engine fallback

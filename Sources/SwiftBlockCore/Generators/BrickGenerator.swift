@@ -1,23 +1,23 @@
 import Foundation
 
-public struct ModuleGeneratorOptions {
-    public var type: ModuleType
-    public var moduleName: String
+public struct BrickGeneratorOptions {
+    public var type: Brick
+    public var name: String
     public var projectRootPath: String
     public var modulesTemplatePath: String
     public var isDryRun: Bool
     public var variables: [String: String]
 
     public init(
-        type: ModuleType,
-        moduleName: String,
+        type: Brick,
+        name: String,
         projectRootPath: String = FileManager.default.currentDirectoryPath,
         modulesTemplatePath: String? = nil,
         isDryRun: Bool = false,
         variables: [String: String] = [:]
     ) {
         self.type = type
-        self.moduleName = moduleName
+        self.name = name
         self.projectRootPath = projectRootPath
         if let templatePath = modulesTemplatePath, !templatePath.isEmpty {
             self.modulesTemplatePath = templatePath
@@ -45,44 +45,53 @@ public struct ModuleGeneratorOptions {
     }
 }
 
-public enum ModuleGeneratorError: Error, LocalizedError {
+public typealias ModuleGeneratorOptions = BrickGeneratorOptions
+
+public enum BrickGeneratorError: Error, LocalizedError {
     case templateNotFound(String)
+    case brickAlreadyExists(String)
     case moduleAlreadyExists(String)
     case generationFailed(String)
 
     public var errorDescription: String? {
         switch self {
         case .templateNotFound(let path):
-            return "Module template not found at \(path)"
-        case .moduleAlreadyExists(let path):
-            return "Module already exists at \(path)"
+            return "Brick template not found at \(path)"
+        case .brickAlreadyExists(let path), .moduleAlreadyExists(let path):
+            return "Brick already exists at \(path)"
         case .generationFailed(let message):
-            return "Failed to generate module: \(message)"
+            return "Failed to generate brick: \(message)"
         }
     }
 }
 
-public class ModuleGenerator {
+public typealias ModuleGeneratorError = BrickGeneratorError
+
+public class BrickGenerator {
     private let fileManager: FileManager
 
     public init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
     }
 
-    public func generateModule(options: ModuleGeneratorOptions) throws -> String {
+    public func generateModule(options: BrickGeneratorOptions) throws -> String {
+        try generateBrick(options: options)
+    }
+
+    public func generateBrick(options: BrickGeneratorOptions) throws -> String {
         let config = try SwiftBlockConfig.load(from: options.projectRootPath)
-        let resolvedPath = config.resolveOutputPath(for: options.type, moduleName: options.moduleName)
+        let resolvedPath = config.resolveOutputPath(for: options.type, moduleName: options.name)
 
         let destinationFolderPath: String
         if options.type.category == .core {
             destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
-        } else if resolvedPath.contains(options.moduleName.lowercased()) || resolvedPath.contains(options.moduleName) {
+        } else if resolvedPath.contains(options.name.lowercased()) || resolvedPath.contains(options.name) {
             destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
         } else {
-            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)/\(options.moduleName)"
+            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)/\(options.name)"
         }
 
-        let discoveryEngine = BlockDiscoveryEngine(fileManager: fileManager)
+        let discoveryEngine = BrickDiscoveryEngine(fileManager: fileManager)
         let resolvedTemplate = discoveryEngine.resolveBrickPath(named: options.type.rawValue, in: options.modulesTemplatePath)
 
         var templateTypeFolderPath: String
@@ -101,11 +110,11 @@ public class ModuleGenerator {
         }
 
         guard fileManager.fileExists(atPath: templateTypeFolderPath) else {
-            throw ModuleGeneratorError.templateNotFound("\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)")
+            throw BrickGeneratorError.templateNotFound("\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)")
         }
 
         if options.type.category != .core && fileManager.fileExists(atPath: destinationFolderPath) {
-            throw ModuleGeneratorError.moduleAlreadyExists(destinationFolderPath)
+            throw BrickGeneratorError.moduleAlreadyExists(destinationFolderPath)
         }
 
         let manifest = BrickManifest.load(fromPath: templateTypeFolderPath)
@@ -114,7 +123,7 @@ public class ModuleGenerator {
                 manifest.preSnapHooks,
                 variables: options.variables,
                 projectName: config.projectName,
-                moduleName: options.moduleName,
+                moduleName: options.name,
                 projectRootPath: options.projectRootPath,
                 isDryRun: options.isDryRun
             )
@@ -122,7 +131,7 @@ public class ModuleGenerator {
 
         if options.isDryRun {
             print("🔍 [DRY RUN] Would load module block from: \(templateTypeFolderPath)")
-            print("🔍 [DRY RUN] Would generate \(options.type.rawValue) module '\(options.moduleName)' at: \(destinationFolderPath)")
+            print("🔍 [DRY RUN] Would generate \(options.type.rawValue) module '\(options.name)' at: \(destinationFolderPath)")
             return destinationFolderPath
         }
 
@@ -132,7 +141,7 @@ public class ModuleGenerator {
             try copyAndProcessModuleTemplates(
                 from: templateTypeFolderPath,
                 to: destinationFolderPath,
-                moduleName: options.moduleName,
+                moduleName: options.name,
                 projectName: config.projectName,
                 projectRootPath: options.projectRootPath,
                 moduleType: options.type,
@@ -141,8 +150,8 @@ public class ModuleGenerator {
             )
 
             let manifestGenerator = ProjectManifestGeneratorFactory.createGenerator(for: config.generatorTool)
-            try? manifestGenerator.addModuleDependency(
-                moduleName: options.moduleName,
+            try? manifestGenerator.addBrickDependency(
+                name: options.name,
                 type: options.type,
                 config: config,
                 projectPath: options.projectRootPath
@@ -151,7 +160,7 @@ public class ModuleGenerator {
             if options.type.category == .feature {
                 let targetWiringEngine = ProjectTargetWiringEngine(fileManager: fileManager)
                 try? targetWiringEngine.wireFeatureTarget(
-                    moduleName: options.moduleName,
+                    moduleName: options.name,
                     projectPath: options.projectRootPath,
                     config: config,
                     isDryRun: options.isDryRun
@@ -163,7 +172,7 @@ public class ModuleGenerator {
                     specs: manifest.injections,
                     variables: options.variables,
                     projectName: config.projectName,
-                    moduleName: options.moduleName,
+                    moduleName: options.name,
                     projectRootPath: options.projectRootPath,
                     config: config,
                     isDryRun: options.isDryRun
@@ -173,7 +182,7 @@ public class ModuleGenerator {
                     manifest.postSnapHooks,
                     variables: options.variables,
                     projectName: config.projectName,
-                    moduleName: options.moduleName,
+                    moduleName: options.name,
                     projectRootPath: options.projectRootPath,
                     isDryRun: options.isDryRun
                 )
@@ -194,7 +203,7 @@ public class ModuleGenerator {
         moduleName: String,
         projectName: String,
         projectRootPath: String,
-        moduleType: ModuleType,
+        moduleType: Brick,
         variables: [String: String] = [:],
         config: SwiftBlockConfig? = nil
     ) throws {
@@ -259,3 +268,5 @@ public class ModuleGenerator {
         }
     }
 }
+
+public typealias ModuleGenerator = BrickGenerator

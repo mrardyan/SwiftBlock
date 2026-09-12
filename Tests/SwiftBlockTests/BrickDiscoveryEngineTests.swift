@@ -2,11 +2,11 @@ import Foundation
 import Testing
 @testable import SwiftBlockCore
 
-struct BlockDiscoveryEngineTests {
+struct BrickDiscoveryEngineTests {
 
     @Test func evaluateTokens() {
         let template = "App/Sources/Features/{module}/{block}"
-        let evaluated = BlockDiscoveryEngine.evaluateTokens(in: template, moduleName: "Auth", blockName: "UseCase")
+        let evaluated = BrickDiscoveryEngine.evaluateTokens(in: template, moduleName: "Auth", blockName: "UseCase")
         #expect(evaluated == "App/Sources/Features/auth/usecase")
     }
 
@@ -31,8 +31,8 @@ struct BlockDiscoveryEngineTests {
         try metadataYAML.write(to: customBlockDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
         try "struct __MODULE_NAME__Form {}".write(to: customBlockDir.appendingPathComponent("__MODULE_NAME__Form.swift"), atomically: true, encoding: .utf8)
 
-        let engine = BlockDiscoveryEngine()
-        let discovered = engine.discoverBlocks(in: tempDir.path, category: .feature)
+        let engine = BrickDiscoveryEngine()
+        let discovered = engine.discoverBricks(in: tempDir.path, category: .feature)
 
         #expect(!discovered.isEmpty)
         #expect(discovered.contains { $0.commandName == "customform" })
@@ -50,13 +50,13 @@ struct BlockDiscoveryEngineTests {
         try FileManager.default.createDirectory(at: networkBrickDir, withIntermediateDirectories: true)
         try "name: network\ninstantiation: singleton".write(to: networkBrickDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
 
-        let engine = BlockDiscoveryEngine()
+        let engine = BrickDiscoveryEngine()
         let resolvedShort = engine.resolveBrickPath(named: "network", in: tempDir.path)
         #expect(resolvedShort != nil)
         #expect(resolvedShort?.lowercased().hasSuffix("network") == true)
     }
 
-    @Test func blockJsonIsNotCopiedToGeneratedProject() throws {
+    @Test func brickYmlIsNotCopiedToGeneratedProject() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -74,15 +74,15 @@ struct BlockDiscoveryEngineTests {
         try "name: scene".write(to: mockSceneDir.appendingPathComponent("brick.yml"), atomically: true, encoding: .utf8)
         try "struct __MODULE_NAME__View {}".write(to: mockSceneDir.appendingPathComponent("__MODULE_NAME__View.swift"), atomically: true, encoding: .utf8)
 
-        let options = ModuleGeneratorOptions(
+        let options = BrickGeneratorOptions(
             type: .scene,
-            moduleName: "Home",
+            name: "Home",
             projectRootPath: tempDir.path,
             modulesTemplatePath: mockModulesDir.path
         )
 
-        let generator = ModuleGenerator()
-        let generatedPath = try generator.generateModule(options: options)
+        let generator = BrickGenerator()
+        let generatedPath = try generator.generateBrick(options: options)
 
         let generatedView = "\(generatedPath)/HomeView.swift"
         let generatedBlockYml = "\(generatedPath)/brick.yml"

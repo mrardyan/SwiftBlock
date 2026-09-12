@@ -289,7 +289,7 @@ public class InteractiveWizard {
             TerminalPrompt.MultiChoiceOption(id: "featureflag", title: "FeatureFlag", subtitle: "Remote feature flags & toggles", isSelected: false)
         ]
         let selectedCoreBlockIds = TerminalPrompt.selectMultiChoice(title: "Select Core Foundation Modules to include", options: coreBlockOptions, readLineFallback: readLine)
-        var selectedCoreBlocks = selectedCoreBlockIds.compactMap { ModuleType(rawValue: $0) }
+        var selectedCoreBlocks = selectedCoreBlockIds.compactMap { Brick(rawValue: $0) }
 
         let multiEnvConfirm = promptConfirm(message: "Setup Multi-Environment Configurations (.xcconfig & Schemes)?", defaultYes: true, readLine: readLine)
         if multiEnvConfirm {
@@ -359,11 +359,11 @@ public class InteractiveWizard {
     public static func runModuleWizard(
         defaultTemplatePath: String = "/usr/local/share/swiftblock/Blocks/Modules",
         readLine: () -> String? = { InteractiveWizard.readLine() }
-    ) throws -> ModuleGeneratorOptions {
+    ) throws -> BrickGeneratorOptions {
         print("┌  \(ANSIColor.boldText("Create New Feature Block"))")
         print("│")
 
-        let blocks = BlockRegistry.featureBlocks
+        let blocks = BrickRegistry.featureBricks
         let typeChoices = blocks.map { ChoiceOption(title: $0.title, subtitle: $0.description) }
 
         let selectedIndex = promptChoiceWithOptions(title: "Select Feature Block Type", options: typeChoices, readLine: readLine)
@@ -377,9 +377,9 @@ public class InteractiveWizard {
             }
         }
 
-        return ModuleGeneratorOptions(
+        return BrickGeneratorOptions(
             type: selectedType,
-            moduleName: moduleName,
+            name: moduleName,
             modulesTemplatePath: defaultTemplatePath
         )
     }
@@ -387,11 +387,11 @@ public class InteractiveWizard {
     public static func runCoreWizard(
         defaultTemplatePath: String = "/usr/local/share/swiftblock/Blocks/Core",
         readLine: () -> String? = { InteractiveWizard.readLine() }
-    ) throws -> ModuleGeneratorOptions {
+    ) throws -> BrickGeneratorOptions {
         print("┌  \(ANSIColor.boldText("Create New Core Block"))")
         print("│")
 
-        let blocks = BlockRegistry.coreBlocks
+        let blocks = BrickRegistry.coreBricks
         let typeChoices = blocks.map { ChoiceOption(title: $0.title, subtitle: $0.description) }
 
         let selectedIndex = promptChoiceWithOptions(title: "Select Core Block Type", options: typeChoices, readLine: readLine)
@@ -405,9 +405,9 @@ public class InteractiveWizard {
             }
         }
 
-        return ModuleGeneratorOptions(
+        return BrickGeneratorOptions(
             type: selectedType,
-            moduleName: moduleName,
+            name: moduleName,
             modulesTemplatePath: defaultTemplatePath
         )
     }
@@ -427,7 +427,7 @@ public class InteractiveWizard {
             }
         }
 
-        let featureBlocks = BlockRegistry.featureBlocks
+        let featureBlocks = BrickRegistry.featureBricks
         let blockOptions = featureBlocks.map {
             TerminalPrompt.MultiChoiceOption(id: $0.commandName, title: $0.title, subtitle: $0.description, isSelected: true)
         }

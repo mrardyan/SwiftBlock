@@ -108,8 +108,7 @@ public class ProjectGenerator {
             // 1.5 Generate Selected Core Blocks
             if !config.coreBlocks.isEmpty {
                 if options.isVerbose { print("🔹 [Assembly] Assembling selected Core Foundation modules...") }
-                let moduleGen = ModuleGenerator(fileManager: fileManager)
-                let baseBlocksDir = ((options.templatePath as NSString).deletingLastPathComponent as NSString).deletingLastPathComponent
+                let moduleGen = BrickGenerator(fileManager: fileManager)
                 for type in config.coreBlocks {
                     let defaultName: String
                     switch type {
@@ -122,9 +121,9 @@ public class ProjectGenerator {
                     case .featureflag: defaultName = "FeatureFlags"
                     default: defaultName = type.rawValue.capitalized
                     }
-                    let moduleOptions = ModuleGeneratorOptions(
+                    let moduleOptions = BrickGeneratorOptions(
                         type: type,
-                        moduleName: defaultName,
+                        name: defaultName,
                         projectRootPath: options.outputPath
                     )
                     do {

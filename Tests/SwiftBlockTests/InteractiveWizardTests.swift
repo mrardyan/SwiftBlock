@@ -69,7 +69,7 @@ struct InteractiveWizardTests {
         })
 
         #expect(options.type == .repository)
-        #expect(options.moduleName == "UserRepo")
+        #expect(options.name == "UserRepo")
         #expect(options.modulesTemplatePath == "/tmp/modules")
     }
 
@@ -80,7 +80,7 @@ struct InteractiveWizardTests {
         })
 
         #expect(options.type == .storage)
-        #expect(options.moduleName == "UserStorage")
+        #expect(options.name == "UserStorage")
         #expect(options.modulesTemplatePath == "/tmp/core")
     }
 

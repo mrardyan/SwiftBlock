@@ -1,20 +1,20 @@
 import Foundation
 
-public struct BlockSpec: Equatable {
-    public let type: ModuleType
+public struct BrickSpec: Equatable {
+    public let type: Brick
     public let commandName: String
     public let title: String
     public let description: String
-    public let category: ModuleCategory
+    public let category: Brick.Category
     public let defaultOutputPath: String
     public let defaultTemplateSubpath: String
 
     public init(
-        type: ModuleType,
+        type: Brick,
         commandName: String,
         title: String,
         description: String,
-        category: ModuleCategory,
+        category: Brick.Category,
         defaultOutputPath: String,
         defaultTemplateSubpath: String
     ) {
@@ -28,10 +28,10 @@ public struct BlockSpec: Equatable {
     }
 }
 
-public struct BlockRegistry {
-    public static let allBlocks: [BlockSpec] = [
-        // Feature Blocks
-        BlockSpec(
+public struct BrickRegistry {
+    public static let allBricks: [BrickSpec] = [
+        // Feature Bricks
+        BrickSpec(
             type: .scene,
             commandName: "scene",
             title: "Scene",
@@ -40,7 +40,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Features",
             defaultTemplateSubpath: "Modules/Scene"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .usecase,
             commandName: "usecase",
             title: "UseCase",
@@ -49,7 +49,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Domain/UseCases",
             defaultTemplateSubpath: "Modules/UseCase"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .repository,
             commandName: "repository",
             title: "Repository",
@@ -58,7 +58,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Data/Repositories",
             defaultTemplateSubpath: "Modules/Repository"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .service,
             commandName: "service",
             title: "Service",
@@ -67,7 +67,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Data/Services",
             defaultTemplateSubpath: "Modules/Service"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .entity,
             commandName: "entity",
             title: "Entity",
@@ -76,7 +76,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Domain/Entities",
             defaultTemplateSubpath: "Modules/Entity"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .coordinator,
             commandName: "coordinator",
             title: "Coordinator",
@@ -85,7 +85,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Presentation/Coordinators",
             defaultTemplateSubpath: "Modules/Coordinator"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .component,
             commandName: "component",
             title: "Component",
@@ -94,7 +94,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Presentation/Components",
             defaultTemplateSubpath: "Modules/Component"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .mapper,
             commandName: "mapper",
             title: "Mapper",
@@ -103,7 +103,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Domain/Mappers",
             defaultTemplateSubpath: "Modules/Mapper"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .validator,
             commandName: "validator",
             title: "Validator",
@@ -113,8 +113,8 @@ public struct BlockRegistry {
             defaultTemplateSubpath: "Modules/Validator"
         ),
 
-        // Core Blocks
-        BlockSpec(
+        // Core Bricks
+        BrickSpec(
             type: .storage,
             commandName: "storage",
             title: "Storage",
@@ -123,7 +123,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Core/Storage",
             defaultTemplateSubpath: "Core/Storage"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .network,
             commandName: "network",
             title: "Network",
@@ -132,7 +132,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Core/Network",
             defaultTemplateSubpath: "Core/Network"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .logger,
             commandName: "logger",
             title: "Logger",
@@ -141,7 +141,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Core/Logger",
             defaultTemplateSubpath: "Core/Logger"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .analytics,
             commandName: "analytics",
             title: "Analytics",
@@ -150,7 +150,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Core/Analytics",
             defaultTemplateSubpath: "Core/Analytics"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .config,
             commandName: "config",
             title: "Config",
@@ -159,7 +159,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Core/Config",
             defaultTemplateSubpath: "Core/Config"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .auth,
             commandName: "auth",
             title: "Auth",
@@ -168,7 +168,7 @@ public struct BlockRegistry {
             defaultOutputPath: "App/Sources/Core/Auth",
             defaultTemplateSubpath: "Core/Auth"
         ),
-        BlockSpec(
+        BrickSpec(
             type: .featureflag,
             commandName: "featureflag",
             title: "FeatureFlag",
@@ -179,19 +179,85 @@ public struct BlockRegistry {
         )
     ]
 
-    public static var featureBlocks: [BlockSpec] {
-        allBlocks.filter { $0.category == .feature }
+    public static var featureBricks: [BrickSpec] {
+        allBricks.filter { $0.category == .feature }
     }
 
-    public static var coreBlocks: [BlockSpec] {
-        allBlocks.filter { $0.category == .core }
+    public static var coreBricks: [BrickSpec] {
+        allBricks.filter { $0.category == .core }
     }
 
-    public static func spec(for type: ModuleType) -> BlockSpec? {
-        allBlocks.first { $0.type == type }
+    public static func spec(for type: Brick) -> BrickSpec? {
+        allBricks.first { $0.type == type }
     }
 
-    public static func spec(forCommand command: String) -> BlockSpec? {
-        allBlocks.first { $0.commandName.lowercased() == command.lowercased() }
+    public static func spec(forCommand command: String) -> BrickSpec? {
+        allBricks.first { $0.commandName.lowercased() == command.lowercased() }
+    }
+}
+
+// MARK: - Built-in Brick Presets Extension
+extension Brick {
+    public enum Feature {
+        public static let scene: Brick = "scene"
+        public static let usecase: Brick = "usecase"
+        public static let repository: Brick = "repository"
+        public static let service: Brick = "service"
+        public static let entity: Brick = "entity"
+        public static let coordinator: Brick = "coordinator"
+        public static let component: Brick = "component"
+        public static let mapper: Brick = "mapper"
+        public static let validator: Brick = "validator"
+    }
+
+    public enum Core {
+        public static let storage: Brick = "storage"
+        public static let network: Brick = "network"
+        public static let logger: Brick = "logger"
+        public static let analytics: Brick = "analytics"
+        public static let config: Brick = "config"
+        public static let auth: Brick = "auth"
+        public static let featureflag: Brick = "featureflag"
+    }
+
+    // Conveniences
+    public static let scene = Feature.scene
+    public static let usecase = Feature.usecase
+    public static let repository = Feature.repository
+    public static let service = Feature.service
+    public static let entity = Feature.entity
+    public static let coordinator = Feature.coordinator
+    public static let component = Feature.component
+    public static let mapper = Feature.mapper
+    public static let validator = Feature.validator
+
+    public static let storage = Core.storage
+    public static let network = Core.network
+    public static let logger = Core.logger
+    public static let analytics = Core.analytics
+    public static let config = Core.config
+    public static let auth = Core.auth
+    public static let featureflag = Core.featureflag
+
+    public static var allCases: [Brick] {
+        [
+            Feature.scene, Feature.usecase, Feature.repository, Feature.service, Feature.entity,
+            Feature.coordinator, Feature.component, Feature.mapper, Feature.validator,
+            Core.storage, Core.network, Core.logger, Core.analytics, Core.config, Core.auth, Core.featureflag
+        ]
+    }
+}
+
+// MARK: - Built-in Brick.Category Presets Extension
+extension Brick.Category {
+    public static let feature: Brick.Category = "feature"
+    public static let core: Brick.Category = "core"
+    public static let ui: Brick.Category = "ui"
+    public static let domain: Brick.Category = "domain"
+    public static let data: Brick.Category = "data"
+    public static let presentation: Brick.Category = "presentation"
+
+    public var isSingleton: Bool {
+        return self == .core || rawValue == "infrastructure" || rawValue == "singletons"
     }
 }

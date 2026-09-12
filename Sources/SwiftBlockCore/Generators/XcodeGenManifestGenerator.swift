@@ -120,7 +120,7 @@ targets:
         try trimmedContent.write(toFile: manifestPath, atomically: true, encoding: .utf8)
     }
 
-    public func addModuleDependency(moduleName: String, type: ModuleType, config: SwiftBlockConfig, projectPath: String) throws {
+    public func addBrickDependency(name: String, type: Brick, config: SwiftBlockConfig, projectPath: String) throws {
         // XcodeGen resolves sources recursively from App/Sources and Packages
     }
 }
