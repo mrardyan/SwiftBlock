@@ -5,15 +5,17 @@ public struct Brick: RawRepresentable, ExpressibleByStringLiteral, Hashable, Cod
     public let rawValue: String
 
     public init(rawValue: String) {
-        self.rawValue = rawValue.lowercased()
+        let clean = rawValue.contains("/") ? String(rawValue.split(separator: "/").last!) :
+                    (rawValue.contains(".") ? String(rawValue.split(separator: ".").last!) : rawValue)
+        self.rawValue = clean.lowercased()
     }
 
     public init(_ description: String) {
-        self.rawValue = description.lowercased()
+        self.init(rawValue: description)
     }
 
     public init(stringLiteral value: String) {
-        self.rawValue = value.lowercased()
+        self.init(rawValue: value)
     }
 
     public var description: String {

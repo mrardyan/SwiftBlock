@@ -35,6 +35,25 @@ struct BrickRegistryTests {
         #expect(authSpec != nil)
         #expect(authSpec?.type == .auth)
 
+        // Category namespacing tests (core/network, feature/scene, core.storage)
+        let coreNetworkSpec = BrickRegistry.spec(forCommand: "core/network")
+        #expect(coreNetworkSpec != nil)
+        #expect(coreNetworkSpec?.type == .network)
+
+        let featureSceneSpec = BrickRegistry.spec(forCommand: "feature/scene")
+        #expect(featureSceneSpec != nil)
+        #expect(featureSceneSpec?.type == .scene)
+
+        let coreStorageSpec = BrickRegistry.spec(forCommand: "core.storage")
+        #expect(coreStorageSpec != nil)
+        #expect(coreStorageSpec?.type == .storage)
+
+        let slashBrick: Brick = "core/network"
+        #expect(slashBrick.rawValue == "network")
+
+        let dotBrick: Brick = "feature/scene"
+        #expect(dotBrick.rawValue == "scene")
+
         let invalidSpec = BrickRegistry.spec(forCommand: "nonexistent")
         #expect(invalidSpec == nil)
     }

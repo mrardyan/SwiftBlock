@@ -192,7 +192,20 @@ public struct BrickRegistry {
     }
 
     public static func spec(forCommand command: String) -> BrickSpec? {
-        allBricks.first { $0.commandName.lowercased() == command.lowercased() }
+        let normalized = command.lowercased()
+        let separator: Character? = normalized.contains("/") ? "/" : (normalized.contains(".") ? "." : nil)
+        if let sep = separator {
+            let parts = normalized.split(separator: sep, maxSplits: 1).map(String.init)
+            if parts.count == 2 {
+                let categoryStr = parts[0]
+                let nameStr = parts[1]
+                return allBricks.first {
+                    ($0.category.rawValue == categoryStr || (categoryStr == "feature" && $0.category != .core)) &&
+                    $0.commandName.lowercased() == nameStr
+                } ?? allBricks.first { $0.commandName.lowercased() == nameStr }
+            }
+        }
+        return allBricks.first { $0.commandName.lowercased() == normalized }
     }
 }
 
