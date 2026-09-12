@@ -2,7 +2,7 @@
   <img src="Docs/Assets/SwiftBlock.svg" width="120" height="120" alt="SwiftBlock Logo">
   <h1 align="center">SwiftBlock</h1>
   <p align="center">
-    <strong>Composable building blocks for modern Swift & Apple engineering.</strong>
+    <strong>Stop rewriting the same code. Start snapping blocks.</strong>
   </p>
   <p align="center">
     <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.10-orange.svg?style=flat-square" alt="Swift 5.10"></a>
@@ -13,7 +13,7 @@
 
 ---
 
-**SwiftBlock** is a modular component engine for modern Swift and Apple engineering. Inspired by the satisfying simplicity of Lego building blocks, SwiftBlock empowers developers and engineering teams to snap production-ready architecture components directly into their iOS, macOS, and Vapor codebases.
+**SwiftBlock** turns production-ready architecture into modular building blocks for Swift. Skip hours of tedious setup and snap complete feature layers, network engines, auto-wired dependencies, and unit tests directly into your iOS, macOS, and Vapor codebases in seconds.
 
 ---
 
@@ -73,22 +73,21 @@ swiftblock snap securestorage
 swiftblock kit run clean-feature Profile
 ```
 
-
 ---
 
 ## Documentation Index
 
 Explore the complete SwiftBlock documentation guides:
 
-| Guide | Description |
-| --- | --- |
-| 🚀 [**Getting Started**](Docs/01-Getting-Started.md) | Step-by-step tutorial on initializing baseplates and snapping components. |
-| 🧩 [**Core Concepts**](Docs/02-Core-Concepts.md) | Architecture breakdown, automatic dependency registration, and Stencil variable engine. |
-| 🏗️ [**Baseplates Guide**](Docs/03-Baseplates-Guide.md) | Deep dive on Baseplate starters (`SwiftUI`/`Vapor`), Tuist/XcodeGen manifests, and guardrails. |
-| 📚 [**Bricks Catalog**](Docs/04-Bricks-Catalog.md) | Comprehensive catalog of all 28 built-in Core, Feature, and Utility components. |
-| 📦 [**Custom Bricks & Boxes**](Docs/05-Custom-Bricks-and-Boxes.md) | Guide to writing `brick.yml` manifests, local overrides, and team Box registries. |
-| 📐 [**Composition Kits**](Docs/06-Composition-Kits.md) | Multi-brick architectural blueprints (`clean-feature`). |
-| 📖 [**CLI Reference**](Docs/07-CLI-Reference.md) | Exhaustive CLI flags and subcommands reference. |
+| Guide                                                              | Description                                                                                    |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| 🚀 [**Getting Started**](Docs/01-Getting-Started.md)               | Step-by-step tutorial on initializing baseplates and snapping components.                      |
+| 🧩 [**Core Concepts**](Docs/02-Core-Concepts.md)                   | Architecture breakdown, automatic dependency registration, and Stencil variable engine.        |
+| 🏗️ [**Baseplates Guide**](Docs/03-Baseplates-Guide.md)             | Deep dive on Baseplate starters (`SwiftUI`/`Vapor`), Tuist/XcodeGen manifests, and guardrails. |
+| 📚 [**Bricks Catalog**](Docs/04-Bricks-Catalog.md)                 | Comprehensive catalog of all 28 built-in Core, Feature, and Utility components.                |
+| 📦 [**Custom Bricks & Boxes**](Docs/05-Custom-Bricks-and-Boxes.md) | Guide to writing `brick.yml` manifests, local overrides, and team Box registries.              |
+| 📐 [**Composition Kits**](Docs/06-Composition-Kits.md)             | Multi-brick architectural blueprints (`clean-feature`).                                        |
+| 📖 [**CLI Reference**](Docs/07-CLI-Reference.md)                   | Exhaustive CLI flags and subcommands reference.                                                |
 
 ---
 
@@ -107,7 +106,6 @@ make test-e2e
 # Install binary & assets locally to /usr/local/bin
 make install
 ```
-
 
 ---
 
