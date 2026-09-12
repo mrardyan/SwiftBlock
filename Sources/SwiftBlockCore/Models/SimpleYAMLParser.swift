@@ -6,7 +6,6 @@ public struct SimpleYAMLParser {
         let lines = yamlString.components(separatedBy: .newlines)
         
         var stack: [(indent: Int, key: String, dict: [String: Any], isList: Bool, list: [Any])] = []
-        var currentDict: [String: Any] = [:]
         
         for rawLine in lines {
             // Strip comments (preserving # inside double or single quotes)
@@ -56,9 +55,7 @@ public struct SimpleYAMLParser {
                     let key = parts[0]
                     let value = parts.count > 1 ? parseValue(parts[1]) : ""
                     
-                    if var top = stack.last, top.isList {
-                        var lastItem = (top.list.last as? [String: Any]) ?? [:]
-                        lastItem[key] = value
+                    if let top = stack.last, top.isList {
                         if top.list.isEmpty || !(top.list.last is [String: Any]) {
                             stack[stack.count - 1].list.append([key: value])
                         } else {
@@ -71,7 +68,7 @@ public struct SimpleYAMLParser {
                     }
                 } else {
                     let val = parseValue(itemStr)
-                    if var top = stack.last, top.isList {
+                    if let top = stack.last, top.isList {
                         stack[stack.count - 1].list.append(val)
                     }
                 }
@@ -86,9 +83,10 @@ public struct SimpleYAMLParser {
                 } else {
                     let val = parseValue(valStr)
                     if !stack.isEmpty {
-                        if stack[stack.count - 1].isList, var lastDict = stack[stack.count - 1].list.last as? [String: Any] {
-                            lastDict[key] = val
-                            stack[stack.count - 1].list[stack[stack.count - 1].list.count - 1] = lastDict
+                        if stack[stack.count - 1].isList, let lastDict = stack[stack.count - 1].list.last as? [String: Any] {
+                            var mutableDict = lastDict
+                            mutableDict[key] = val
+                            stack[stack.count - 1].list[stack[stack.count - 1].list.count - 1] = mutableDict
                         } else {
                             stack[stack.count - 1].dict[key] = val
                         }

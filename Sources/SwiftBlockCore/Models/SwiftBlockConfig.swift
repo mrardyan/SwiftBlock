@@ -1,29 +1,5 @@
 import Foundation
 
-public struct PackagingConfig: Codable, Equatable {
-    public var feature: String
-    public var core: String
-
-    public init(feature: String = "monolithic", core: String = "spm") {
-        self.feature = feature
-        self.core = core
-    }
-
-    public init(from decoder: Decoder) throws {
-        if let container = try? decoder.container(keyedBy: CodingKeys.self) {
-            self.feature = (try? container.decode(String.self, forKey: .feature)) ?? "monolithic"
-            self.core = (try? container.decode(String.self, forKey: .core)) ?? "spm"
-        } else if let single = try? decoder.singleValueContainer(),
-                  let value = try? single.decode(String.self) {
-            self.feature = value
-            self.core = value == "spm" ? "spm" : "monolithic"
-        } else {
-            self.feature = "monolithic"
-            self.core = "spm"
-        }
-    }
-}
-
 public struct SwiftBlockConfig: Codable, Equatable {
     public static let defaultKits: [String: [String]] = [
         "clean-feature": ["scene", "usecase", "repository", "service"],
@@ -379,33 +355,5 @@ public enum SwiftBlockConfigError: Error, LocalizedError {
         case .encodingFailed:
             return "Failed to encode SwiftBlock configuration to JSON."
         }
-    }
-}
-
-public enum ModuleCategory: String, Codable {
-    case feature
-    case core
-}
-
-public enum ModuleType: String, CaseIterable, Codable {
-    case scene
-    case usecase
-    case repository
-    case service
-    case entity
-    case coordinator
-    case component
-    case mapper
-    case validator
-    case storage
-    case network
-    case logger
-    case analytics
-    case config
-    case auth
-    case featureflag
-
-    public var category: ModuleCategory {
-        BlockRegistry.spec(for: self)?.category ?? .feature
     }
 }
