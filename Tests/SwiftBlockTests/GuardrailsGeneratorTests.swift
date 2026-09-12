@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import SwiftBlockCore
 
-struct GuardrailsInjectorTests {
+struct GuardrailsGeneratorTests {
 
     @Test func injectAllGuardrails() throws {
         let tempDir = FileManager.default.temporaryDirectory
@@ -27,8 +27,8 @@ struct GuardrailsInjectorTests {
             )
         )
 
-        let injector = GuardrailsInjector()
-        try injector.injectGuardrails(in: tempDir.path, config: config)
+        let generator = GuardrailsGenerator()
+        try generator.generateGuardrails(in: tempDir.path, config: config)
 
         #expect(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftlint.yml").path))
         #expect(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftformat").path))
@@ -61,8 +61,8 @@ struct GuardrailsInjectorTests {
             )
         )
 
-        let injector = GuardrailsInjector()
-        try injector.injectGuardrails(in: tempDir.path, config: config)
+        let generator = GuardrailsGenerator()
+        try generator.generateGuardrails(in: tempDir.path, config: config)
 
         #expect(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftlint.yml").path))
         #expect(!FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftformat").path))

@@ -150,8 +150,8 @@ public class ProjectGenerator {
 
             // 4. Inject Guardrails (.swiftlint.yml, .swiftformat, .pre-commit-config.yaml, etc.)
             if options.isVerbose { print("🔹 [Assembly] Injecting guardrail configuration files...") }
-            let guardrailGen = GuardrailsInjector(fileManager: fileManager)
-            try guardrailGen.injectGuardrails(in: options.outputPath, config: config)
+            let guardrailGen = GuardrailsGenerator(fileManager: fileManager)
+            try guardrailGen.generateGuardrails(in: options.outputPath, config: config)
 
             // 5. Generate CI/CD Pipeline Workflow Files
             if config.cicd.provider != .none {

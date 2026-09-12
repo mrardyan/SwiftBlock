@@ -1,13 +1,13 @@
 import Foundation
 
-public class GuardrailsInjector {
+public class GuardrailsGenerator {
     private let fileManager: FileManager
 
     public init(fileManager: FileManager = .default) {
         self.fileManager = fileManager
     }
 
-    public func injectGuardrails(in projectPath: String, config: SwiftBlockConfig) throws {
+    public func generateGuardrails(in projectPath: String, config: SwiftBlockConfig) throws {
         let guardrails = config.guardrails
 
         // 1. SwiftLint (.swiftlint.yml)
