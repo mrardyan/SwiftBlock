@@ -576,8 +576,38 @@ struct RenameCommand: ParsableCommand {
 
 
 private func executeInitProject(projectName: String, bundlePrefix: String, baseplateName: String = "swiftui", templatePath: String?, generatorTool: ProjectGeneratorTool, isDryRun: Bool, isVerbose: Bool) throws {
-    let resolvedTool: ProjectGeneratorTool = baseplateName.lowercased().contains("vapor") ? .spm : generatorTool
-    let config = SwiftBlockConfig(projectName: projectName, bundlePrefix: bundlePrefix, generatorTool: resolvedTool)
+    let isVapor = baseplateName.lowercased().contains("vapor")
+    let resolvedTool: ProjectGeneratorTool = isVapor ? .spm : generatorTool
+    let config: SwiftBlockConfig
+    if isVapor {
+        config = SwiftBlockConfig(
+            projectName: projectName,
+            bundlePrefix: bundlePrefix,
+            packaging: PackagingConfig(feature: "monolithic", core: "monolithic"),
+            organization: "feature-first",
+            generatorTool: .spm,
+            guardrails: GuardrailsConfig(
+                swiftlint: true,
+                swiftformat: true,
+                precommit: true,
+                periphery: false,
+                gitleaks: true,
+                danger: false,
+                swiftgen: false,
+                licenseplist: false
+            ),
+            cicd: CICDConfig(provider: .githubActions),
+            coreBlocks: [.network, .logger, .config, .vaporauth],
+            gitInit: true,
+            pathTemplates: [
+                "feature": "Sources/App/Features/{module}/{block}",
+                "core": "Sources/App/Core/{block}"
+            ]
+        )
+    } else {
+        config = SwiftBlockConfig(projectName: projectName, bundlePrefix: bundlePrefix, generatorTool: resolvedTool)
+    }
+
     let options = ProjectGeneratorOptions(
         projectName: projectName,
         bundlePrefix: bundlePrefix,
@@ -601,14 +631,25 @@ private func executeWithOptions(options: ProjectGeneratorOptions) throws {
             print("✔ Configured \(options.customConfig?.generatorTool.rawValue.capitalized ?? "Tuist") project for \(options.projectName)")
             
             let dirName = (options.outputPath as NSString).lastPathComponent
-            print("""
+            let isVapor = options.baseplateName.lowercased().contains("vapor") || (options.customConfig?.generatorTool == .spm)
+            if isVapor {
+                print("""
 
-            Next steps:
-              1. cd \(dirName)
-              2. swiftblock snap network   # Snap foundation bricks
-              3. swiftblock snap scene Home # Snap feature scene
-              4. make setup                 # Generate Xcode workspace
-            """)
+                Next steps:
+                  1. cd \(dirName)
+                  2. swiftblock snap service Order # Snap feature service brick
+                  3. swift run                     # Start local Vapor dev server
+                """)
+            } else {
+                print("""
+
+                Next steps:
+                  1. cd \(dirName)
+                  2. swiftblock snap network       # Snap foundation bricks
+                  3. swiftblock snap scene Home    # Snap feature scene
+                  4. make setup                    # Generate Xcode workspace
+                """)
+            }
         }
     } catch {
         print("✖ \(error.localizedDescription)")
