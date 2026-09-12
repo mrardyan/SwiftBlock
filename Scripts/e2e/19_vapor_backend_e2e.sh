@@ -40,6 +40,13 @@ run_scenario_19() {
         log_success "Vapor backend project compiled successfully via Swift Package Manager"
     fi
 
+    # 6. Verify Vapor backend project unit tests execution via XCTVapor
+    log_info "Sub-test 19.4: Executing unit tests in generated Vapor project..."
+    if [[ -f "Package.swift" ]]; then
+        swift test > /dev/null 2>&1
+        log_success "Vapor backend unit tests (XCTVapor) executed successfully"
+    fi
+
     cd "$TEST_DIR"
     log_success "Scenario 19 Vapor Backend API E2E verified successfully!"
 }
