@@ -8,6 +8,7 @@ public struct BrickSpec: Equatable {
     public let category: Brick.Category
     public let defaultOutputPath: String
     public let defaultTemplateSubpath: String
+    public let baseplates: [String]?
 
     public init(
         type: Brick,
@@ -16,7 +17,8 @@ public struct BrickSpec: Equatable {
         description: String,
         category: Brick.Category,
         defaultOutputPath: String,
-        defaultTemplateSubpath: String
+        defaultTemplateSubpath: String,
+        baseplates: [String]? = nil
     ) {
         self.type = type
         self.commandName = commandName
@@ -25,6 +27,7 @@ public struct BrickSpec: Equatable {
         self.category = category
         self.defaultOutputPath = defaultOutputPath
         self.defaultTemplateSubpath = defaultTemplateSubpath
+        self.baseplates = baseplates
     }
 }
 
@@ -163,10 +166,21 @@ public struct BrickRegistry {
             type: .auth,
             commandName: "auth",
             title: "Auth",
-            description: "User Session & Token State Manager",
+            description: "User Session & Token State Manager (Keychain / iOS)",
             category: .core,
             defaultOutputPath: "App/Sources/Core/Auth",
-            defaultTemplateSubpath: "Core/Auth"
+            defaultTemplateSubpath: "Core/Auth",
+            baseplates: ["swiftui"]
+        ),
+        BrickSpec(
+            type: .vaporauth,
+            commandName: "vaporauth",
+            title: "VaporAuth",
+            description: "JWT & Session Auth Manager for Vapor backend API",
+            category: .core,
+            defaultOutputPath: "Sources/App/Core/Auth",
+            defaultTemplateSubpath: "Core/VaporAuth",
+            baseplates: ["vapor"]
         ),
         BrickSpec(
             type: .featureflag,
@@ -284,6 +298,7 @@ extension Brick {
         public static let analytics: Brick = "analytics"
         public static let config: Brick = "config"
         public static let auth: Brick = "auth"
+        public static let vaporauth: Brick = "vaporauth"
         public static let featureflag: Brick = "featureflag"
         public static let validator: Brick = "validator"
         public static let formatter: Brick = "formatter"
@@ -311,6 +326,7 @@ extension Brick {
     public static let analytics = Core.analytics
     public static let config = Core.config
     public static let auth = Core.auth
+    public static let vaporauth = Core.vaporauth
     public static let featureflag = Core.featureflag
     public static let formatter = Core.formatter
     public static let biometrics = Core.biometrics
@@ -323,7 +339,7 @@ extension Brick {
         [
             Feature.scene, Feature.usecase, Feature.repository, Feature.service, Feature.entity,
             Feature.coordinator, Feature.component, Feature.mapper, Feature.validator,
-            Core.storage, Core.network, Core.logger, Core.analytics, Core.config, Core.auth, Core.featureflag, Core.formatter,
+            Core.storage, Core.network, Core.logger, Core.analytics, Core.config, Core.auth, Core.vaporauth, Core.featureflag, Core.formatter,
             Core.biometrics, Core.deeplink, Core.permissions, Core.location, Core.notification
         ]
     }

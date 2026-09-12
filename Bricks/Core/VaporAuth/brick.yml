@@ -1,0 +1,8 @@
+name: vaporauth
+category: infrastructure
+instantiation: singleton
+description: "JWT & Session Auth Manager for Vapor backend API"
+defaultPath: "Sources/App/Core/Auth"
+baseplates:
+  - vapor
+requiresNameArgument: false

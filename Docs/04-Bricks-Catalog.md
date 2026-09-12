@@ -1,6 +1,6 @@
 # Bricks Catalog
 
-This catalog details all **28 built-in Bricks** provided out-of-the-box by **SwiftBlock**. Bricks are categorized into 4 User-First functional layers: **Config**, **Core**, **Feature**, and **Utils**.
+This catalog details all **29 built-in Bricks** provided out-of-the-box by **SwiftBlock**. Bricks are categorized into 4 User-First functional layers: **Config**, **Core**, **Feature**, and **Utils**. Platform compatibility is declared using `baseplates` in `brick.yml` (e.g. `swiftui`, `vapor`, or shared).
 
 ---
 
@@ -65,7 +65,7 @@ swiftblock snap deeplink
 
 ---
 
-## 2. Core Infrastructure Bricks
+## 2. Infrastructure & Service Bricks
 
 Infrastructure bricks provide shared low-level I/O, security, storage, analytics, and system hardware services snapped once into your application core.
 
@@ -107,16 +107,40 @@ try secureStorage.save(token, forKey: "authToken")
 
 ---
 
-### Auth
+### Auth (SwiftUI / Apple Platforms)
 
-Authentication & Session Manager.
+iOS / macOS Keychain Authentication & Session Manager.
 
 ```bash
 swiftblock snap auth
 ```
 
 - **Output**: `App/Sources/Core/Auth/AuthService.swift`
-- **Features**: Session state machine, token refresh handling, secure login/logout hooks.
+- **Platform**: `swiftui`
+- **Features**: Keychain token storage, session state machine, token refresh handling, secure login/logout hooks.
+
+---
+
+### VaporAuth (Vapor Backend API)
+
+JWT & Session Authentication Manager for Vapor backend API services.
+
+```bash
+swiftblock snap vaporauth
+```
+
+- **Output**: `Sources/App/Core/Auth/UserAuth.swift`
+- **Platform**: `vapor`
+- **Features**: Pure Swift JWT payload claim generator, bearer token validator, in-memory session revocation manager without Keychain dependency.
+
+```swift
+// Code Example: Using VaporAuth
+let auth = UserAuth.shared
+let token = auth.generateToken(for: "user_123")
+if let payload = auth.validateToken(token) {
+    print("Authenticated user: \(payload.subject)")
+}
+```
 
 ---
 

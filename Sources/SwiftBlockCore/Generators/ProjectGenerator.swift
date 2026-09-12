@@ -120,7 +120,7 @@ public class ProjectGenerator {
                     case .network: defaultName = "NetworkClient"
                     case .logger: defaultName = "AppLogger"
                     case .config: defaultName = "AppConfig"
-                    case .auth: defaultName = "UserAuth"
+                    case .auth, .vaporauth: defaultName = "UserAuth"
                     case .analytics: defaultName = "AppAnalytics"
                     case .featureflag: defaultName = "FeatureFlags"
                     default: defaultName = type.rawValue.capitalized

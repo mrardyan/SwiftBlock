@@ -428,7 +428,9 @@ public class InteractiveWizard {
             TerminalPrompt.MultiChoiceOption(id: "storage", title: "Storage", subtitle: "Database & Fluent ORM persistence", isSelected: false)
         ]
         let selectedServerBlockIds = TerminalPrompt.selectMultiChoice(title: "Select Server Services to include", options: serverBlockOptions, readLineFallback: readLine)
-        let selectedCoreBlocks = selectedServerBlockIds.compactMap { Brick(rawValue: $0) }
+        let selectedCoreBlocks = selectedServerBlockIds.map { id -> Brick in
+            return id == "auth" ? .vaporauth : Brick(rawValue: id)
+        }
 
         print("│")
         print("◇  \(ANSIColor.boldText("CI/CD Pipeline & Git Repository"))")

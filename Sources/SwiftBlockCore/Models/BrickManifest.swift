@@ -44,6 +44,7 @@ public struct BrickManifest {
     public let defaultPath: String
     public let requiresNameArgument: Bool
     public let namingPostfix: String?
+    public let baseplates: [String]?
     public let variables: [VariableSpec]
     public let files: [FileSpec]
     public let preSnapHooks: [String]
@@ -59,6 +60,7 @@ public struct BrickManifest {
         defaultPath: String = "App/Sources/Features",
         requiresNameArgument: Bool = true,
         namingPostfix: String? = nil,
+        baseplates: [String]? = nil,
         variables: [VariableSpec] = [],
         files: [FileSpec] = [],
         preSnapHooks: [String] = [],
@@ -73,6 +75,7 @@ public struct BrickManifest {
         self.defaultPath = defaultPath
         self.requiresNameArgument = requiresNameArgument
         self.namingPostfix = namingPostfix
+        self.baseplates = baseplates
         self.variables = variables
         self.files = files
         self.preSnapHooks = preSnapHooks
@@ -114,6 +117,7 @@ public struct BrickManifest {
         let version = (dict["version"] as? String) ?? "1.0.0"
         let defaultPath = (dict["defaultPath"] as? String) ?? (dict["defaultOutputPath"] as? String) ?? "App/Sources/Features"
         let requiresName = (dict["requiresNameArgument"] as? Bool) ?? (instantiation == .generative)
+        let baseplates = (dict["baseplates"] as? [String]) ?? (dict["platforms"] as? [String])
         
         var namingPostfix: String? = nil
         if let naming = dict["namingConvention"] as? [String: Any] {
@@ -184,6 +188,7 @@ public struct BrickManifest {
             defaultPath: defaultPath,
             requiresNameArgument: requiresName,
             namingPostfix: namingPostfix,
+            baseplates: baseplates,
             variables: variables,
             files: files,
             preSnapHooks: preSnapHooks,
