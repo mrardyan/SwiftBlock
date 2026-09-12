@@ -42,6 +42,9 @@ struct BaseplateCommand: ParsableCommand {
     @Option(name: .long, help: "Build tool generator: tuist or xcodegen (default: tuist)")
     var tool: String = "tuist"
 
+    @Option(name: .long, help: "Unit test framework: swift-testing or xctest (default: swift-testing)")
+    var testFramework: String = "swift-testing"
+
     @Flag(name: .long, help: "Simulate project generation without writing to disk")
     var dryRun: Bool = false
 
@@ -51,7 +54,8 @@ struct BaseplateCommand: ParsableCommand {
     func run() throws {
         if let projectName = projectName, !projectName.isEmpty {
             let toolEnum = ProjectGeneratorTool(rawValue: tool.lowercased()) ?? .tuist
-            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, baseplateName: baseplate, templatePath: templatePath, generatorTool: toolEnum, isDryRun: dryRun, isVerbose: verbose)
+            let tfEnum = TestFramework(rawValue: testFramework.lowercased()) ?? .swiftTesting
+            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, baseplateName: baseplate, templatePath: templatePath, generatorTool: toolEnum, testFramework: tfEnum, isDryRun: dryRun, isVerbose: verbose)
         } else {
             let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: templatePath ?? "")
             var finalOptions = options
@@ -80,6 +84,9 @@ struct SnapCommand: ParsableCommand {
 
     @Option(name: [.customShort("v"), .customLong("var")], help: "Key-value template variable (e.g. --var timeout=60)")
     var variables: [String] = []
+
+    @Option(name: .long, help: "Unit test framework: swift-testing or xctest")
+    var testFramework: String?
 
     @Flag(name: .long, help: "Simulate brick generation without writing to disk")
     var dryRun: Bool = false
@@ -575,7 +582,7 @@ struct RenameCommand: ParsableCommand {
 
 
 
-private func executeInitProject(projectName: String, bundlePrefix: String, baseplateName: String = "swiftui", templatePath: String?, generatorTool: ProjectGeneratorTool, isDryRun: Bool, isVerbose: Bool) throws {
+private func executeInitProject(projectName: String, bundlePrefix: String, baseplateName: String = "swiftui", templatePath: String?, generatorTool: ProjectGeneratorTool, testFramework: TestFramework = .swiftTesting, isDryRun: Bool, isVerbose: Bool) throws {
     let isVapor = baseplateName.lowercased().contains("vapor")
     let resolvedTool: ProjectGeneratorTool = isVapor ? .spm : generatorTool
     let config: SwiftBlockConfig
@@ -602,10 +609,11 @@ private func executeInitProject(projectName: String, bundlePrefix: String, basep
             pathTemplates: [
                 "feature": "Sources/App/Features/{module}/{block}",
                 "core": "Sources/App/Core/{block}"
-            ]
+            ],
+            testFramework: testFramework
         )
     } else {
-        config = SwiftBlockConfig(projectName: projectName, bundlePrefix: bundlePrefix, generatorTool: resolvedTool)
+        config = SwiftBlockConfig(projectName: projectName, bundlePrefix: bundlePrefix, generatorTool: resolvedTool, testFramework: testFramework)
     }
 
     let options = ProjectGeneratorOptions(

@@ -173,8 +173,9 @@ public struct BrickManifest {
             for item in injList {
                 if let target = item["target"] as? String, let content = item["content"] as? String {
                     let marker = item["marker"] as? String
+                    let scope = item["scope"] as? String
                     let condition = item["condition"] as? String
-                    injections.append(InjectionSpec(target: target, marker: marker, content: content, condition: condition))
+                    injections.append(InjectionSpec(target: target, marker: marker, scope: scope, content: content, condition: condition))
                 }
             }
         }

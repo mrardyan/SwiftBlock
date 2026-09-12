@@ -328,6 +328,12 @@ public class InteractiveWizard {
         let cicdChoiceIndex = promptChoiceWithOptions(title: "Select CI/CD Pipeline Provider", options: cicdChoices, readLine: readLine)
         let selectedCICD = CICDProvider.allCases[cicdChoiceIndex]
 
+        print("│")
+        print("◇  \(ANSIColor.boldText("Unit Testing Framework"))")
+        let testChoices = TestFramework.allCases.map { ChoiceOption(title: $0.displayName) }
+        let testChoiceIndex = promptChoiceWithOptions(title: "Select Unit Test Framework", options: testChoices, readLine: readLine)
+        let selectedTestFramework = TestFramework.allCases[testChoiceIndex]
+
         let gitInitConfirm = promptConfirm(message: "Initialize Git repository & setup hooks?", defaultYes: true, readLine: readLine)
 
         print("│")
@@ -366,7 +372,8 @@ public class InteractiveWizard {
             pathTemplates: [
                 "feature": featureTemplate,
                 "core": coreTemplate
-            ]
+            ],
+            testFramework: selectedTestFramework
         )
 
         return ProjectGeneratorOptions(

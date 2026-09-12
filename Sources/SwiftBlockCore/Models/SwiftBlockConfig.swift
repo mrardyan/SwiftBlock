@@ -22,6 +22,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
     public var overrides: [String: String]
     public var paths: ModulePaths
     public var kits: [String: [String]]
+    public var testFramework: TestFramework
 
     enum CodingKeys: String, CodingKey {
         case projectName
@@ -38,6 +39,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         case overrides
         case paths
         case kits
+        case testFramework
     }
 
     public init(from decoder: Decoder) throws {
@@ -60,6 +62,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         self.overrides = (try? container.decode([String: String].self, forKey: .overrides)) ?? [:]
         self.paths = (try? container.decode(ModulePaths.self, forKey: .paths)) ?? ModulePaths()
         self.kits = (try? container.decode([String: [String]].self, forKey: .kits)) ?? SwiftBlockConfig.defaultKits
+        self.testFramework = (try? container.decode(TestFramework.self, forKey: .testFramework)) ?? .swiftTesting
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -78,6 +81,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         try container.encode(overrides, forKey: .overrides)
         try container.encode(paths, forKey: .paths)
         try container.encode(kits, forKey: .kits)
+        try container.encode(testFramework, forKey: .testFramework)
     }
 
     public struct ModulePaths: Codable, Equatable {
@@ -149,7 +153,8 @@ public struct SwiftBlockConfig: Codable, Equatable {
         ],
         overrides: [String: String] = [:],
         paths: ModulePaths = ModulePaths(),
-        kits: [String: [String]] = SwiftBlockConfig.defaultKits
+        kits: [String: [String]] = SwiftBlockConfig.defaultKits,
+        testFramework: TestFramework = .swiftTesting
     ) {
         self.projectName = projectName
         self.bundlePrefix = bundlePrefix
@@ -165,6 +170,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         self.overrides = overrides
         self.paths = paths
         self.kits = kits
+        self.testFramework = testFramework
     }
 
     public func resolveOutputPath(for type: Brick, moduleName: String) -> String {

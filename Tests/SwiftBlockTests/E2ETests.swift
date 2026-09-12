@@ -336,5 +336,137 @@ struct E2ETests {
             }
         }
     }
+
+    @Test func testE2ENewWizardAndTestFrameworkTranspilation() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("E2E_Wizard_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        // 1. Run InteractiveWizard with Swift Testing option (choice '2' for Swift Testing)
+        var inputsSwiftTesting = ["1", "SwiftTestingApp", "com.test", "1", "1", "1", "1", "y", "1", "2", "y", "y"]
+        let optionsSwiftTesting = try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
+            inputsSwiftTesting.isEmpty ? nil : inputsSwiftTesting.removeFirst()
+        })
+        #expect(optionsSwiftTesting.customConfig?.testFramework == .swiftTesting)
+
+        // 2. Run InteractiveWizard with XCTest option (choice '1' for XCTest)
+        var inputsXCTest = ["1", "XCTestApp", "com.test", "1", "1", "1", "1", "y", "1", "1", "y", "y"]
+        let optionsXCTest = try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
+            inputsXCTest.isEmpty ? nil : inputsXCTest.removeFirst()
+        })
+        #expect(optionsXCTest.customConfig?.testFramework == .xctest)
+
+        // 3. Test Brick Generation with Swift Testing transpilation
+        let projectPath = tempDir.appendingPathComponent("SwiftTestingApp").path
+        let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+        try "// Main App".write(toFile: "\(mockTemplate)/App/Sources/Main.swift", atomically: true, encoding: .utf8)
+
+        var projOpts = optionsSwiftTesting
+        projOpts.templatePath = mockTemplate
+        projOpts.outputPath = projectPath
+
+        let projectGen = ProjectGenerator()
+        try projectGen.generateProject(options: projOpts)
+
+        // Snap a brick into SwiftTestingApp
+        let mockModuleTemplate = tempDir.appendingPathComponent("MockModuleTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockModuleTemplate)/Scene", withIntermediateDirectories: true)
+        try "// Scene View".write(toFile: "\(mockModuleTemplate)/Scene/__MODULE_NAME__View.swift", atomically: true, encoding: .utf8)
+        let sampleTestContent = """
+        import XCTest
+        @testable import App
+
+        final class __MODULE_NAME__Tests: XCTestCase {
+            func testExample() {
+                XCTAssertEqual(1, 1)
+            }
+        }
+        """
+        try sampleTestContent.write(toFile: "\(mockModuleTemplate)/Scene/__MODULE_NAME__Tests.swift", atomically: true, encoding: .utf8)
+
+        let brickGen = BrickGenerator()
+        let brickOptions = BrickGeneratorOptions(
+            type: .scene,
+            name: "Profile",
+            projectRootPath: projectPath,
+            modulesTemplatePath: mockModuleTemplate
+        )
+        try brickGen.generateBrick(options: brickOptions)
+
+        let generatedTestPath = "\(projectPath)/App/Tests/Features/profile/scene/ProfileTests.swift"
+        #expect(FileManager.default.fileExists(atPath: generatedTestPath))
+
+        let testContent = try String(contentsOfFile: generatedTestPath, encoding: .utf8)
+        #expect(testContent.contains("import Testing"))
+        #expect(testContent.contains("@Suite struct ProfileTests"))
+        #expect(testContent.contains("@Test func testExample()"))
+        #expect(testContent.contains("#expect(1 == 1)"))
+    }
+
+    @Test func testE2EAutoIntegrationInjectedIntoContainerAndCoordinator() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("E2E_Injection_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let projectPath = tempDir.appendingPathComponent("InjectionApp").path
+        let config = SwiftBlockConfig(projectName: "InjectionApp", bundlePrefix: "com.test", coreBlocks: [])
+
+        let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+
+        let depContainerContent = """
+        import SwiftUI
+
+        public final class DependencyContainer {
+            public func setupDependencies() {
+                // MARK: - SwiftBlock Dependency Injection Marker
+            }
+        }
+        """
+        try depContainerContent.write(toFile: "\(mockTemplate)/App/Sources/DependencyContainer.swift", atomically: true, encoding: .utf8)
+
+        let appCoordinatorContent = """
+        import SwiftUI
+
+        public enum AppRoute: Hashable {
+            // MARK: - SwiftBlock Route Enum Marker
+            case home
+        }
+        """
+        try appCoordinatorContent.write(toFile: "\(mockTemplate)/App/Sources/AppCoordinator.swift", atomically: true, encoding: .utf8)
+
+        let projOpts = ProjectGeneratorOptions(
+            projectName: "InjectionApp",
+            bundlePrefix: "com.test",
+            templatePath: mockTemplate,
+            outputPath: projectPath,
+            customConfig: config
+        )
+        let projectGen = ProjectGenerator()
+        try projectGen.generateProject(options: projOpts)
+
+        // Snap Scene brick (which has injections configured in brick.yml)
+        let brickGen = BrickGenerator()
+        let brickOptions = BrickGeneratorOptions(
+            type: .scene,
+            name: "Checkout",
+            projectRootPath: projectPath,
+            modulesTemplatePath: "\(FileManager.default.currentDirectoryPath)/Bricks/Feature/Scene"
+        )
+        try brickGen.generateBrick(options: brickOptions)
+
+        let updatedContainer = try String(contentsOfFile: "\(projectPath)/App/Sources/DependencyContainer.swift", encoding: .utf8)
+        let updatedCoordinator = try String(contentsOfFile: "\(projectPath)/App/Sources/AppCoordinator.swift", encoding: .utf8)
+
+        #expect(updatedContainer.contains("register(CheckoutViewModel.self)"))
+        #expect(updatedCoordinator.contains("case checkout"))
+    }
 }
 

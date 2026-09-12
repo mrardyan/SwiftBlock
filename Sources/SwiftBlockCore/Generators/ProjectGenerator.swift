@@ -31,6 +31,8 @@ public struct ProjectGeneratorOptions {
         
         if let custom = templatePath, !custom.isEmpty {
             self.templatePath = custom
+        } else if let envPath = ProcessInfo.processInfo.environment["SWIFTBLOCK_TEMPLATE_PATH"], !envPath.isEmpty, FileManager.default.fileExists(atPath: envPath) {
+            self.templatePath = envPath
         } else if FileManager.default.fileExists(atPath: localDir) {
             self.templatePath = localDir
         } else if FileManager.default.fileExists(atPath: defaultShare) {

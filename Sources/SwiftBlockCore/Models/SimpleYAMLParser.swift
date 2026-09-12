@@ -56,15 +56,7 @@ public struct SimpleYAMLParser {
                     let value = parts.count > 1 ? parseValue(parts[1]) : ""
                     
                     if let top = stack.last, top.isList {
-                        if top.list.isEmpty || !(top.list.last is [String: Any]) {
-                            stack[stack.count - 1].list.append([key: value])
-                        } else {
-                            var list = top.list
-                            var dict = (list.removeLast() as? [String: Any]) ?? [:]
-                            dict[key] = value
-                            list.append(dict)
-                            stack[stack.count - 1].list = list
-                        }
+                        stack[stack.count - 1].list.append([key: value])
                     }
                 } else {
                     let val = parseValue(itemStr)

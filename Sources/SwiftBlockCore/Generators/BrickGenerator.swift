@@ -248,13 +248,17 @@ public class BrickGenerator {
 
                     // Text files are processed with template rendering; binary files copied raw
                     if let content = try? String(contentsOfFile: itemSourcePath, encoding: .utf8) {
-                        let processed = TemplateRenderer.render(
+                        var processed = TemplateRenderer.render(
                             template: content,
                             variables: variables,
                             config: config,
                             moduleName: moduleName,
                             projectName: projectName
                         )
+                        if itemRelativePath.hasSuffix("Tests.swift") {
+                            let framework = config?.testFramework ?? .swiftTesting
+                            processed = TestFrameworkConverter.convert(processed, target: framework)
+                        }
                         let trimmedProcessed = processed.trimmingCharacters(in: .newlines) + "\n"
                         try trimmedProcessed.write(toFile: itemTargetPath, atomically: true, encoding: .utf8)
                     } else {

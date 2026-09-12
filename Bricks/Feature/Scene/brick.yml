@@ -6,3 +6,11 @@ defaultPath: "App/Sources/Features"
 requiresNameArgument: true
 namingConvention:
   postfix: "Scene"
+
+injections:
+  - target: "App/Sources/DependencyContainer.swift"
+    marker: "// MARK: - SwiftBlock Dependency Injection Marker"
+    content: "register({{moduleName}}ViewModel.self) { {{moduleName}}ViewModel() }"
+  - target: "App/Sources/AppCoordinator.swift"
+    marker: "// MARK: - SwiftBlock Route Enum Marker"
+    content: "case {{moduleName.lowercased()}}"

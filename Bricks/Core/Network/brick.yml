@@ -4,3 +4,8 @@ instantiation: singleton
 description: "HTTP Network Transport engine with URLSession & Concurrency"
 defaultPath: "App/Sources/Core/Network"
 requiresNameArgument: false
+
+injections:
+  - target: "App/Sources/DependencyContainer.swift"
+    marker: "// MARK: - SwiftBlock Dependency Injection Marker"
+    content: "register(HTTPTransporting.self) { NetworkTransport() }"

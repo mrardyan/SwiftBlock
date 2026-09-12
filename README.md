@@ -20,12 +20,12 @@
 ## Key Capabilities
 
 - **Modular Brick Engine**: Attach production-ready infrastructure, feature, and utility components (`Network`, `Scene`, `Storage`) in seconds.
-- **Instant Project Baseplates**: Lay down complete SwiftUI or Vapor project baseplates powered by **Tuist** or **XcodeGen**.
+- **Instant Project Baseplates**: Lay down complete SwiftUI or Vapor project baseplates ready for immediate development.
 - **Automatic Integration**: Auto-registers dependencies in `DependencyContainer.swift` and routes in `AppCoordinator.swift` without manual boilerplate editing.
 - **Composition Kits**: Generate complete architectural layers in a single command using pre-configured feature blueprints (`clean-feature`).
 - **Team Box Registries**: Publish, fetch, and share team component blocks across monorepos via Git repositories (`swiftblock box`).
 - **Interactive Wizard Mode**: Guided terminal prompt engine when arguments are omitted.
-- **Automated Unit Tests**: Every snapped component includes pre-packaged **Swift Testing** unit test suites.
+- **Automated Unit Tests**: Automatically transforms single-source brick test definitions into **Swift Testing** or **XCTest**.
 - **Simulation Mode (`--dry-run`)**: Test component generation and code injections without writing to disk.
 
 ---
