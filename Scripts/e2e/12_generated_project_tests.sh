@@ -5,7 +5,7 @@ run_scenario_12() {
 
     # 1. Initialize project with SPM Core package & full Core blocks
     log_info "Sub-test 12.1: Generating project with full Core & Feature blocks..."
-    printf "TestProjectWithTests\ncom.company.testproj\n1\n2\n1\n1\ny\n1\ny\ny\n" | "$SWIFTBLOCK_BIN" init --template-path "$TEMPLATE_PATH" > /dev/null 2>&1
+    printf "1\nTestProjectWithTests\ncom.company.testproj\n1\n2\n1\n1\ny\n1\ny\ny\n" | "$SWIFTBLOCK_BIN" init --template-path "$TEMPLATE_PATH" > /dev/null 2>&1
 
     assert_dir_exists "TestProjectWithTests" "TestProjectWithTests directory created"
 

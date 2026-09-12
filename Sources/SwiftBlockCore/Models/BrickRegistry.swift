@@ -158,9 +158,9 @@ public struct BrickRegistry {
             commandName: "config",
             title: "Config",
             description: "Environment Config & Feature Flags",
-            category: .core,
+            category: .config,
             defaultOutputPath: "App/Sources/Core/Config",
-            defaultTemplateSubpath: "Core/Config"
+            defaultTemplateSubpath: "Config/Config"
         ),
         BrickSpec(
             type: .auth,
@@ -187,18 +187,18 @@ public struct BrickRegistry {
             commandName: "featureflag",
             title: "FeatureFlag",
             description: "Feature Flags & Remote Toggles Engine",
-            category: .core,
+            category: .config,
             defaultOutputPath: "App/Sources/Core/FeatureFlag",
-            defaultTemplateSubpath: "Core/FeatureFlag"
+            defaultTemplateSubpath: "Config/FeatureFlag"
         ),
         BrickSpec(
             type: .formatter,
             commandName: "formatter",
             title: "Formatter",
             description: "Currency, Date, and Number Formatting Engine",
-            category: .core,
+            category: .utils,
             defaultOutputPath: "App/Sources/Core/Formatter",
-            defaultTemplateSubpath: "Core/Formatter"
+            defaultTemplateSubpath: "Utils/Formatter"
         ),
         BrickSpec(
             type: .biometrics,
@@ -252,7 +252,7 @@ public struct BrickRegistry {
     }
 
     public static var coreBricks: [BrickSpec] {
-        allBricks.filter { $0.category == .core }
+        allBricks.filter { $0.category != .feature }
     }
 
     public static func spec(for type: Brick) -> BrickSpec? {
@@ -349,12 +349,14 @@ extension Brick {
 extension Brick.Category {
     public static let feature: Brick.Category = "feature"
     public static let core: Brick.Category = "core"
+    public static let config: Brick.Category = "config"
+    public static let utils: Brick.Category = "utils"
     public static let ui: Brick.Category = "ui"
     public static let domain: Brick.Category = "domain"
     public static let data: Brick.Category = "data"
     public static let presentation: Brick.Category = "presentation"
 
     public var isSingleton: Bool {
-        return self == .core || rawValue == "infrastructure" || rawValue == "singletons"
+        return self == .core || self == .config || self == .utils || rawValue == "infrastructure" || rawValue == "singletons"
     }
 }

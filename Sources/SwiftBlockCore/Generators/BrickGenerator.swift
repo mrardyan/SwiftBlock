@@ -83,7 +83,7 @@ public class BrickGenerator {
         let resolvedPath = config.resolveOutputPath(for: options.type, moduleName: options.name)
 
         let destinationFolderPath: String
-        if options.type.category == .core {
+        if options.type.category.isSingleton {
             destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
         } else if resolvedPath.contains(options.name.lowercased()) || resolvedPath.contains(options.name) {
             destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
@@ -113,7 +113,7 @@ public class BrickGenerator {
             throw BrickGeneratorError.templateNotFound("\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)")
         }
 
-        if options.type.category != .core && fileManager.fileExists(atPath: destinationFolderPath) {
+        if !options.type.category.isSingleton && fileManager.fileExists(atPath: destinationFolderPath) {
             throw BrickGeneratorError.moduleAlreadyExists(destinationFolderPath)
         }
 
@@ -227,7 +227,7 @@ public class BrickGenerator {
 
             let itemTargetPath: String
             if itemRelativePath.hasSuffix("Tests.swift") {
-                if moduleType.category == .core {
+                if moduleType.category.isSingleton {
                     itemTargetPath = "\(projectRootPath)/App/Tests/Core/\(moduleType.rawValue.lowercased())/\(itemRelativePath)"
                 } else {
                     itemTargetPath = "\(projectRootPath)/App/Tests/Features/\(moduleName.lowercased())/\(moduleType.rawValue.lowercased())/\(itemRelativePath)"

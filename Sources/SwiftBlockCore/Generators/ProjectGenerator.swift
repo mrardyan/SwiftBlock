@@ -113,6 +113,13 @@ public class ProjectGenerator {
             if !config.coreBlocks.isEmpty {
                 if options.isVerbose { print("🔹 [Assembly] Assembling selected Core Foundation modules...") }
                 let moduleGen = BrickGenerator(fileManager: fileManager)
+                let bricksPath: String?
+                if fileManager.fileExists(atPath: "\(options.templatePath)/Bricks") || fileManager.fileExists(atPath: "\(options.templatePath)/Core") || fileManager.fileExists(atPath: "\(options.templatePath)/Config") {
+                    bricksPath = options.templatePath
+                } else {
+                    bricksPath = nil
+                }
+
                 for type in config.coreBlocks {
                     let defaultName: String
                     switch type {
@@ -128,7 +135,8 @@ public class ProjectGenerator {
                     let moduleOptions = BrickGeneratorOptions(
                         type: type,
                         name: defaultName,
-                        projectRootPath: options.outputPath
+                        projectRootPath: options.outputPath,
+                        modulesTemplatePath: bricksPath
                     )
                     do {
                         _ = try moduleGen.generateModule(options: moduleOptions)

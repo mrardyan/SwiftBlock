@@ -24,20 +24,26 @@ public struct BrickDiscoveryEngine {
     /// Smart Namespace Resolution (`[box/][category/]<brick>`)
     /// Resolves brick name or path to the full file directory path containing brick.yml
     public func resolveBrickPath(named nameOrPath: String, in baseDir: String) -> String? {
+        func isValidBrick(_ path: String) -> Bool {
+            return fileManager.fileExists(atPath: "\(path)/brick.yml") ||
+                   fileManager.fileExists(atPath: "\(path)/brick.yaml") ||
+                   fileManager.fileExists(atPath: "\(path)/block.json")
+        }
+
         // 1. Direct path check
-        if fileManager.fileExists(atPath: nameOrPath) {
+        if fileManager.fileExists(atPath: nameOrPath) && isValidBrick(nameOrPath) {
             return nameOrPath
         }
         
         // 2. Check explicitly under baseDir
         let candidatePath = "\(baseDir)/\(nameOrPath)"
-        if fileManager.fileExists(atPath: candidatePath) {
+        if fileManager.fileExists(atPath: candidatePath) && isValidBrick(candidatePath) {
             return candidatePath
         }
         
         // 3. Check local project overrides (.swiftblock/blocks/)
         let localOverride = "\(baseDir)/.swiftblock/blocks/\(nameOrPath)"
-        if fileManager.fileExists(atPath: localOverride) {
+        if fileManager.fileExists(atPath: localOverride) && isValidBrick(localOverride) {
             return localOverride
         }
 
@@ -48,7 +54,7 @@ public struct BrickDiscoveryEngine {
         // 4. Check registered Box store (~/.swiftblock/store/v1/boxes/<nameOrPath>)
         let boxManager = BoxManager()
         let boxPath = "\(boxManager.boxesDirectory)/\(nameOrPath)"
-        if fileManager.fileExists(atPath: boxPath) {
+        if fileManager.fileExists(atPath: boxPath) && isValidBrick(boxPath) {
             return boxPath
         }
 
@@ -75,12 +81,12 @@ public struct BrickDiscoveryEngine {
 
         for subdir in searchSubdirs {
             let direct = "\(baseDir)/\(subdir)/\(nameOrPath)"
-            if fileManager.fileExists(atPath: direct) {
+            if fileManager.fileExists(atPath: direct) && isValidBrick(direct) {
                 return direct
             }
 
             let directClean = "\(baseDir)/\(subdir)/\(relativePathClean)"
-            if fileManager.fileExists(atPath: directClean) {
+            if fileManager.fileExists(atPath: directClean) && isValidBrick(directClean) {
                 return directClean
             }
 
@@ -89,7 +95,10 @@ public struct BrickDiscoveryEngine {
             if let items = try? fileManager.contentsOfDirectory(atPath: parentDir) {
                 for item in items {
                     if item.lowercased() == nameLower {
-                        return "\(parentDir)/\(item)"
+                        let fullPath = "\(parentDir)/\(item)"
+                        if isValidBrick(fullPath) {
+                            return fullPath
+                        }
                     }
                 }
             }

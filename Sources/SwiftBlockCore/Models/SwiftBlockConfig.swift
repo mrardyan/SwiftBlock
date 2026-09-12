@@ -176,7 +176,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
         }
 
         // Priority 2: Check pathTemplates in .swiftblock
-        let categoryKey = type.category.rawValue
+        let categoryKey = pathTemplates[type.category.rawValue] != nil ? type.category.rawValue : (type.category.isSingleton ? "core" : "feature")
         if let template = pathTemplates[categoryKey] {
             return BrickDiscoveryEngine.evaluateTokens(in: template, moduleName: moduleName, blockName: blockName)
         }
