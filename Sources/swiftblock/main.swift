@@ -124,7 +124,7 @@ struct SnapCommand: ParsableCommand {
                     resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
                 }
                 let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.name.capitalized)
-                let moduleType = ModuleType(rawValue: manifest.name.lowercased()) ?? .scene
+                let moduleType = ModuleType(rawValue: manifest.name.lowercased())
                 try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: targetPath, isDryRun: dryRun, variables: resolvedVars)
                 return
             }
@@ -142,7 +142,7 @@ struct SnapCommand: ParsableCommand {
                     resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: selected.manifest, providedValues: resolvedVars)
                 }
                 let instanceName = name ?? (selected.manifest.instantiation == .generative ? "Main" : selected.manifest.name.capitalized)
-                let moduleType = ModuleType(rawValue: selected.manifest.name.lowercased()) ?? .scene
+                let moduleType = ModuleType(rawValue: selected.manifest.name.lowercased())
                 try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: selectedPath, isDryRun: dryRun, variables: resolvedVars)
                 return
             }
@@ -156,18 +156,16 @@ struct SnapCommand: ParsableCommand {
                 resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
             }
             let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.name.capitalized)
-            let moduleType = ModuleType(rawValue: manifest.name.lowercased()) ?? .scene
+            let moduleType = ModuleType(rawValue: manifest.name.lowercased())
             
             try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: resolvedPath, isDryRun: dryRun, variables: resolvedVars)
             return
         }
         
         // Fallback for standard module type
-        if let type = ModuleType(rawValue: normalizedBrick) {
-            let instanceName = name ?? "Main"
-            try executeAddModule(type: type, moduleName: instanceName, templatePath: baseDir, isDryRun: dryRun, variables: resolvedVars)
-            return
-        }
+        let type = ModuleType(rawValue: normalizedBrick)
+        let instanceName = name ?? "Main"
+        try executeAddModule(type: type, moduleName: instanceName, templatePath: baseDir, isDryRun: dryRun, variables: resolvedVars)
         
         print("❌ Brick '\(brickInput)' not found in local library or registry.")
         throw ExitCode.failure

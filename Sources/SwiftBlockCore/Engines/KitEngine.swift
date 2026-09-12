@@ -40,10 +40,8 @@ public class KitEngine {
             let type: ModuleType
             if let spec = BlockRegistry.spec(forCommand: brickName) {
                 type = spec.type
-            } else if let parsedType = ModuleType(rawValue: brickName.lowercased()) {
-                type = parsedType
             } else {
-                throw KitEngineError.invalidBrickType(brickName)
+                type = ModuleType(rawValue: brickName.lowercased())
             }
 
             let options = ModuleGeneratorOptions(
