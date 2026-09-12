@@ -516,6 +516,29 @@ public class InteractiveWizard {
 
         return resolved
     }
+
+    public static func runRenameWizard(
+        projectPath: String = FileManager.default.currentDirectoryPath,
+        readLine: () -> String? = { InteractiveWizard.readLine() }
+    ) throws -> String {
+        let resolvedRoot = SwiftBlockConfig.findProjectRoot(from: projectPath) ?? projectPath
+        let config = try? SwiftBlockConfig.load(from: resolvedRoot)
+        let oldName = config?.projectName ?? "CurrentProject"
+
+        print("┌  \(ANSIColor.boldText("Refactor / Rename SwiftBlock Project"))")
+        print("│  Current Project Name: \(ANSIColor.cyanText(oldName))")
+        print("│  Project Root Path: \(resolvedRoot)")
+        print("│")
+
+        var newName = ""
+        while newName.isEmpty {
+            newName = prompt(message: "Enter New Project Name", readLine: readLine)
+            if newName.isEmpty {
+                print("  \(ANSIColor.yellowText("⚠️"))  Project name cannot be empty.")
+            }
+        }
+        return newName
+    }
 }
 
 public enum InteractiveWizardError: Error, LocalizedError, Equatable {

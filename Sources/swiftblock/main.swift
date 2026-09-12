@@ -160,10 +160,14 @@ struct SnapCommand: ParsableCommand {
         // Fallback for standard module type
         let type = Brick(rawValue: normalizedBrick)
         let instanceName = name ?? "Main"
-        try executeAddModule(type: type, moduleName: instanceName, templatePath: baseDir, isDryRun: dryRun, variables: resolvedVars)
-        
-        print("❌ Brick '\(brickInput)' not found in local library or registry.")
-        throw ExitCode.failure
+        do {
+            try executeAddModule(type: type, moduleName: instanceName, templatePath: baseDir, isDryRun: dryRun, variables: resolvedVars)
+            return
+        } catch {
+            print("❌ Brick '\(brickInput)' not found in local library or registry.")
+            print("  \(ANSIColor.dimText("ℹ Available bricks:")) \(BrickRegistry.allBricks.map { $0.commandName }.joined(separator: ", "))")
+            throw ExitCode.failure
+        }
     }
 }
 
@@ -172,34 +176,61 @@ struct KitCommand: ParsableCommand {
         commandName: "kit",
         abstract: "Manage and execute multi-brick composition recipes (kits)",
         subcommands: [
-            KitRun.self,
-            KitList.self
+            KitAdd.self,
+            KitList.self,
+            KitCreate.self
         ],
         defaultSubcommand: KitList.self
     )
 }
 
-struct KitRun: ParsableCommand {
+struct KitAdd: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "run",
-        abstract: "Execute a composition kit to batch generate multiple bricks"
+        commandName: "add",
+        abstract: "Snap or apply a multi-brick composition kit into current project",
+        aliases: ["run", "use", "apply"]
     )
 
     @Argument(help: "Kit name (e.g. clean-feature)")
-    var kitName: String
+    var kitName: String?
 
     @Argument(help: "Target module name (e.g. Profile, Auth)")
-    var moduleName: String
+    var moduleName: String?
 
     @Flag(name: .long, help: "Simulate kit generation without writing to disk")
     var dryRun: Bool = false
 
     func run() throws {
         let config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
+        let targetKit: String
+        let targetModule: String
+
+        if let kName = kitName, !kName.isEmpty {
+            targetKit = kName
+        } else {
+            let availableKits = Array(config.kits.keys.sorted())
+            let choices = availableKits.map { ChoiceOption(title: $0, subtitle: config.kits[$0]?.joined(separator: ", ")) }
+            let selectedIdx = InteractiveWizard.promptChoiceWithOptions(title: "Select Composition Kit", options: choices)
+            targetKit = availableKits[selectedIdx]
+        }
+
+        if let mName = moduleName, !mName.isEmpty {
+            targetModule = mName
+        } else {
+            var inputModule = ""
+            while inputModule.isEmpty {
+                inputModule = InteractiveWizard.prompt(message: "Enter Target Module Name (e.g. Profile)")
+                if inputModule.isEmpty {
+                    print("  \(ANSIColor.yellowText("⚠️"))  Module name cannot be empty.")
+                }
+            }
+            targetModule = inputModule
+        }
+
         let engine = KitEngine()
         let result = try engine.executeKit(
-            name: kitName,
-            moduleName: moduleName,
+            name: targetKit,
+            moduleName: targetModule,
             config: config,
             projectPath: FileManager.default.currentDirectoryPath,
             isDryRun: dryRun
@@ -207,6 +238,54 @@ struct KitRun: ParsableCommand {
         if !dryRun {
             print("✔ Snapped kit '\(result.kitName)' for module '\(result.moduleName)' with bricks: \(result.generatedBricks.map { $0.rawValue }.joined(separator: ", "))")
         }
+    }
+}
+
+struct KitCreate: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "create",
+        abstract: "Design and save a custom multi-brick composition kit",
+        aliases: ["new", "make"]
+    )
+
+    @Argument(help: "Kit name (optional, triggers interactive wizard if omitted)")
+    var kitName: String?
+
+    @Option(name: [.customShort("b"), .long], help: "Comma-separated list of brick names (e.g. --bricks scene,usecase,repository)")
+    var bricks: String?
+
+    func run() throws {
+        let rootPath = FileManager.default.currentDirectoryPath
+        var config = (try? SwiftBlockConfig.load(from: rootPath)) ?? SwiftBlockConfig(projectName: "App")
+
+        let finalName: String
+        let finalBlocks: [String]
+
+        if let name = kitName, !name.isEmpty {
+            finalName = name.lowercased()
+            if let brickList = bricks, !brickList.isEmpty {
+                finalBlocks = brickList.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+            } else {
+                let featureBlocks = BrickRegistry.featureBricks
+                let blockOptions = featureBlocks.map {
+                    TerminalPrompt.MultiChoiceOption(id: $0.commandName, title: $0.title, subtitle: $0.description, isSelected: true)
+                }
+                finalBlocks = TerminalPrompt.selectMultiChoice(title: "Select composed bricks for '\(finalName)'", options: blockOptions)
+            }
+        } else {
+            let res = try InteractiveWizard.runKitCreateWizard(projectPath: rootPath)
+            finalName = res.name
+            finalBlocks = res.blocks
+        }
+
+        guard !finalBlocks.isEmpty else {
+            print("└  \(ANSIColor.redText("✖ Kit creation cancelled (no bricks selected)."))")
+            throw ExitCode.failure
+        }
+
+        config.kits[finalName] = finalBlocks
+        try config.save(to: rootPath)
+        print("✔ Saved custom composition kit '\(finalName)' with bricks: \(finalBlocks.joined(separator: ", "))")
     }
 }
 
@@ -454,8 +533,8 @@ struct RenameCommand: ParsableCommand {
         abstract: "Safely refactor and rename current project without breaking targets, manifests, or tests"
     )
 
-    @Argument(help: "New project name (e.g. MyAwesomeApp)")
-    var newName: String
+    @Argument(help: "New project name (optional, triggers interactive wizard if omitted)")
+    var newName: String?
 
     @Option(name: [.customShort("p"), .long], help: "Path to project root directory (default: current directory)")
     var path: String?
@@ -465,10 +544,17 @@ struct RenameCommand: ParsableCommand {
 
     func run() throws {
         let rootPath = path ?? FileManager.default.currentDirectoryPath
+        let targetName: String
+        if let name = newName, !name.isEmpty {
+            targetName = name
+        } else {
+            targetName = try InteractiveWizard.runRenameWizard(projectPath: rootPath)
+        }
+
         let engine = ProjectRefactoringEngine()
 
         do {
-            let result = try engine.renameProject(projectPath: rootPath, newName: newName, isDryRun: dryRun)
+            let result = try engine.renameProject(projectPath: rootPath, newName: targetName, isDryRun: dryRun)
             if dryRun {
                 print("✔ [DRY RUN] Would rename project '\(result.oldName)' -> '\(result.newName)'")
             } else {

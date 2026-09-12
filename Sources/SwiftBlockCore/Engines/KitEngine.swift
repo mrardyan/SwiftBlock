@@ -30,7 +30,7 @@ public class KitEngine {
         isDryRun: Bool = false
     ) throws -> KitExecutionResult {
         let normalizedName = kitName.lowercased()
-        guard let brickNames = config.kits[normalizedName] else {
+        guard let brickNames = config.kits[normalizedName] ?? SwiftBlockConfig.defaultKits[normalizedName] else {
             throw KitEngineError.kitNotFound(kitName)
         }
 

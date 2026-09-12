@@ -104,4 +104,13 @@ struct InteractiveWizardTests {
         let cleanInput = InteractiveWizard.stripANSIEscapeCodes(dirtyInput)
         #expect(cleanInput == "MyCompanyApp")
     }
+
+    @Test func runRenameWizardSuccess() throws {
+        var inputs = ["", "NewAwesomeProject"]
+        let newName = try InteractiveWizard.runRenameWizard(projectPath: ".", readLine: {
+            inputs.isEmpty ? nil : inputs.removeFirst()
+        })
+        #expect(newName == "NewAwesomeProject")
+    }
 }
+
