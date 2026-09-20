@@ -4,3 +4,4 @@ type: singleton
 category: core/formatter/date
 options:
   name: DateFormatter
+defaultPath: "App/Sources/Core/Formatters/Date"

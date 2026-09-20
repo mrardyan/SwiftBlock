@@ -51,6 +51,7 @@ public enum BrickGeneratorError: Error, LocalizedError {
     case templateNotFound(String)
     case brickAlreadyExists(String)
     case moduleAlreadyExists(String)
+    case baseplateMismatch(brickName: String, baseplates: [String], projectType: String)
     case generationFailed(String)
 
     public var errorDescription: String? {
@@ -59,6 +60,8 @@ public enum BrickGeneratorError: Error, LocalizedError {
             return "Brick template not found at \(path)"
         case .brickAlreadyExists(let path), .moduleAlreadyExists(let path):
             return "Brick already exists at \(path)"
+        case .baseplateMismatch(let brickName, let baseplates, let projectType):
+            return "Brick '\(brickName)' only supports baseplate(s) [\(baseplates.joined(separator: ", "))] and cannot be snapped into a \(projectType) project."
         case .generationFailed(let message):
             return "Failed to generate brick: \(message)"
         }
@@ -80,16 +83,6 @@ public class BrickGenerator {
 
     public func generateBrick(options: BrickGeneratorOptions) throws -> String {
         let config = try SwiftBlockConfig.load(from: options.projectRootPath)
-        let resolvedPath = config.resolveOutputPath(for: options.type, moduleName: options.name)
-
-        let destinationFolderPath: String
-        if options.type.category.isSingleton {
-            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
-        } else if resolvedPath.contains(options.name.lowercased()) || resolvedPath.contains(options.name) {
-            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
-        } else {
-            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)/\(options.name)"
-        }
 
         let discoveryEngine = BrickDiscoveryEngine(fileManager: fileManager)
         let resolvedTemplate = discoveryEngine.resolveBrickPath(named: options.type.rawValue, in: options.modulesTemplatePath)
@@ -113,11 +106,54 @@ public class BrickGenerator {
             throw BrickGeneratorError.templateNotFound("\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)")
         }
 
-        if !options.type.category.isSingleton && fileManager.fileExists(atPath: destinationFolderPath) {
+        let manifest = BrickManifest.load(fromPath: templateTypeFolderPath)
+
+        // Effective category: curated registry wins; otherwise derive from the manifest so that
+        // unregistered bricks (e.g. via --template-path) get the correct classification.
+        let effectiveCategory: Brick.Category
+        if let curated = BrickRegistry.curatedSpec(for: options.type)?.category {
+            effectiveCategory = curated
+        } else if let manifest = manifest {
+            effectiveCategory = BrickRegistry.category(for: manifest.category, defaultPath: manifest.defaultPath)
+        } else {
+            effectiveCategory = options.type.category
+        }
+
+        if let manifest = manifest, let baseplates = manifest.baseplates, !baseplates.isEmpty {
+            let isVapor = config.generatorTool == .spm
+            let allowed = baseplates.map { $0.lowercased() }
+            let matches = isVapor ? allowed.contains("vapor") : allowed.contains("swiftui")
+            if !matches {
+                throw BrickGeneratorError.baseplateMismatch(
+                    brickName: manifest.name,
+                    baseplates: baseplates,
+                    projectType: isVapor ? "Vapor (SPM)" : "SwiftUI (Tuist/XcodeGen)"
+                )
+            }
+        }
+
+        let resolvedPath = config.resolveOutputPath(
+            for: options.type,
+            moduleName: options.name,
+            manifestDefaultPath: manifest?.defaultPath,
+            category: effectiveCategory
+        )
+
+        let isSingleton = (manifest?.instantiation == .singleton) || effectiveCategory.isSingleton
+
+        let destinationFolderPath: String
+        if isSingleton {
+            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
+        } else if resolvedPath.contains(options.name.lowercased()) || resolvedPath.contains(options.name) {
+            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
+        } else {
+            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)/\(options.name)"
+        }
+
+        if !isSingleton && fileManager.fileExists(atPath: destinationFolderPath) {
             throw BrickGeneratorError.moduleAlreadyExists(destinationFolderPath)
         }
 
-        let manifest = BrickManifest.load(fromPath: templateTypeFolderPath)
         if let manifest = manifest {
             try HooksEngine.executeHooks(
                 manifest.preSnapHooks,
@@ -146,25 +182,34 @@ public class BrickGenerator {
                 projectRootPath: options.projectRootPath,
                 moduleType: options.type,
                 variables: options.variables,
-                config: config
+                config: config,
+                manifest: manifest
             )
 
             let manifestGenerator = ProjectManifestGeneratorFactory.createGenerator(for: config.generatorTool)
-            _ = try? manifestGenerator.addBrickDependency(
-                name: options.name,
-                type: options.type,
-                config: config,
-                projectPath: options.projectRootPath
-            )
-
-            if options.type.category == .feature {
-                let targetWiringEngine = ProjectTargetWiringEngine(fileManager: fileManager)
-                _ = try? targetWiringEngine.wireFeatureTarget(
-                    moduleName: options.name,
-                    projectPath: options.projectRootPath,
+            do {
+                try manifestGenerator.addBrickDependency(
+                    name: options.name,
+                    type: options.type,
                     config: config,
-                    isDryRun: options.isDryRun
+                    projectPath: options.projectRootPath
                 )
+            } catch {
+                print("⚠️ Could not register brick '\(options.name)' in project manifest: \(error.localizedDescription)")
+            }
+
+            if effectiveCategory == .feature {
+                let targetWiringEngine = ProjectTargetWiringEngine(fileManager: fileManager)
+                do {
+                    try targetWiringEngine.wireFeatureTarget(
+                        moduleName: options.name,
+                        projectPath: options.projectRootPath,
+                        config: config,
+                        isDryRun: options.isDryRun
+                    )
+                } catch {
+                    print("⚠️ Could not wire feature target for '\(options.name)': \(error.localizedDescription)")
+                }
             }
 
             if let manifest = manifest {
@@ -205,7 +250,8 @@ public class BrickGenerator {
         projectRootPath: String,
         moduleType: Brick,
         variables: [String: String] = [:],
-        config: SwiftBlockConfig? = nil
+        config: SwiftBlockConfig? = nil,
+        manifest: BrickManifest? = nil
     ) throws {
         let enumerator = fileManager.enumerator(atPath: sourcePath)
 
@@ -227,10 +273,14 @@ public class BrickGenerator {
 
             let itemTargetPath: String
             if itemRelativePath.hasSuffix("Tests.swift") {
-                if moduleType.category.isSingleton {
-                    itemTargetPath = "\(projectRootPath)/App/Tests/Core/\(moduleType.rawValue.lowercased())/\(itemRelativePath)"
+                let testRoot = (config?.generatorTool == .spm)
+                    ? "\(projectRootPath)/Tests/AppTests"
+                    : "\(projectRootPath)/App/Tests"
+                let isSingleton = (manifest?.instantiation == .singleton) || moduleType.category.isSingleton
+                if isSingleton {
+                    itemTargetPath = "\(testRoot)/Core/\(moduleType.rawValue.lowercased())/\(itemRelativePath)"
                 } else {
-                    itemTargetPath = "\(projectRootPath)/App/Tests/Features/\(moduleName.lowercased())/\(moduleType.rawValue.lowercased())/\(itemRelativePath)"
+                    itemTargetPath = "\(testRoot)/Features/\(moduleName.lowercased())/\(moduleType.rawValue.lowercased())/\(itemRelativePath)"
                 }
             } else {
                 itemTargetPath = "\(targetPath)/\(itemRelativePath)"

@@ -1,0 +1,8 @@
+name: rate_limiter
+category: infrastructure
+instantiation: singleton
+description: "In-memory fixed-window rate limiting middleware (per remote address)"
+defaultPath: "Sources/App/Core/RateLimiter"
+baseplates:
+  - vapor
+requiresNameArgument: false

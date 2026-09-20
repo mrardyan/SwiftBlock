@@ -76,7 +76,12 @@ struct InteractiveWizardTests {
     }
 
     @Test func runModuleWizardSuccess() throws {
-        var inputs = ["3", "", "UserRepo"] // Choice 3 = Repository
+        let blocks = BrickRegistry.featureBricks.filter { $0.isCompatible(withVapor: false) }
+        guard let repoIndex = blocks.firstIndex(where: { $0.commandName == "repository" }) else {
+            Issue.record("repository brick not found in catalog")
+            return
+        }
+        var inputs = ["\(repoIndex + 1)", "", "UserRepo"]
         let options = try InteractiveWizard.runModuleWizard(defaultTemplatePath: "/tmp/modules", readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
@@ -87,7 +92,12 @@ struct InteractiveWizardTests {
     }
 
     @Test func runCoreWizardSuccess() throws {
-        var inputs = ["1", "", "UserStorage"] // Choice 1 = Storage
+        let blocks = BrickRegistry.coreBricks.filter { $0.isCompatible(withVapor: false) }
+        guard let storageIndex = blocks.firstIndex(where: { $0.commandName == "storage" }) else {
+            Issue.record("storage brick not found in catalog")
+            return
+        }
+        var inputs = ["\(storageIndex + 1)", "", "UserStorage"]
         let options = try InteractiveWizard.runCoreWizard(defaultTemplatePath: "/tmp/core", readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })

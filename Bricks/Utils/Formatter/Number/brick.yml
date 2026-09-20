@@ -4,3 +4,4 @@ type: singleton
 category: core/formatter/number
 options:
   name: NumberFormatter
+defaultPath: "App/Sources/Core/Formatters/Number"

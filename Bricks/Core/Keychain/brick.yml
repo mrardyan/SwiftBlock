@@ -1,0 +1,6 @@
+name: keychain
+category: infrastructure
+instantiation: singleton
+description: "Keychain-backed secure storage for credentials and tokens (Security framework)"
+defaultPath: "App/Sources/Core/Keychain"
+requiresNameArgument: false

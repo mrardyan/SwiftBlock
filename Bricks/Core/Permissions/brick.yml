@@ -4,3 +4,4 @@ type: singleton
 category: core/permissions
 options:
   name: SystemPermissionManager
+defaultPath: "App/Sources/Core/Permissions"

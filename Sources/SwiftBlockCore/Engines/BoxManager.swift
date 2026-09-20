@@ -238,7 +238,11 @@ public class BoxManager {
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = arguments
         process.currentDirectoryURL = URL(fileURLWithPath: currentDirectoryPath)
-        try? process.run()
+        do {
+            try process.run()
+        } catch {
+            return -1
+        }
         process.waitUntilExit()
         return process.terminationStatus
     }

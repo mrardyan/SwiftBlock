@@ -6,12 +6,18 @@ struct BrickRegistryTests {
 
     @Test func allBricksNotEmpty() {
         #expect(!BrickRegistry.allBricks.isEmpty)
-        #expect(BrickRegistry.allBricks.count == 23)
+        // Curated bricks are always present
+        #expect(BrickRegistry.allBricks.count >= 23)
     }
 
     @Test func featureAndCoreBlocksCount() {
-        #expect(BrickRegistry.featureBricks.count == 9)
-        #expect(BrickRegistry.coreBricks.count == 14)
+        // All curated feature bricks must be present
+        #expect(BrickRegistry.featureBricks.count >= 9)
+        #expect(BrickRegistry.coreBricks.count >= 14)
+        // Auto-discovered bricks are categorized (e.g. value types land in utils, not feature)
+        let moneySpec = BrickRegistry.spec(forCommand: "money")
+        #expect(moneySpec != nil)
+        #expect(moneySpec?.category == .utils)
     }
 
     @Test func specForType() {

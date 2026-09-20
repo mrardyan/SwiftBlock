@@ -27,7 +27,9 @@ public class CICDManifestGenerator {
         try fileManager.createDirectory(atPath: workflowsDir, withIntermediateDirectories: true)
 
         let ciPath = "\(workflowsDir)/ci.yml"
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
+        let isSPM = config.generatorTool == .spm
+        let generateCmd = isSPM ? "swift build" : (config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate")
+        let testCmd = isSPM ? "swift test" : "xcodebuild test -scheme \(config.projectName) -destination 'platform=iOS Simulator,name=iPhone 15'"
 
         var steps: [String] = [
             """
@@ -35,15 +37,11 @@ public class CICDManifestGenerator {
         uses: actions/checkout@v4
 """,
             """
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_15.4.app
-""",
-            """
       - name: Install Tooling via mise
         uses: jdx/mise-action@v2
 """,
             """
-      - name: Generate Project Manifests
+      - name: Build Project Manifests
         run: \(generateCmd)
 """
         ]
@@ -64,7 +62,7 @@ public class CICDManifestGenerator {
 
         steps.append("""
       - name: Run Unit Tests
-        run: xcodebuild test -scheme \(config.projectName) -destination 'platform=iOS Simulator,name=iPhone 15'
+        run: \(testCmd)
 """)
 
         if config.guardrails.danger {
@@ -99,7 +97,9 @@ jobs:
 
     private func generateGitLabCI(in projectPath: String, config: SwiftBlockConfig) throws {
         let ciPath = "\(projectPath)/.gitlab-ci.yml"
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
+        let isSPM = config.generatorTool == .spm
+        let generateCmd = isSPM ? "swift build" : (config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate")
+        let testCmd = isSPM ? "swift test" : "xcodebuild test -scheme \(config.projectName) -destination 'platform=iOS Simulator,name=iPhone 15'"
 
         let content = """
 stages:
@@ -113,7 +113,6 @@ build_job:
   script:
     - mise install
     - \(generateCmd)
-    - xcodebuild build -scheme \(config.projectName) -destination 'platform=iOS Simulator,name=iPhone 15'
 
 test_job:
   stage: test
@@ -122,7 +121,7 @@ test_job:
   script:
     - mise install
     - \(generateCmd)
-    - xcodebuild test -scheme \(config.projectName) -destination 'platform=iOS Simulator,name=iPhone 15'
+    - \(testCmd)
 """
         let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
         try trimmedContent.write(toFile: ciPath, atomically: true, encoding: .utf8)
@@ -130,7 +129,26 @@ test_job:
 
     private func generateBitrise(in projectPath: String, config: SwiftBlockConfig) throws {
         let ciPath = "\(projectPath)/bitrise.yml"
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
+        let isSPM = config.generatorTool == .spm
+        let generateCmd = isSPM ? "swift build" : (config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate")
+
+        let testStep: String
+        if isSPM {
+            testStep = """
+      - script@1:
+          title: Run Unit Tests
+          inputs:
+            - content: |-
+                swift test
+"""
+        } else {
+            testStep = """
+      - xcode-test@5:
+          inputs:
+            - project_path: \(config.projectName).xcodeproj
+            - scheme: \(config.projectName)
+"""
+        }
 
         let content = """
 format_version: "11"
@@ -146,10 +164,7 @@ workflows:
             - content: |-
                 mise install
                 \(generateCmd)
-      - xcode-test@5:
-          inputs:
-            - project_path: \(config.projectName).xcodeproj
-            - scheme: \(config.projectName)
+\(testStep)
 """
         let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
         try trimmedContent.write(toFile: ciPath, atomically: true, encoding: .utf8)
@@ -160,7 +175,8 @@ workflows:
         try fileManager.createDirectory(atPath: scriptsDir, withIntermediateDirectories: true)
 
         let scriptPath = "\(scriptsDir)/ci_post_clone.sh"
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
+        let isSPM = config.generatorTool == .spm
+        let generateCmd = isSPM ? "swift build" : (config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate")
 
         let content = """
 #!/usr/bin/env bash

@@ -4,3 +4,4 @@ type: singleton
 category: core/notification
 options:
   name: AppNotificationScheduler
+defaultPath: "App/Sources/Core/Notification"

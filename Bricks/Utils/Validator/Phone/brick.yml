@@ -4,3 +4,4 @@ type: singleton
 category: core/validator/phone
 options:
   name: PhoneValidator
+defaultPath: "App/Sources/Core/Validators/Phone"

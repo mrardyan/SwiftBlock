@@ -1,5 +1,5 @@
 import XCTest
-@testable import __PROJECT_NAME__
+@testable import __APP_MODULE__
 
 final class __MODULE_NAME__ComponentTests: XCTestCase {
     func testComponentInitialization() {

@@ -46,14 +46,12 @@ public struct HooksEngine {
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
         process.arguments = ["-c", renderedCommand]
         process.currentDirectoryURL = URL(fileURLWithPath: projectRootPath)
-        
-        let outputPipe = Pipe()
+
+        // Only stderr is captured; stdout inherits the parent's output to avoid pipe-buffer deadlocks.
         let errorPipe = Pipe()
-        process.standardOutput = outputPipe
         process.standardError = errorPipe
 
         defer {
-            try? outputPipe.fileHandleForReading.close()
             try? errorPipe.fileHandleForReading.close()
         }
         

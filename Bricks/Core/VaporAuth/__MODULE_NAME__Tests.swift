@@ -1,6 +1,9 @@
 import Foundation
 import Testing
-@testable import __MODULE_NAME__
+#if canImport(Core)
+@testable import Core
+#endif
+@testable import __APP_MODULE__
 
 struct __MODULE_NAME__Tests {
     @Test func generateAndValidateToken() {

@@ -4,3 +4,4 @@ type: singleton
 category: core/validator/card
 options:
   name: CreditCardValidator
+defaultPath: "App/Sources/Core/Validators/CreditCard"

@@ -4,3 +4,4 @@ type: singleton
 category: core/formatter/duration
 options:
   name: DurationFormatter
+defaultPath: "App/Sources/Core/Formatters/Duration"

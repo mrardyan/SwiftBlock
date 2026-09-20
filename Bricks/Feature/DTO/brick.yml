@@ -1,0 +1,8 @@
+name: dto
+category: architecture
+instantiation: generative
+description: "Request/Response DTOs with Vapor Content and Validatable conformance"
+defaultPath: "Sources/App/Features/{module}/{block}"
+baseplates:
+  - vapor
+requiresNameArgument: true

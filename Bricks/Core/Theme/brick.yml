@@ -1,0 +1,6 @@
+name: theme
+category: infrastructure
+instantiation: singleton
+description: "Design system tokens: colors, typography, spacing, and corner radii"
+defaultPath: "App/Sources/Core/Theme"
+requiresNameArgument: false

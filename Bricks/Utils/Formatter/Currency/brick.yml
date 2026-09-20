@@ -4,3 +4,4 @@ type: singleton
 category: core/formatter/currency
 options:
   name: CurrencyFormatter
+defaultPath: "App/Sources/Core/Formatters/Currency"

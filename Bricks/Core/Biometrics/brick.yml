@@ -4,3 +4,4 @@ type: singleton
 category: core/biometrics
 options:
   name: BiometricAuthManager
+defaultPath: "App/Sources/Core/Biometrics"

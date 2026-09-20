@@ -4,3 +4,4 @@ type: singleton
 category: core/validator/health
 options:
   name: HealthValidator
+defaultPath: "App/Sources/Core/Validators/Health"

@@ -4,3 +4,4 @@ type: singleton
 category: core/formatter/relative-date
 options:
   name: RelativeDateFormatter
+defaultPath: "App/Sources/Core/Formatters/RelativeDate"

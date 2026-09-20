@@ -1,6 +1,6 @@
 import Vapor
 
-public struct HealthController: RouteCollection {
+public struct HealthController: RouteCollection, Sendable {
     public init() {}
 
     public func boot(routes: RoutesBuilder) throws {

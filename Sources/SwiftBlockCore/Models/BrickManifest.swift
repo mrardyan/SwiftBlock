@@ -83,11 +83,21 @@ public struct BrickManifest {
         self.injections = injections
     }
     
+    /// The module/instance name derived from the manifest `name`, converting snake_case to
+    /// PascalCase and preserving existing camelCase (e.g. "battery_level" -> "BatteryLevel",
+    /// "BiometricAuthManager" stays as-is).
+    public var defaultInstanceName: String {
+        if name.contains("_") {
+            return name.split(separator: "_").map { String($0).capitalized }.joined()
+        }
+        return name.isEmpty ? name : String(name.prefix(1).uppercased()) + name.dropFirst()
+    }
+
     public static func load(fromPath path: String) -> BrickManifest? {
         let fileManager = FileManager.default
         let ymlPath = path.hasSuffix("brick.yml") ? path : (path as NSString).appendingPathComponent("brick.yml")
         let jsonPath = (path as NSString).appendingPathComponent("block.json")
-        
+
         if fileManager.fileExists(atPath: ymlPath), let content = try? String(contentsOfFile: ymlPath, encoding: .utf8) {
             return parseYAML(content, folderName: (path as NSString).lastPathComponent)
         } else if fileManager.fileExists(atPath: jsonPath), let data = fileManager.contents(atPath: jsonPath),
@@ -111,8 +121,8 @@ public struct BrickManifest {
     private static func parseDict(_ dict: [String: Any], folderName: String) -> BrickManifest {
         let name = (dict["name"] as? String) ?? folderName.lowercased()
         let category = (dict["category"] as? String) ?? "general"
-        let instStr = (dict["instantiation"] as? String)?.lowercased() ?? "generative"
-        let instantiation = BrickInstantiationType(rawValue: instStr) ?? .generative
+        let instStr = (dict["instantiation"] as? String) ?? (dict["type"] as? String) ?? "generative"
+        let instantiation = BrickInstantiationType(rawValue: instStr.lowercased()) ?? .generative
         let description = (dict["description"] as? String) ?? (dict["title"] as? String) ?? ""
         let version = (dict["version"] as? String) ?? "1.0.0"
         let defaultPath = (dict["defaultPath"] as? String) ?? (dict["defaultOutputPath"] as? String) ?? "App/Sources/Features"

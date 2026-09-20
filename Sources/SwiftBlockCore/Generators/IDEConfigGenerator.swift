@@ -78,12 +78,18 @@ public class IDEConfigGenerator {
         }
 
         if !content.contains("snap-scene:") {
-            let shortcuts = """
+            var shortcuts = """
 
 # SwiftBlock IDE & Developer Shortcuts
+"""
+            if !content.contains("\nopen:") {
+                shortcuts += """
 open:
 	open *.xcworkspace 2>/dev/null || open *.xcodeproj 2>/dev/null || tuist generate
 
+"""
+            }
+            shortcuts += """
 snap-scene:
 	swiftblock snap scene $(NAME)
 

@@ -1,0 +1,6 @@
+name: pagination
+category: utils
+instantiation: singleton
+description: "Pagination state model and page cursor for paged data loading"
+defaultPath: "App/Sources/Core/Pagination"
+requiresNameArgument: false

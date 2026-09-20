@@ -13,6 +13,7 @@ public struct TemplateRenderer {
         // 1. Replace standard SwiftBlock placeholders
         result = result.replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
         result = result.replacingOccurrences(of: "__PROJECT_NAME__", with: projectName)
+        result = result.replacingOccurrences(of: "__APP_MODULE__", with: config?.appModuleName ?? projectName)
         result = result.replacingOccurrences(of: "{{name}}", with: moduleName)
         result = result.replacingOccurrences(of: "{{name.lowercased()}}", with: moduleName.lowercased())
         result = result.replacingOccurrences(of: "{{name.capitalized}}", with: moduleName.capitalized)
@@ -53,6 +54,8 @@ public struct TemplateRenderer {
             .replacingOccurrences(of: "{module}", with: moduleName.lowercased())
             .replacingOccurrences(of: "{block}", with: blockName.lowercased())
             .replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
+            .replacingOccurrences(of: "__PROJECT_NAME__", with: config?.projectName ?? "")
+            .replacingOccurrences(of: "__APP_MODULE__", with: config?.appModuleName ?? "")
             .replacingOccurrences(of: "{{name}}", with: moduleName)
             .replacingOccurrences(of: "{{name.lowercased()}}", with: moduleName.lowercased())
             .replacingOccurrences(of: "{{name.capitalized}}", with: moduleName.capitalized)

@@ -18,6 +18,13 @@ public struct TestFrameworkConverter {
             return content
         }
 
+        // XCTest lifecycle hooks (setUp/tearDown) have no direct Swift Testing equivalent and
+        // cannot be expressed in a @Suite struct. Keep these tests as XCTest to avoid
+        // generating code that does not compile.
+        if content.contains("override func setUp") || content.contains("override func tearDown") {
+            return content
+        }
+
         var result = content
 
         // 1. Framework import

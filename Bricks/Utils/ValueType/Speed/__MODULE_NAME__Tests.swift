@@ -1,5 +1,8 @@
 import XCTest
-@testable import __MODULE_NAME__
+#if canImport(Core)
+@testable import Core
+#endif
+@testable import __APP_MODULE__
 
 final class __MODULE_NAME__Tests: XCTestCase {
     func testSpeedConversionsAndFormatting() throws {

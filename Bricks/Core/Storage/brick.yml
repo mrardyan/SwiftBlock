@@ -8,4 +8,4 @@ requiresNameArgument: false
 injections:
   - target: "App/Sources/DependencyContainer.swift"
     marker: "// MARK: - SwiftBlock Dependency Injection Marker"
-    content: "register(LocalStorage.self) { KeyValueStorage() }"
+    content: "register(StorageProtocol.self) { {{moduleName}}() }"

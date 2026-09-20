@@ -234,6 +234,9 @@ public class InteractiveWizard {
             projectName = prompt(message: "Enter Project Name", readLine: readLine)
             if projectName.isEmpty {
                 print("  \(ANSIColor.yellowText("⚠️"))  Project name cannot be empty.")
+            } else if !ProjectRefactoringEngine.isValidProjectName(projectName) {
+                print("  \(ANSIColor.yellowText("⚠️"))  Project name must start with a letter and contain only alphanumeric characters or underscores.")
+                projectName = ""
             }
         }
 
@@ -254,12 +257,8 @@ public class InteractiveWizard {
         let corePkgChoice = promptChoiceWithOptions(title: "Select Core Packaging Strategy", options: corePkgChoices, readLine: readLine)
         let corePkg = corePkgChoice == 0 ? "monolithic" : "spm"
 
-        let featurePkgChoices = [
-            ChoiceOption(title: "Monolithic Main Target", subtitle: "e.g. App/Sources/Features/Home/..."),
-            ChoiceOption(title: "SPM Multi-Package Target", subtitle: "e.g. Packages/HomeFeature/Sources/...")
-        ]
-        let featurePkgChoice = promptChoiceWithOptions(title: "Select Feature Packaging Strategy", options: featurePkgChoices, readLine: readLine)
-        let featurePkg = featurePkgChoice == 0 ? "monolithic" : "spm"
+        // Feature code is always composed into the main app target (monolithic).
+        let featurePkg = "monolithic"
 
         print("│")
         print("◇  \(ANSIColor.boldText("Code Organization Strategy"))")
@@ -344,9 +343,7 @@ public class InteractiveWizard {
         }
 
         let featureTemplate: String
-        if featurePkg == "spm" {
-            featureTemplate = "Packages/{module}Feature/Sources/{module}Feature/{block}s"
-        } else if orgStrategy == "technical-first" {
+        if orgStrategy == "technical-first" {
             featureTemplate = "App/Sources/{block}s/{module}"
         } else {
             featureTemplate = "App/Sources/Features/{module}/{block}"
@@ -397,6 +394,9 @@ public class InteractiveWizard {
             projectName = prompt(message: "Enter Backend Server Project Name", readLine: readLine)
             if projectName.isEmpty {
                 print("  \(ANSIColor.yellowText("⚠️"))  Project name cannot be empty.")
+            } else if !ProjectRefactoringEngine.isValidProjectName(projectName) {
+                print("  \(ANSIColor.yellowText("⚠️"))  Project name must start with a letter and contain only alphanumeric characters or underscores.")
+                projectName = ""
             }
         }
 
@@ -487,7 +487,8 @@ public class InteractiveWizard {
         print("┌  \(ANSIColor.boldText("Create New Feature Block"))")
         print("│")
 
-        let blocks = BrickRegistry.featureBricks
+        let isVapor = (try? SwiftBlockConfig.load())?.generatorTool == .spm
+        let blocks = BrickRegistry.featureBricks.filter { $0.isCompatible(withVapor: isVapor) }
         let typeChoices = blocks.map { ChoiceOption(title: $0.title, subtitle: $0.description) }
 
         let selectedIndex = promptChoiceWithOptions(title: "Select Feature Block Type", options: typeChoices, readLine: readLine)
@@ -515,7 +516,8 @@ public class InteractiveWizard {
         print("┌  \(ANSIColor.boldText("Create New Core Block"))")
         print("│")
 
-        let blocks = BrickRegistry.coreBricks
+        let isVapor = (try? SwiftBlockConfig.load())?.generatorTool == .spm
+        let blocks = BrickRegistry.coreBricks.filter { $0.isCompatible(withVapor: isVapor) }
         let typeChoices = blocks.map { ChoiceOption(title: $0.title, subtitle: $0.description) }
 
         let selectedIndex = promptChoiceWithOptions(title: "Select Core Block Type", options: typeChoices, readLine: readLine)

@@ -195,11 +195,15 @@ public class DoctorEngine {
         }
 
         print("│")
-        let overallOk = report.toolChecks.contains(where: { $0.isInstalled })
-        if overallOk {
-            print("└  \(ANSIColor.greenText("✔ SwiftBlock environment is operational and healthy."))")
+        let criticalToolMissing = ["git", "make"].contains { name in
+            report.toolChecks.first(where: { $0.name == name })?.isInstalled != true
+        }
+        if criticalToolMissing {
+            print("└  \(ANSIColor.yellowText("⚠️ SwiftBlock environment requires critical tooling (git/make) to be installed."))")
+        } else if report.isProjectFolder && !report.configValid {
+            print("└  \(ANSIColor.yellowText("⚠️ SwiftBlock project configuration is malformed."))")
         } else {
-            print("└  \(ANSIColor.yellowText("⚠️ SwiftBlock environment requires tooling installation."))")
+            print("└  \(ANSIColor.greenText("✔ SwiftBlock environment is operational and healthy."))")
         }
     }
 }

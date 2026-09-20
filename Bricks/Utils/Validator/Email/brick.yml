@@ -4,3 +4,4 @@ type: singleton
 category: core/validator/email
 options:
   name: EmailValidator
+defaultPath: "App/Sources/Core/Validators/Email"

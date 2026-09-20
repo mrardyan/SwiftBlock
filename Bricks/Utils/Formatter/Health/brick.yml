@@ -4,3 +4,4 @@ type: singleton
 category: core/formatter/health
 options:
   name: HealthFormatter
+defaultPath: "App/Sources/Core/Formatters/Health"

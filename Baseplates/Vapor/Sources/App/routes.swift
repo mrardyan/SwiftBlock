@@ -5,5 +5,6 @@ public func routes(_ app: Application) throws {
         "Welcome to __PROJECT_NAME__ Vapor API Server!"
     }
 
+    // MARK: - SwiftBlock Route Collection Marker
     try app.register(collection: HealthController())
 }

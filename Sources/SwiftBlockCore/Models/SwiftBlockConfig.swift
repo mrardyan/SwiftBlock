@@ -173,7 +173,13 @@ public struct SwiftBlockConfig: Codable, Equatable {
         self.testFramework = testFramework
     }
 
-    public func resolveOutputPath(for type: Brick, moduleName: String) -> String {
+    /// Name of the main application module used by generated tests (`@testable import`).
+    /// Vapor/SPM projects expose a fixed `App` module; other projects use the project name.
+    public var appModuleName: String {
+        return generatorTool == .spm ? "App" : projectName
+    }
+
+    public func resolveOutputPath(for type: Brick, moduleName: String, manifestDefaultPath: String? = nil, category: Brick.Category? = nil) -> String {
         let blockName = type.rawValue.lowercased()
 
         // Priority 1: Check overrides in .swiftblock
@@ -181,18 +187,33 @@ public struct SwiftBlockConfig: Codable, Equatable {
             return BrickDiscoveryEngine.evaluateTokens(in: overridePath, moduleName: moduleName, blockName: blockName)
         }
 
-        // Priority 2: Check pathTemplates in .swiftblock
-        let categoryKey = pathTemplates[type.category.rawValue] != nil ? type.category.rawValue : (type.category.isSingleton ? "core" : "feature")
+        let typeCategory = category ?? type.category
+        let spec = BrickRegistry.curatedSpec(for: type)
+        let categoryKey = pathTemplates[typeCategory.rawValue] != nil ? typeCategory.rawValue : (typeCategory.isSingleton ? "core" : "feature")
+
+        // Priority 2: Project pathTemplates describe the user's chosen layout strategy.
+        // They take precedence for known (registry) bricks. Custom bricks use the author's
+        // declared defaultPath instead, since the project feature/core templates are meaningless for them.
+        if let template = pathTemplates[categoryKey], spec != nil || manifestDefaultPath == nil {
+            return BrickDiscoveryEngine.evaluateTokens(in: template, moduleName: moduleName, blockName: blockName)
+        }
+
+        // Priority 3: Brick author's declared default output path
+        if let manifestPath = manifestDefaultPath, !manifestPath.isEmpty {
+            return BrickDiscoveryEngine.evaluateTokens(in: manifestPath, moduleName: moduleName, blockName: blockName)
+        }
+
+        // Priority 4: Project feature/core layout as a fallback for custom bricks without defaultPath
         if let template = pathTemplates[categoryKey] {
             return BrickDiscoveryEngine.evaluateTokens(in: template, moduleName: moduleName, blockName: blockName)
         }
 
-        // Priority 3: Check block.json metadata or fallback
-        if let defaultPath = BrickRegistry.spec(for: type)?.defaultOutputPath {
+        // Priority 5: Check block.json metadata or fallback
+        if let defaultPath = spec?.defaultOutputPath {
             return BrickDiscoveryEngine.evaluateTokens(in: defaultPath, moduleName: moduleName, blockName: blockName)
         }
 
-        // Priority 4: Standard engine fallback
+        // Priority 6: Standard engine fallback
         return paths.path(for: type)
     }
 
@@ -227,6 +248,11 @@ public struct SwiftBlockConfig: Codable, Equatable {
         } else if fileManager.fileExists(atPath: yamlConfigPath) {
             targetPath = yamlConfigPath
         } else if fileManager.fileExists(atPath: rootConfigPath) {
+            var isDir: ObjCBool = false
+            if fileManager.fileExists(atPath: rootConfigPath, isDirectory: &isDir), isDir.boolValue {
+                // `.swiftblock` exists as a directory but contains no config file.
+                throw SwiftBlockConfigError.configNotFound("\(resolvedDirectory)/.swiftblock/config.yml")
+            }
             targetPath = rootConfigPath
         }
         
@@ -246,6 +272,7 @@ public struct SwiftBlockConfig: Codable, Equatable {
             let toolStr = (parsed["generatorTool"] as? String) ?? "tuist"
             let tool = ProjectGeneratorTool(rawValue: toolStr.lowercased()) ?? .tuist
             let org = (parsed["organization"] as? String) ?? "feature-first"
+            let normalizedOrg = (org == "business-first") ? "feature-first" : org
             
             var pkg = PackagingConfig()
             if let pkgDict = parsed["packaging"] as? [String: Any] {
@@ -292,17 +319,54 @@ public struct SwiftBlockConfig: Codable, Equatable {
                 kitsDict = kDict
             }
 
+            let testFramework = (parsed["testFramework"] as? String).flatMap(TestFramework.init(rawValue:)) ?? .swiftTesting
+            let gitInit = (parsed["gitInit"] as? Bool) ?? true
+
+            var guardrails = GuardrailsConfig.all
+            if let gDict = parsed["guardrails"] as? [String: Any] {
+                guardrails = GuardrailsConfig(
+                    swiftlint: (gDict["swiftlint"] as? Bool) ?? true,
+                    swiftformat: (gDict["swiftformat"] as? Bool) ?? true,
+                    precommit: (gDict["precommit"] as? Bool) ?? true,
+                    periphery: (gDict["periphery"] as? Bool) ?? true,
+                    gitleaks: (gDict["gitleaks"] as? Bool) ?? true,
+                    danger: (gDict["danger"] as? Bool) ?? true,
+                    swiftgen: (gDict["swiftgen"] as? Bool) ?? true,
+                    licenseplist: (gDict["licenseplist"] as? Bool) ?? true
+                )
+            }
+
+            var toolVersionsDict: [String: String] = [:]
+            if let tvDict = parsed["toolVersions"] as? [String: Any] {
+                for (k, v) in tvDict {
+                    if let str = v as? String { toolVersionsDict[k] = str }
+                }
+            }
+
+            var coreBlocks: [Brick] = [.storage, .network, .logger, .config]
+            if let blockList = parsed["coreBlocks"] as? [Any] {
+                let blocks = blockList.compactMap { ($0 as? String).map { Brick(rawValue: $0) } }
+                if !blocks.isEmpty {
+                    coreBlocks = blocks
+                }
+            }
+
             return SwiftBlockConfig(
                 projectName: name,
                 bundlePrefix: prefix,
                 packaging: pkg,
-                organization: org,
+                organization: normalizedOrg,
                 generatorTool: tool,
+                guardrails: guardrails,
                 cicd: cicdCfg,
+                toolVersions: toolVersionsDict,
+                coreBlocks: coreBlocks,
+                gitInit: gitInit,
                 pathTemplates: pathTemplatesDict,
                 overrides: overridesDict,
                 paths: ModulePaths(customPaths: customPaths),
-                kits: kitsDict
+                kits: kitsDict,
+                testFramework: testFramework
             )
         }
         
@@ -326,41 +390,64 @@ public struct SwiftBlockConfig: Codable, Equatable {
         
         var yaml = """
         # SwiftBlock Project Configuration (.swiftblock/config.yml)
-        projectName: \(projectName)
-        bundlePrefix: \(bundlePrefix)
-        organization: \(organization)
+        projectName: \(Self.yamlScalar(projectName))
+        bundlePrefix: \(Self.yamlScalar(bundlePrefix))
+        organization: \(Self.yamlScalar(organization))
         generatorTool: \(generatorTool.rawValue)
+        testFramework: \(testFramework.rawValue)
+        gitInit: \(gitInit ? "true" : "false")
 
         packaging:
-          feature: \(packaging.feature)
-          core: \(packaging.core)
+          feature: \(Self.yamlScalar(packaging.feature))
+          core: \(Self.yamlScalar(packaging.core))
+
+        guardrails:
+          swiftlint: \(guardrails.swiftlint ? "true" : "false")
+          swiftformat: \(guardrails.swiftformat ? "true" : "false")
+          precommit: \(guardrails.precommit ? "true" : "false")
+          periphery: \(guardrails.periphery ? "true" : "false")
+          gitleaks: \(guardrails.gitleaks ? "true" : "false")
+          danger: \(guardrails.danger ? "true" : "false")
+          swiftgen: \(guardrails.swiftgen ? "true" : "false")
+          licenseplist: \(guardrails.licenseplist ? "true" : "false")
 
         cicd:
           provider: \(cicd.provider.rawValue)
 
-        paths:
+        coreBlocks:
         """
-        
+        for block in coreBlocks {
+            yaml += "\n  - \(block.rawValue)"
+        }
+
+if !toolVersions.isEmpty {
+            yaml += "\n\ntoolVersions:"
+            for (key, val) in toolVersions.sorted(by: { $0.key < $1.key }) {
+                yaml += "\n  \(Self.yamlScalar(key)): \(Self.yamlScalar(val))"
+            }
+        }
+
+        yaml += "\n\npaths:"
         let allPaths = paths.allCustomPaths
         if allPaths.isEmpty {
             yaml += "\n  scene: App/Sources/Features\n  network: App/Sources/Core/Network"
         } else {
             for (key, val) in allPaths.sorted(by: { $0.key < $1.key }) {
-                yaml += "\n  \(key): \(val)"
+                yaml += "\n  \(Self.yamlScalar(key)): \(Self.yamlScalar(val))"
             }
         }
-        
+
         if !pathTemplates.isEmpty {
             yaml += "\n\npathTemplates:"
             for (key, val) in pathTemplates.sorted(by: { $0.key < $1.key }) {
-                yaml += "\n  \(key): \(val)"
+                yaml += "\n  \(Self.yamlScalar(key)): \(Self.yamlScalar(val))"
             }
         }
 
         if !overrides.isEmpty {
             yaml += "\n\noverrides:"
             for (key, val) in overrides.sorted(by: { $0.key < $1.key }) {
-                yaml += "\n  \(key): \(val)"
+                yaml += "\n  \(Self.yamlScalar(key)): \(Self.yamlScalar(val))"
             }
         }
         
@@ -374,6 +461,20 @@ public struct SwiftBlockConfig: Codable, Equatable {
         
         yaml += "\n"
         try yaml.write(toFile: configFilePath, atomically: true, encoding: .utf8)
+    }
+
+    private static func yamlScalar(_ value: String) -> String {
+        let needsQuotes = value.isEmpty ||
+            value.hasPrefix(" ") || value.hasSuffix(" ") ||
+            value.contains(":") || value.contains("#") ||
+            value.hasPrefix("- ") || value.hasPrefix("?") ||
+            value.hasPrefix("[") || value.hasPrefix("{") ||
+            ["true", "false", "null", "~", "yes", "no", "on", "off"].contains(value.lowercased())
+        guard needsQuotes else { return value }
+        let escaped = value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        return "\"\(escaped)\""
     }
 }
 

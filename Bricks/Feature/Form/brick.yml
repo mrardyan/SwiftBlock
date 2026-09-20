@@ -1,0 +1,6 @@
+name: form
+category: architecture
+instantiation: generative
+description: "Validated form scene with field state, error handling, and submit flow"
+defaultPath: "App/Sources/Features/{module}/{block}"
+requiresNameArgument: true

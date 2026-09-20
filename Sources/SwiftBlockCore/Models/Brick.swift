@@ -5,8 +5,12 @@ public struct Brick: RawRepresentable, ExpressibleByStringLiteral, Hashable, Cod
     public let rawValue: String
 
     public init(rawValue: String) {
-        let clean = rawValue.contains("/") ? String(rawValue.split(separator: "/").last!) :
-                    (rawValue.contains(".") ? String(rawValue.split(separator: ".").last!) : rawValue)
+        var clean = rawValue
+        if clean.contains("/") {
+            clean = String(clean.split(separator: "/").last ?? Substring(clean))
+        } else if clean.contains(".") {
+            clean = String(clean.split(separator: ".").last ?? Substring(clean))
+        }
         self.rawValue = clean.lowercased()
     }
 

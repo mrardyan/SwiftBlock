@@ -1,0 +1,6 @@
+name: swift_data_store
+category: infrastructure
+instantiation: singleton
+description: "SwiftData model container stack (iOS 17+) with a shared ModelContext"
+defaultPath: "App/Sources/Core/SwiftData"
+requiresNameArgument: false

@@ -29,10 +29,20 @@ public struct BrickSpec: Equatable {
         self.defaultTemplateSubpath = defaultTemplateSubpath
         self.baseplates = baseplates
     }
+
+    /// Whether this brick can be snapped into the given baseplate (vapor vs swiftui).
+    /// Bricks without `baseplates` metadata are considered compatible with everything.
+    public func isCompatible(withVapor isVapor: Bool) -> Bool {
+        guard let baseplates = baseplates, !baseplates.isEmpty else { return true }
+        let allowed = baseplates.map { $0.lowercased() }
+        return isVapor ? allowed.contains("vapor") : allowed.contains("swiftui")
+    }
 }
 
 public struct BrickRegistry {
-    public static let allBricks: [BrickSpec] = [
+    /// Curated specs for the well-known bricks. Kept for stable metadata/titles; the full catalog
+    /// is auto-discovered from the installed Bricks directories via `discoveredSpecs()`.
+    public static let curatedSpecs: [BrickSpec] = [
         // Feature Bricks
         BrickSpec(
             type: .scene,
@@ -192,15 +202,6 @@ public struct BrickRegistry {
             defaultTemplateSubpath: "Config/FeatureFlag"
         ),
         BrickSpec(
-            type: .formatter,
-            commandName: "formatter",
-            title: "Formatter",
-            description: "Currency, Date, and Number Formatting Engine",
-            category: .utils,
-            defaultOutputPath: "App/Sources/Core/Formatter",
-            defaultTemplateSubpath: "Utils/Formatter"
-        ),
-        BrickSpec(
             type: .biometrics,
             commandName: "biometrics",
             title: "Biometrics",
@@ -246,6 +247,103 @@ public struct BrickRegistry {
             defaultTemplateSubpath: "Core/Notification"
         )
     ]
+
+    /// Full brick catalog: curated specs merged with auto-discovered bricks from the Bricks
+    /// directories. Curated specs win on name collision.
+    public static var allBricks: [BrickSpec] {
+        let discovered = discoveredSpecs()
+        var merged: [String: BrickSpec] = [:]
+        for spec in discovered { merged[spec.commandName] = spec }
+        for spec in curatedSpecs { merged[spec.commandName] = spec }
+        return merged.values.sorted { $0.commandName < $1.commandName }
+    }
+
+    /// Curated specs only. Used for path-strategy resolution where user `pathTemplates` should
+    /// take precedence over the brick author's default path.
+    public static func curatedSpec(for type: Brick) -> BrickSpec? {
+        curatedSpecs.first { $0.type == type }
+    }
+
+    /// Auto-discovers every brick template under the known Bricks roots by scanning for
+    /// `brick.yml` / `block.json` manifests. Command names derive from the folder name, so any
+    /// brick added to the correct directory is immediately snapable without registry changes.
+    public static func discoveredSpecs() -> [BrickSpec] {
+        if let cached = discoveredCache { return cached }
+
+        let fileManager = FileManager.default
+        var roots: [String] = []
+        if let envRoot = ProcessInfo.processInfo.environment["SWIFTBLOCK_ROOT"], !envRoot.isEmpty {
+            roots.append("\(envRoot)/Bricks")
+            roots.append(envRoot)
+        }
+        roots.append("\(fileManager.currentDirectoryPath)/Bricks")
+        roots.append("/usr/local/share/swiftblock/Bricks")
+        roots.append("/usr/local/share/swiftblock/Blocks")
+
+        var result: [String: BrickSpec] = [:]
+        for root in roots {
+            guard fileManager.fileExists(atPath: root),
+                  let enumerator = fileManager.enumerator(at: URL(fileURLWithPath: root), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else {
+                continue
+            }
+            for case let url as URL in enumerator {
+                let file = url.lastPathComponent
+                guard file == "brick.yml" || file == "brick.yaml" || file == "block.json" else { continue }
+                let brickFolder = url.deletingLastPathComponent()
+                guard let manifest = BrickManifest.load(fromPath: brickFolder.path) else { continue }
+                let folderName = brickFolder.lastPathComponent
+                let commandName = folderName.lowercased()
+                guard result[commandName] == nil else { continue }
+                let category = Self.category(for: manifest.category, defaultPath: manifest.defaultPath)
+                result[commandName] = BrickSpec(
+                    type: Brick(rawValue: commandName),
+                    commandName: commandName,
+                    title: manifest.name.capitalized,
+                    description: manifest.description,
+                    category: category,
+                    defaultOutputPath: manifest.defaultPath.isEmpty
+                        ? Self.fallbackPath(category: category, commandName: commandName)
+                        : manifest.defaultPath,
+                    defaultTemplateSubpath: brickFolder.path.replacingOccurrences(of: root + "/", with: ""),
+                    baseplates: manifest.baseplates
+                )
+            }
+        }
+
+        let sorted = result.values.sorted { $0.commandName < $1.commandName }
+        discoveredCache = sorted
+        return sorted
+    }
+
+    private static var discoveredCache: [BrickSpec]?
+
+    /// Maps a manifest `category` string to a `Brick.Category`. Used both by auto-discovery and
+    /// by generation so that unregistered bricks get the correct category regardless of search roots.
+    public static func category(for raw: String, defaultPath: String = "") -> Brick.Category {
+        let c = raw.lowercased()
+        if c.contains("feature") || c.contains("architecture") || c.contains("generative") {
+            return .feature
+        }
+        if c.contains("config") {
+            return .config
+        }
+        if c.contains("utils") || c.contains("utility") || c.contains("value") || c.contains("formatter") || c.contains("validator") || c.contains("ui") {
+            return .utils
+        }
+        if defaultPath.lowercased().contains("feature") {
+            return .feature
+        }
+        return .core
+    }
+
+    private static func fallbackPath(category: Brick.Category, commandName: String) -> String {
+        switch category {
+        case .feature: return "App/Sources/Features/{module}/\(commandName)"
+        case .config: return "App/Sources/Core/Config/\(commandName)"
+        case .utils: return "App/Sources/Core/\(commandName.capitalized)"
+        default: return "App/Sources/Core/\(commandName.capitalized)"
+        }
+    }
 
     public static var featureBricks: [BrickSpec] {
         allBricks.filter { $0.category == .feature }
@@ -301,7 +399,6 @@ extension Brick {
         public static let vaporauth: Brick = "vaporauth"
         public static let featureflag: Brick = "featureflag"
         public static let validator: Brick = "validator"
-        public static let formatter: Brick = "formatter"
         public static let biometrics: Brick = "biometrics"
         public static let deeplink: Brick = "deeplink"
         public static let permissions: Brick = "permissions"
@@ -328,7 +425,6 @@ extension Brick {
     public static let auth = Core.auth
     public static let vaporauth = Core.vaporauth
     public static let featureflag = Core.featureflag
-    public static let formatter = Core.formatter
     public static let biometrics = Core.biometrics
     public static let deeplink = Core.deeplink
     public static let permissions = Core.permissions
@@ -339,7 +435,7 @@ extension Brick {
         [
             Feature.scene, Feature.usecase, Feature.repository, Feature.service, Feature.entity,
             Feature.coordinator, Feature.component, Feature.mapper, Feature.validator,
-            Core.storage, Core.network, Core.logger, Core.analytics, Core.config, Core.auth, Core.vaporauth, Core.featureflag, Core.formatter,
+            Core.storage, Core.network, Core.logger, Core.analytics, Core.config, Core.auth, Core.vaporauth, Core.featureflag,
             Core.biometrics, Core.deeplink, Core.permissions, Core.location, Core.notification
         ]
     }

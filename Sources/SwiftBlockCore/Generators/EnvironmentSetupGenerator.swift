@@ -23,10 +23,13 @@ public class EnvironmentSetupGenerator {
     private func generateMiseToml(in projectPath: String, config: SwiftBlockConfig, versions: DependencyVersionRegistry) throws {
         var tools: [String] = ["[tools]"]
 
-        if config.generatorTool == .tuist {
+        switch config.generatorTool {
+        case .tuist:
             tools.append("tuist = \"\(versions.tuist)\"")
-        } else {
+        case .xcodegen:
             tools.append("xcodegen = \"\(versions.xcodegen)\"")
+        case .spm:
+            break
         }
 
         if config.guardrails.swiftlint { tools.append("swiftlint = \"\(versions.swiftlint)\"") }
@@ -42,11 +45,11 @@ public class EnvironmentSetupGenerator {
     }
 
     private func generateMakefile(in projectPath: String, config: SwiftBlockConfig, versions: DependencyVersionRegistry) throws {
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
+        let isSPM = config.generatorTool == .spm
         var targets: [String] = []
         var helpLines: [String] = [
-            "  make setup             Setup environment (install tools, hooks & generate project)",
-            "  make generate          Generate project via \(config.generatorTool.rawValue)"
+            "  make setup             Setup environment (install tools, hooks & build project)",
+            "  make build             Build project via \(config.generatorTool.rawValue)"
         ]
 
         targets.append("""
@@ -57,23 +60,33 @@ setup:
 """)
 
         targets.append("""
-.PHONY: generate
-generate:
-	@echo "◆ Generating project via \(config.generatorTool.rawValue)..."
-	@\(generateCmd)
+.PHONY: build
+build:
+	@echo "◆ Building project via \(config.generatorTool.rawValue)..."
+	@\(isSPM ? "swift build" : (config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"))
 """)
 
-        helpLines.append("  make open              Open project in Xcode")
-        let openCmd = config.generatorTool == .tuist
-            ? "open \(config.projectName).xcworkspace 2>/dev/null || open \(config.projectName).xcodeproj 2>/dev/null || tuist generate"
-            : "open \(config.projectName).xcodeproj 2>/dev/null || open \(config.projectName).xcworkspace 2>/dev/null || xcodegen generate"
+        if isSPM {
+            helpLines.append("  make run               Run the server")
+            targets.append("""
+.PHONY: run
+run:
+	@echo "◆ Running server..."
+	@swift run
+""")
+        } else {
+            helpLines.append("  make open              Open project in Xcode")
+            let openCmd = config.generatorTool == .tuist
+                ? "open \(config.projectName).xcworkspace 2>/dev/null || open \(config.projectName).xcodeproj 2>/dev/null || tuist generate"
+                : "open \(config.projectName).xcodeproj 2>/dev/null || open \(config.projectName).xcworkspace 2>/dev/null || xcodegen generate"
 
-        targets.append("""
+            targets.append("""
 .PHONY: open
 open:
 	@echo "◆ Opening \(config.projectName) in Xcode..."
 	@\(openCmd)
 """)
+        }
 
         if config.guardrails.swiftformat {
             helpLines.append("  make format            Format Swift code via SwiftFormat")
@@ -125,12 +138,12 @@ generate-licenses:
 """)
         }
 
-        helpLines.append("  make test              Run unit tests via xcodebuild")
+        helpLines.append("  make test              Run unit tests")
         targets.append("""
 .PHONY: test
 test:
 	@echo "◆ Running tests..."
-	@xcodebuild test -scheme \(config.projectName) -destination 'platform=iOS Simulator,name=iPhone 15'
+	@\(isSPM ? "swift test" : "xcodebuild test -scheme \(config.projectName) -destination 'platform=iOS Simulator,name=iPhone 15'")
 """)
 
         let helpTarget = """
@@ -153,10 +166,13 @@ help:
         var setupSteps: [String] = []
 
         var requiredToolChecks: [(binary: String, brewFormula: String)] = []
-        if config.generatorTool == .tuist {
+        switch config.generatorTool {
+        case .tuist:
             requiredToolChecks.append(("tuist", "tuist"))
-        } else {
+        case .xcodegen:
             requiredToolChecks.append(("xcodegen", "xcodegen"))
+        case .spm:
+            break
         }
 
         if config.guardrails.swiftlint { requiredToolChecks.append(("swiftlint", "swiftlint")) }
@@ -200,10 +216,15 @@ fi
 """)
         }
 
-        let generateCmd = config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate"
+        let buildCmd: String
+        switch config.generatorTool {
+        case .tuist: buildCmd = "tuist generate --no-open"
+        case .xcodegen: buildCmd = "xcodegen generate"
+        case .spm: buildCmd = "swift build"
+        }
         setupSteps.append("""
-echo "◆ Generating project..."
-\(generateCmd)
+echo "◆ Building project..."
+\(buildCmd)
 """)
 
         let scriptContent = """

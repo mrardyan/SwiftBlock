@@ -52,7 +52,7 @@ public class ProjectRefactoringEngine {
         let absolutePath = SwiftBlockConfig.findProjectRoot(from: startPath) ?? startPath
 
         let sanitizedNewName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard isValidProjectName(sanitizedNewName) else {
+        guard ProjectRefactoringEngine.isValidProjectName(sanitizedNewName) else {
             throw ProjectRefactoringError.invalidProjectName(newName)
         }
 
@@ -118,7 +118,8 @@ public class ProjectRefactoringEngine {
 
                 if fileManager.fileExists(atPath: fullPath) {
                     if fileManager.fileExists(atPath: destinationPath) {
-                        try? fileManager.removeItem(atPath: destinationPath)
+                        print("⚠️ Skipping rename '\(relPath)': a file/directory with the new name already exists at '\(destinationPath)'.")
+                        continue
                     }
                     try fileManager.moveItem(atPath: fullPath, toPath: destinationPath)
                     let relativeDest = destinationPath.replacingOccurrences(of: "\(absolutePath)/", with: "")
@@ -177,7 +178,8 @@ public class ProjectRefactoringEngine {
         )
     }
 
-    private func isValidProjectName(_ name: String) -> Bool {
+    /// Shared project-name validation used by both rename and project creation paths.
+    public static func isValidProjectName(_ name: String) -> Bool {
         guard !name.isEmpty else { return false }
         let regex = "^[A-Za-z][A-Za-z0-9_]*$"
         return name.range(of: regex, options: .regularExpression) != nil

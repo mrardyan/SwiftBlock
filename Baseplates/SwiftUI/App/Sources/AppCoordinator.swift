@@ -16,6 +16,8 @@ public final class AppCoordinator: ObservableObject {
         // MARK: - SwiftBlock Route View Marker
         case .home:
             Text("Home")
+        default:
+            EmptyView()
         }
     }
 }

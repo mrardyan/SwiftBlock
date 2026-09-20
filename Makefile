@@ -22,7 +22,6 @@ install: build
 		rm -rf $(SHAREDIR)/*; \
 		cp -R Baseplates $(SHAREDIR)/ 2>/dev/null || true; \
 		cp -R Bricks $(SHAREDIR)/ 2>/dev/null || true; \
-		cp -R Kits $(SHAREDIR)/ 2>/dev/null || true; \
 	else \
 		sudo mkdir -p $(BINDIR); \
 		sudo cp -f $(BUILD_PATH) $(BINDIR)/$(CLI_NAME); \
@@ -30,7 +29,6 @@ install: build
 		sudo rm -rf $(SHAREDIR)/*; \
 		sudo cp -R Baseplates $(SHAREDIR)/ 2>/dev/null || true; \
 		sudo cp -R Bricks $(SHAREDIR)/ 2>/dev/null || true; \
-		sudo cp -R Kits $(SHAREDIR)/ 2>/dev/null || true; \
 		ACTUAL_USER=$${SUDO_USER:-$$(whoami)}; \
 		sudo chown -R $$ACTUAL_USER $(SHAREDIR); \
 		sudo chmod -R u+rwX $(SHAREDIR); \

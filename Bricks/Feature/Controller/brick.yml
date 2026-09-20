@@ -1,0 +1,13 @@
+name: controller
+category: architecture
+instantiation: generative
+description: "RESTful RouteCollection controller with CRUD route wiring"
+defaultPath: "Sources/App/Features/{module}/{block}"
+baseplates:
+  - vapor
+requiresNameArgument: true
+
+injections:
+  - target: "Sources/App/routes.swift"
+    marker: "// MARK: - SwiftBlock Route Collection Marker"
+    content: "try app.register(collection: {{moduleName}}Controller())"

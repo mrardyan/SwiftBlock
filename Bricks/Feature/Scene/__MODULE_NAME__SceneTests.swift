@@ -1,5 +1,5 @@
 import XCTest
-@testable import __MODULE_NAME__
+@testable import __APP_MODULE__
 
 @MainActor
 final class __MODULE_NAME__SceneTests: XCTestCase {

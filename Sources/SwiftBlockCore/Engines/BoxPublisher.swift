@@ -167,12 +167,16 @@ public class BoxPublisher {
         return "git"
     }
 
-    private func runProcess(executable: String, arguments: [String], currentDirectoryPath: String) -> Int32 {
+private func runProcess(executable: String, arguments: [String], currentDirectoryPath: String) -> Int32 {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = arguments
-        process.currentDirectoryURL = URL(fileURLWithPath: currentDirectoryPath)
-        try? process.run()
+        process.currentDirectoryPath = currentDirectoryPath
+        do {
+            try process.run()
+        } catch {
+            return -1
+        }
         process.waitUntilExit()
         return process.terminationStatus
     }

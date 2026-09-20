@@ -34,18 +34,28 @@ public struct CodeInjector {
             config: config
         )
 
-        let rawTargetPath = (resolvedTargetPath as NSString).isAbsolutePath
-            ? resolvedTargetPath
-            : "\(projectRootPath)/\(resolvedTargetPath)"
-        let standardizedTarget = URL(fileURLWithPath: rawTargetPath).resolvingSymlinksInPath().path
-        let standardizedRoot = URL(fileURLWithPath: projectRootPath).resolvingSymlinksInPath().path
-
-        guard standardizedTarget.hasPrefix(standardizedRoot) else {
-            print("⚠️ Path traversal blocked: Target path '\(standardizedTarget)' is outside project root '\(standardizedRoot)'")
+        // Path traversal guard. `standardizedFileURL`/`resolvingSymlinksInPath()` are unreliable on
+        // symlinked roots (e.g. /tmp -> /private/tmp), so use a deterministic component-based check:
+        //  - relative targets must not contain ".." components;
+        //  - absolute targets must live inside the project root.
+        let isAbsoluteTarget = (resolvedTargetPath as NSString).isAbsolutePath
+        var isSafe = true
+        if isAbsoluteTarget {
+            let target = URL(fileURLWithPath: resolvedTargetPath).standardizedFileURL.path
+            let root = URL(fileURLWithPath: projectRootPath).standardizedFileURL.path
+            isSafe = target == root || target.hasPrefix(root + "/")
+        } else {
+            isSafe = !(resolvedTargetPath as NSString).pathComponents.contains("..")
+        }
+        guard isSafe else {
+            print("⚠️ Path traversal blocked: Target path '\(resolvedTargetPath)' is outside project root '\(projectRootPath)'")
             return false
         }
 
-        let absoluteTargetPath = standardizedTarget
+        let rawTargetPath = isAbsoluteTarget
+            ? resolvedTargetPath
+            : "\(projectRootPath)/\(resolvedTargetPath)"
+        let absoluteTargetPath = URL(fileURLWithPath: rawTargetPath).standardizedFileURL.path
 
         let fileManager = FileManager.default
         guard fileManager.fileExists(atPath: absoluteTargetPath) else {
@@ -95,20 +105,59 @@ public struct CodeInjector {
             )
 
             if let scopeIndex = lines.firstIndex(where: { $0.contains(renderedScope) }) {
-                // Find matching closing brace for this method/container
+                // Find matching closing brace, ignoring braces inside string literals and comments.
                 var braceCount = 0
                 var foundOpenBrace = false
                 var closingBraceIndex: Int?
+                var inString = false
+                var inLineComment = false
+                var stringQuote: Character = "\""
+
+                func resetState() {
+                    inString = false
+                    inLineComment = false
+                }
 
                 for i in scopeIndex..<lines.count {
                     let line = lines[i]
-                    for char in line {
+                    resetState()
+                    var j = 0
+                    let chars = Array(line)
+                    while j < chars.count {
+                        let char = chars[j]
+                        if inLineComment {
+                            j += 1
+                            continue
+                        }
+                        if inString {
+                            if char == "\\", j + 1 < chars.count {
+                                j += 2
+                                continue
+                            }
+                            if char == stringQuote {
+                                inString = false
+                            }
+                            j += 1
+                            continue
+                        }
+                        if char == "/", j + 1 < chars.count, chars[j + 1] == "/" {
+                            inLineComment = true
+                            j += 1
+                            continue
+                        }
+                        if char == "\"" || char == "'" {
+                            inString = true
+                            stringQuote = char
+                            j += 1
+                            continue
+                        }
                         if char == "{" {
                             braceCount += 1
                             foundOpenBrace = true
                         } else if char == "}" {
                             braceCount -= 1
                         }
+                        j += 1
                     }
                     if foundOpenBrace && braceCount == 0 {
                         closingBraceIndex = i
@@ -140,12 +189,16 @@ public struct CodeInjector {
             }
         }
 
-        // 3. Fallback: Append before last closing brace or at end of file
+        // 3. Fallback: Append before the outermost closing brace (column 0) or at end of file
         if !injected {
-            if let lastBraceIndex = lines.rIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "}" }) {
+            let topLevelClose = lines.rIndex(where: { line in
+                line.hasPrefix("}") && !line.hasPrefix("}}")
+            })
+            if let lastBraceIndex = topLevelClose {
                 lines.insert("    " + renderedSnippet, at: lastBraceIndex)
                 injected = true
             } else {
+                print("⚠️ No injection marker or scope found in \(resolvedTargetPath); snippet appended at end of file.")
                 lines.append(renderedSnippet)
                 injected = true
             }

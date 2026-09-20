@@ -1,5 +1,8 @@
 import XCTest
-@testable import __MODULE_NAME__
+#if canImport(Core)
+@testable import Core
+#endif
+@testable import __APP_MODULE__
 
 @available(macOS 11.0, iOS 14.0, watchOS 7.0, tvOS 14.0, *)
 final class __MODULE_NAME__Tests: XCTestCase {

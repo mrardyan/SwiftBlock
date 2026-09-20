@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 public final class DependencyContainer {
     public static let shared = DependencyContainer()
     private var factories: [String: () -> Any] = [:]

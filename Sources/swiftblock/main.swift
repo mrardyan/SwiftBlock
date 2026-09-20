@@ -53,6 +53,10 @@ struct BaseplateCommand: ParsableCommand {
 
     func run() throws {
         if let projectName = projectName, !projectName.isEmpty {
+            guard ProjectRefactoringEngine.isValidProjectName(projectName) else {
+                print("❌ Invalid project name '\(projectName)'. Project name must start with a letter and contain only alphanumeric characters or underscores.")
+                throw ExitCode.failure
+            }
             let toolEnum = ProjectGeneratorTool(rawValue: tool.lowercased()) ?? .tuist
             let tfEnum = TestFramework(rawValue: testFramework.lowercased()) ?? .swiftTesting
             try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, baseplateName: baseplate, templatePath: templatePath, generatorTool: toolEnum, testFramework: tfEnum, isDryRun: dryRun, isVerbose: verbose)
@@ -128,8 +132,8 @@ struct SnapCommand: ParsableCommand {
                 if !manifest.variables.isEmpty {
                     resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
                 }
-                let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.name.capitalized)
-                let moduleType = Brick(rawValue: manifest.name.lowercased())
+                let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.defaultInstanceName)
+                let moduleType = Brick(rawValue: (targetPath as NSString).lastPathComponent)
                 try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: targetPath, isDryRun: dryRun, variables: resolvedVars)
                 return
             }
@@ -146,8 +150,8 @@ struct SnapCommand: ParsableCommand {
                 if !selected.manifest.variables.isEmpty {
                     resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: selected.manifest, providedValues: resolvedVars)
                 }
-                let instanceName = name ?? (selected.manifest.instantiation == .generative ? "Main" : selected.manifest.name.capitalized)
-                let moduleType = Brick(rawValue: selected.manifest.name.lowercased())
+                let instanceName = name ?? (selected.manifest.instantiation == .generative ? "Main" : selected.manifest.defaultInstanceName)
+                let moduleType = Brick(rawValue: (selectedPath as NSString).lastPathComponent)
                 try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: selectedPath, isDryRun: dryRun, variables: resolvedVars)
                 return
             }
@@ -160,8 +164,8 @@ struct SnapCommand: ParsableCommand {
             if !manifest.variables.isEmpty {
                 resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
             }
-            let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.name.capitalized)
-            let moduleType = Brick(rawValue: manifest.name.lowercased())
+            let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.defaultInstanceName)
+            let moduleType = Brick(rawValue: (resolvedPath as NSString).lastPathComponent)
             
             try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: resolvedPath, isDryRun: dryRun, variables: resolvedVars)
             return

@@ -358,4 +358,146 @@ struct BrickGeneratorTests {
         let targetDir = "\(tempDir.path)/App/Sources/Features/rollbacktest"
         #expect(!FileManager.default.fileExists(atPath: targetDir))
     }
+
+    @Test func manifestDefaultPathHonoredForCustomBrick() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CustomBrick_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let config = SwiftBlockConfig(projectName: "TestApp")
+        try config.save(to: tempDir.path)
+
+        let customBrick = tempDir.appendingPathComponent("Widget", isDirectory: true)
+        try FileManager.default.createDirectory(at: customBrick, withIntermediateDirectories: true)
+        let manifest = """
+        name: widget
+        instantiation: singleton
+        defaultPath: "App/Sources/Core/Widgets/{block}"
+        """
+        try manifest.write(toFile: customBrick.appendingPathComponent("brick.yml").path, atomically: true, encoding: .utf8)
+        try "public struct Widget {}\n".write(toFile: customBrick.appendingPathComponent("__MODULE_NAME__.swift").path, atomically: true, encoding: .utf8)
+
+        let options = BrickGeneratorOptions(
+            type: Brick(rawValue: "widget"),
+            name: "Widget",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: customBrick.path
+        )
+
+        let generator = BrickGenerator()
+        let generatedPath = try generator.generateBrick(options: options)
+
+        #expect(FileManager.default.fileExists(atPath: "\(generatedPath)/Widget.swift"))
+        #expect(generatedPath.hasSuffix("App/Sources/Core/Widgets/widget"))
+    }
+
+    @Test func baseplateMismatchThrows() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("BaseplateMismatch_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        // Vapor (SPM) project config
+        let vaporConfig = SwiftBlockConfig(projectName: "VaporApp", generatorTool: .spm)
+        try vaporConfig.save(to: tempDir.path)
+
+        let authBrick = tempDir.appendingPathComponent("Auth", isDirectory: true)
+        try FileManager.default.createDirectory(at: authBrick, withIntermediateDirectories: true)
+        let manifest = """
+        name: auth
+        instantiation: singleton
+        baseplates:
+          - swiftui
+        """
+        try manifest.write(toFile: authBrick.appendingPathComponent("brick.yml").path, atomically: true, encoding: .utf8)
+        try "// Auth".write(toFile: authBrick.appendingPathComponent("__MODULE_NAME__.swift").path, atomically: true, encoding: .utf8)
+
+        let options = BrickGeneratorOptions(
+            type: .auth,
+            name: "UserAuth",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: authBrick.path
+        )
+
+        let generator = BrickGenerator()
+        #expect(throws: BrickGeneratorError.self) {
+            try generator.generateBrick(options: options)
+        }
+    }
+
+    @Test func discoveredCoreBrickSnapsToCorePath() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DiscoveredCore_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let config = SwiftBlockConfig(projectName: "TestApp")
+        try config.save(to: tempDir.path)
+
+        // `cache` is auto-discovered (not curated): its manifest category drives categorization.
+        #expect(Brick(rawValue: "cache").category == .core)
+
+        let templateRoot = tempDir.appendingPathComponent("Templates", isDirectory: true)
+        let cacheTemplate = templateRoot.appendingPathComponent("Cache", isDirectory: true)
+        try FileManager.default.createDirectory(at: cacheTemplate, withIntermediateDirectories: true)
+        let manifest = """
+        name: cache
+        category: infrastructure
+        instantiation: singleton
+        defaultPath: "App/Sources/Core/Cache"
+        """
+        try manifest.write(toFile: cacheTemplate.appendingPathComponent("brick.yml").path, atomically: true, encoding: .utf8)
+        try "// Cache".write(toFile: cacheTemplate.appendingPathComponent("__MODULE_NAME__.swift").path, atomically: true, encoding: .utf8)
+
+        let options = BrickGeneratorOptions(
+            type: Brick(rawValue: "cache"),
+            name: "Cache",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: templateRoot.path
+        )
+
+        let generator = BrickGenerator()
+        let generatedPath = try generator.generateBrick(options: options)
+        #expect(generatedPath.hasSuffix("App/Sources/Core/Cache"))
+        #expect(FileManager.default.fileExists(atPath: "\(generatedPath)/Cache.swift"))
+    }
+
+    @Test func vaporProjectPlacesTestsUnderAppTests() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("VaporTests_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let vaporConfig = SwiftBlockConfig(projectName: "VaporApp", generatorTool: .spm, testFramework: .xctest)
+        try vaporConfig.save(to: tempDir.path)
+
+        let sceneTemplate = tempDir.appendingPathComponent("Scene", isDirectory: true)
+        try FileManager.default.createDirectory(at: sceneTemplate, withIntermediateDirectories: true)
+        try "// Scene".write(toFile: sceneTemplate.appendingPathComponent("__MODULE_NAME__View.swift").path, atomically: true, encoding: .utf8)
+        try "import XCTest\n@testable import __APP_MODULE__\n".write(toFile: sceneTemplate.appendingPathComponent("__MODULE_NAME__Tests.swift").path, atomically: true, encoding: .utf8)
+
+        let options = BrickGeneratorOptions(
+            type: .scene,
+            name: "Order",
+            projectRootPath: tempDir.path,
+            modulesTemplatePath: tempDir.path
+        )
+
+        let generator = BrickGenerator()
+        try generator.generateBrick(options: options)
+
+        let vaporTestPath = "\(tempDir.path)/Tests/AppTests/Features/order/scene/OrderTests.swift"
+        #expect(FileManager.default.fileExists(atPath: vaporTestPath))
+        let content = try String(contentsOfFile: vaporTestPath, encoding: .utf8)
+        #expect(content.contains("@testable import App"))
+    }
 }

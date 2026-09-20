@@ -1,0 +1,6 @@
+name: image_loader
+category: infrastructure
+instantiation: singleton
+description: "Async remote image loader with in-memory caching (SwiftUI/UIKit)"
+defaultPath: "App/Sources/Core/ImageLoader"
+requiresNameArgument: false
