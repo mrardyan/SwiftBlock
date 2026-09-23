@@ -1,7 +1,11 @@
 name: EmailValidator
 description: Email address validation utility with customizable regex rules.
 type: singleton
-category: core/validator/email
+category: utils/validator/email
 options:
   name: EmailValidator
 defaultPath: "App/Sources/Core/Validators/Email"
+dependencies:
+  mandatory:
+    - name: validating
+      reason: "EmailValidator requires Validating protocol contract"

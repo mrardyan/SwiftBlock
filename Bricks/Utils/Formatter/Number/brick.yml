@@ -1,7 +1,11 @@
 name: NumberFormatter
 description: Flexible number formatting singleton supporting decimal, percent, and ordinal styles.
 type: singleton
-category: core/formatter/number
+category: utils/formatter/number
 options:
   name: NumberFormatter
 defaultPath: "App/Sources/Core/Formatters/Number"
+dependencies:
+  mandatory:
+    - name: valueformatting
+      reason: "NumberFormatter requires ValueFormatting protocol contract"

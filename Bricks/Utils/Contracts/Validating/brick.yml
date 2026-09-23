@@ -1,0 +1,7 @@
+name: Validating
+description: Composable Validating rule protocol contract with AND, OR, NOT, AllOf, and AnyOf combinators.
+type: singleton
+category: utils/contracts/validating
+options:
+  name: Validating
+defaultPath: "App/Sources/Core/Contracts"

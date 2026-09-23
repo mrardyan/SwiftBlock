@@ -5,7 +5,7 @@ public protocol NumberFormatterProtocol: Sendable {
     func string(from number: NSNumber, style: NumberFormatter.Style, locale: Locale) -> String?
 }
 
-/// Thread-safe number formatter singleton wrapping `NumberFormatter`.
+/// Thread-safe number formatter singleton wrapping `NumberFormatter` and conforming to `ValueFormatting`.
 public final class __MODULE_NAME__: @unchecked Sendable, NumberFormatterProtocol {
     /// Shared singleton instance.
     public static let shared = __MODULE_NAME__()
@@ -24,5 +24,12 @@ public final class __MODULE_NAME__: @unchecked Sendable, NumberFormatterProtocol
         formatter.numberStyle = style
         formatter.locale = locale
         return formatter.string(from: number)
+    }
+}
+
+// MARK: - ValueFormatting Protocol Conformance
+extension __MODULE_NAME__: ValueFormatting {
+    public func format(_ value: NSNumber) -> String {
+        string(from: value) ?? "\(value)"
     }
 }

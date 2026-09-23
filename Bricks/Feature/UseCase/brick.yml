@@ -6,3 +6,12 @@ defaultPath: "App/Sources/Features"
 requiresNameArgument: true
 namingConvention:
   postfix: "UseCase"
+dependencies:
+  mandatory:
+    - name: asyncusecase
+      reason: "UseCase requires AsyncUseCase domain contract"
+  optional:
+    - name: exponentialbackoff
+      description: "Auto-retry with exponential backoff & jitter"
+    - name: logger
+      description: "Structured OSLog call-site logging"

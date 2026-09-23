@@ -1,0 +1,7 @@
+name: AsyncUseCase
+description: Universal AsyncUseCase domain protocol contract with retry, logging, and fault-tolerance decorators.
+type: singleton
+category: core/contracts/asyncusecase
+options:
+  name: AsyncUseCase
+defaultPath: "App/Sources/Core/Contracts"

@@ -501,6 +501,50 @@ let suggestions = trie.words(matchingPrefix: "app") // ["apple", "application"]
 
 ---
 
+## 5. Universal Contracts & Protocol Bricks
+
+Contract bricks define universal protocol abstractions, decorators, and combinators that allow feature and utility bricks to be seamlessly composed together with clean dependency inversion.
+
+### Available Protocol Contracts (7 Types)
+
+```bash
+swiftblock snap asyncusecase
+swiftblock snap validating
+swiftblock snap keyvaluestoring
+```
+
+- **`AsyncUseCase`**: `public protocol AsyncUseCase<Input, Output>` with `.withRetry()` and `.withTiming()` decorators.
+- **`Logging`**: `public protocol Logging` abstract contract decoupling services from concrete OSLog/third-party loggers.
+- **`KeyValueStoring`**: `public protocol KeyValueStoring` contract for unified memory, disk, keychain, and tiered cache storage.
+- **`Transforming`**: `public protocol Transforming<Source, Target>` for bidirectional mappers and `.pipe()` chaining pipelines.
+- **`Validating`**: `public protocol Validating<Input>` with `.and()`, `.or()`, `.not()`, and `AnyValidator` combinators.
+- **`ValueFormatting`**: `public protocol ValueFormatting<Input>` for composable string formatting and `.optional()` fallback chains.
+- **`DomainValueType`**: `public protocol DomainValueType` standardizing 37 domain value objects and validation.
+
+---
+
+## 6. Structured Composing Engine
+
+SwiftBlock's **Structured Composing Engine** automatically resolves dependencies and offers template flavors when snapping bricks.
+
+### Dependency Resolution
+- **Mandatory Dependencies**: Automatically detected and snapped prior to the target brick (e.g. `usecase` automatically snaps `asyncusecase`).
+- **Optional Dependencies**: Can be snapped alongside using `--with-optional` or `--all-optional` (e.g. adding `exponentialbackoff` auto-wires `.withRetry()`).
+- **Conflict Prevention**: Detects incompatible bricks and prevents conflicting architectures.
+
+```bash
+# Automatically snaps mandatory contract dependencies
+swiftblock snap usecase FetchUserProfile
+
+# Snap with optional decorators
+swiftblock snap usecase FetchUserProfile --with-optional exponentialbackoff,logger
+
+# Skip automatic dependency resolution
+swiftblock snap usecase FetchUserProfile --no-deps
+```
+
+---
+
 ## Next Steps
 
 - Learn how to build [Custom Bricks & Box Registries](file:///Users/ardyan/Development/SwiftBlock/Docs/05-Custom-Bricks-and-Boxes.md).

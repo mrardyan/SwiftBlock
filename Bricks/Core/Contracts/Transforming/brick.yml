@@ -1,0 +1,7 @@
+name: Transforming
+description: Transforming protocol contract for unidirectional/bidirectional mappers and piped transformer chains.
+type: singleton
+category: core/contracts/transforming
+options:
+  name: Transforming
+defaultPath: "App/Sources/Core/Contracts"

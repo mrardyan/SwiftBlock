@@ -5,7 +5,7 @@ public enum BrickInstantiationType: String, Codable {
     case generative
 }
 
-public struct VariableSpec {
+public struct VariableSpec: Equatable {
     public let name: String
     public let type: String // "string", "confirm", "select"
     public let prompt: String
@@ -23,7 +23,7 @@ public struct VariableSpec {
     }
 }
 
-public struct FileSpec {
+public struct FileSpec: Equatable {
     public let source: String
     public let destination: String
     public let condition: String?
@@ -32,6 +32,69 @@ public struct FileSpec {
         self.source = source
         self.destination = destination
         self.condition = condition
+    }
+}
+
+public struct DependencyItemSpec: Equatable {
+    public let name: String
+    public let reason: String?
+    public let autoWire: Bool
+    
+    public init(name: String, reason: String? = nil, autoWire: Bool = false) {
+        self.name = name
+        self.reason = reason
+        self.autoWire = autoWire
+    }
+}
+
+public struct BrickDependenciesSpec: Equatable {
+    public let mandatory: [DependencyItemSpec]
+    public let optional: [DependencyItemSpec]
+    public let conflicts: [String]
+    
+    public init(mandatory: [DependencyItemSpec] = [], optional: [DependencyItemSpec] = [], conflicts: [String] = []) {
+        self.mandatory = mandatory
+        self.optional = optional
+        self.conflicts = conflicts
+    }
+}
+
+public struct FlavorOptionSpec: Equatable {
+    public let id: String
+    public let title: String
+    public let description: String?
+    public let files: [FileSpec]
+    public let variables: [String: String]
+    public let dependencies: BrickDependenciesSpec?
+    
+    public init(
+        id: String,
+        title: String,
+        description: String? = nil,
+        files: [FileSpec] = [],
+        variables: [String: String] = [:],
+        dependencies: BrickDependenciesSpec? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.description = description
+        self.files = files
+        self.variables = variables
+        self.dependencies = dependencies
+    }
+}
+
+public struct FlavorSpec: Equatable {
+    public let id: String
+    public let prompt: String
+    public let defaultValue: String?
+    public let options: [FlavorOptionSpec]
+    
+    public init(id: String, prompt: String, defaultValue: String? = nil, options: [FlavorOptionSpec] = []) {
+        self.id = id
+        self.prompt = prompt
+        self.defaultValue = defaultValue
+        self.options = options
     }
 }
 
@@ -50,6 +113,8 @@ public struct BrickManifest {
     public let preSnapHooks: [String]
     public let postSnapHooks: [String]
     public let injections: [InjectionSpec]
+    public let dependencies: BrickDependenciesSpec
+    public let flavors: [String: FlavorSpec]
     
     public init(
         name: String,
@@ -65,7 +130,9 @@ public struct BrickManifest {
         files: [FileSpec] = [],
         preSnapHooks: [String] = [],
         postSnapHooks: [String] = [],
-        injections: [InjectionSpec] = []
+        injections: [InjectionSpec] = [],
+        dependencies: BrickDependenciesSpec = BrickDependenciesSpec(),
+        flavors: [String: FlavorSpec] = [:]
     ) {
         self.name = name
         self.category = category
@@ -81,6 +148,8 @@ public struct BrickManifest {
         self.preSnapHooks = preSnapHooks
         self.postSnapHooks = postSnapHooks
         self.injections = injections
+        self.dependencies = dependencies
+        self.flavors = flavors
     }
     
     /// The module/instance name derived from the manifest `name`, converting snake_case to
@@ -189,6 +258,50 @@ public struct BrickManifest {
                 }
             }
         }
+
+        // Dependencies Parsing
+        var mandatoryDeps: [DependencyItemSpec] = []
+        var optionalDeps: [DependencyItemSpec] = []
+        var conflictDeps: [String] = []
+
+        if let depsDict = dict["dependencies"] as? [String: Any] {
+            if let mandList = depsDict["mandatory"] as? [Any] {
+                mandatoryDeps = parseDependencyList(mandList)
+            } else if let reqList = depsDict["requires"] as? [Any] {
+                mandatoryDeps = parseDependencyList(reqList)
+            }
+            if let optList = depsDict["optional"] as? [Any] {
+                optionalDeps = parseDependencyList(optList)
+            } else if let suggList = depsDict["suggests"] as? [Any] {
+                optionalDeps = parseDependencyList(suggList)
+            }
+            if let confList = depsDict["conflicts"] as? [Any] {
+                conflictDeps = confList.map { "\($0)".trimmingCharacters(in: .whitespaces) }
+            }
+        }
+        let dependencies = BrickDependenciesSpec(mandatory: mandatoryDeps, optional: optionalDeps, conflicts: conflictDeps)
+
+        // Flavors Parsing
+        var flavors: [String: FlavorSpec] = [:]
+        if let flavorsDict = dict["flavors"] as? [String: Any] {
+            for (flavorKey, flavorVal) in flavorsDict {
+                if let fDict = flavorVal as? [String: Any] {
+                    let prompt = (fDict["prompt"] as? String) ?? "Select flavor for \(flavorKey):"
+                    let defaultValue = fDict["default"] != nil ? "\(fDict["default"]!)" : nil
+                    var options: [FlavorOptionSpec] = []
+                    if let optsList = fDict["options"] as? [[String: Any]] {
+                        for opt in optsList {
+                            if let id = opt["id"] as? String {
+                                let title = (opt["title"] as? String) ?? id.capitalized
+                                let desc = opt["description"] as? String
+                                options.append(FlavorOptionSpec(id: id, title: title, description: desc))
+                            }
+                        }
+                    }
+                    flavors[flavorKey] = FlavorSpec(id: flavorKey, prompt: prompt, defaultValue: defaultValue, options: options)
+                }
+            }
+        }
         
         return BrickManifest(
             name: name,
@@ -204,7 +317,25 @@ public struct BrickManifest {
             files: files,
             preSnapHooks: preSnapHooks,
             postSnapHooks: postSnapHooks,
-            injections: injections
+            injections: injections,
+            dependencies: dependencies,
+            flavors: flavors
         )
+    }
+
+    private static func parseDependencyList(_ list: [Any]) -> [DependencyItemSpec] {
+        var result: [DependencyItemSpec] = []
+        for item in list {
+            if let str = item as? String {
+                result.append(DependencyItemSpec(name: str.trimmingCharacters(in: .whitespaces)))
+            } else if let dict = item as? [String: Any] {
+                if let name = dict["name"] as? String {
+                    let reason = dict["reason"] as? String ?? dict["description"] as? String
+                    let autoWire = (dict["autoWire"] as? Bool) ?? (dict["autoWireCode"] as? Bool) ?? false
+                    result.append(DependencyItemSpec(name: name, reason: reason, autoWire: autoWire))
+                }
+            }
+        }
+        return result
     }
 }

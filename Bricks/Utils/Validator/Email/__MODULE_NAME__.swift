@@ -8,7 +8,7 @@ public protocol EmailValidatorProtocol: Sendable {
     func validate(_ email: String) -> Bool
 }
 
-/// Thread-safe email validator implementing `EmailValidatorProtocol`.
+/// Thread-safe email validator implementing `EmailValidatorProtocol` and `Validating` contract.
 public final class __MODULE_NAME__: EmailValidatorProtocol {
     /// Shared singleton instance with standard RFC-compliant rules.
     public static let shared = __MODULE_NAME__()
@@ -31,5 +31,16 @@ public final class __MODULE_NAME__: EmailValidatorProtocol {
         guard !trimmed.isEmpty else { return false }
         let range = NSRange(location: 0, length: trimmed.utf16.count)
         return regex?.firstMatch(in: trimmed, options: [], range: range) != nil
+    }
+}
+
+// MARK: - Validating Protocol Conformance
+extension __MODULE_NAME__: Validating {
+    public func validate(_ input: String) -> Result<Void, ValidationError> {
+        if validate(input) {
+            return .success(())
+        } else {
+            return .failure(ValidationError("Invalid email address format", field: "Email"))
+        }
     }
 }

@@ -89,6 +89,18 @@ struct SnapCommand: ParsableCommand {
     @Option(name: [.customShort("v"), .customLong("var")], help: "Key-value template variable (e.g. --var timeout=60)")
     var variables: [String] = []
 
+    @Option(name: .customLong("with-optional"), help: "Comma-separated list of optional dependencies to snap")
+    var withOptional: String?
+
+    @Flag(name: .customLong("all-optional"), help: "Snap all optional dependencies")
+    var allOptional: Bool = false
+
+    @Flag(name: .customLong("no-deps"), help: "Skip automatic resolution of mandatory dependencies")
+    var noDeps: Bool = false
+
+    @Option(name: .customLong("flavor"), help: "Key-value flavor selection (e.g. --flavor concurrency=async-await)")
+    var flavor: [String] = []
+
     @Option(name: .long, help: "Unit test framework: swift-testing or xctest")
     var testFramework: String?
 
@@ -97,7 +109,7 @@ struct SnapCommand: ParsableCommand {
 
     private func parseVariables() -> [String: String] {
         var dict: [String: String] = [:]
-        for item in variables {
+        for item in variables + flavor {
             let parts = item.split(separator: "=", maxSplits: 1).map(String.init)
             if parts.count == 2 {
                 dict[parts[0].trimmingCharacters(in: .whitespaces)] = parts[1].trimmingCharacters(in: .whitespaces)
@@ -106,9 +118,18 @@ struct SnapCommand: ParsableCommand {
         return dict
     }
 
+    private func parseOptionalDeps(manifest: BrickManifest) -> Set<String> {
+        if allOptional {
+            return Set(manifest.dependencies.optional.map { $0.name.lowercased() })
+        }
+        guard let list = withOptional else { return [] }
+        return Set(list.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() })
+    }
+
     func run() throws {
         let baseDir = templatePath ?? FileManager.default.currentDirectoryPath
         let discoveryEngine = BrickDiscoveryEngine()
+        let depResolver = DependencyResolverEngine(discoveryEngine: discoveryEngine)
         
         guard let brickInput = brick else {
             // Interactive wizard when no arguments provided
@@ -157,13 +178,40 @@ struct SnapCommand: ParsableCommand {
             }
         }
         
-        // Smart Namespace Resolution
+        // Smart Namespace Resolution & Structured Composing
         if let resolvedPath = discoveryEngine.resolveBrickPath(named: brickInput, in: baseDir),
            let manifest = BrickManifest.load(fromPath: resolvedPath) {
             
             if !manifest.variables.isEmpty {
                 resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
             }
+            let selectedOpts = parseOptionalDeps(manifest: manifest)
+
+            // Resolve Dependency Plan
+            let plan: DependencyResolutionPlan?
+            if !noDeps {
+                plan = try? depResolver.resolve(
+                    targetBrickName: brickInput,
+                    baseTemplatePath: baseDir,
+                    projectRootPath: FileManager.default.currentDirectoryPath,
+                    selectedOptionalDeps: selectedOpts,
+                    includeMandatory: !noDeps
+                )
+            } else {
+                plan = nil
+            }
+
+            if let plan = plan {
+                for skipped in plan.skippedAlreadyInstalled {
+                    print("  \(ANSIColor.dimText("ℹ Dependency '\(skipped)' already installed, skipping."))")
+                }
+                for node in plan.executionOrder where node.name.lowercased() != manifest.name.lowercased() {
+                    let depType = Brick(rawValue: (node.templatePath as NSString).lastPathComponent)
+                    let depInstanceName = node.manifest.instantiation == .generative ? "Main" : node.manifest.defaultInstanceName
+                    try executeAddModule(type: depType, moduleName: depInstanceName, templatePath: node.templatePath, isDryRun: dryRun, variables: resolvedVars)
+                }
+            }
+
             let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.defaultInstanceName)
             let moduleType = Brick(rawValue: (resolvedPath as NSString).lastPathComponent)
             
