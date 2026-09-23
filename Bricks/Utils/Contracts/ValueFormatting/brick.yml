@@ -1,7 +1,0 @@
-name: ValueFormatting
-description: Composable ValueFormatting protocol contract for string formatting and optional fallback pipelines.
-type: singleton
-category: utils/contracts/valueformatting
-options:
-  name: ValueFormatting
-defaultPath: "App/Sources/Core/Contracts"

@@ -1,0 +1,7 @@
+name: DomainValueType
+description: Standardized DomainValueType protocol for type-safe domain value objects and validation.
+type: singleton
+category: utils/protocols/domainvaluetype
+options:
+  name: DomainValueType
+defaultPath: "App/Sources/Core/Protocols"

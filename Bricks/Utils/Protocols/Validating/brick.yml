@@ -1,0 +1,7 @@
+name: Validating
+description: Composable Validating rule protocol with AND, OR, NOT, AllOf, and AnyOf combinators.
+type: singleton
+category: utils/protocols/validating
+options:
+  name: Validating
+defaultPath: "App/Sources/Core/Protocols"

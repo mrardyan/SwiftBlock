@@ -1,7 +1,0 @@
-name: KeyValueStoring
-description: Universal KeyValueStoring contract for memory, disk, keychain, and multi-tier composite stores.
-type: singleton
-category: core/contracts/keyvaluestoring
-options:
-  name: KeyValueStoring
-defaultPath: "App/Sources/Core/Contracts"

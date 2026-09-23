@@ -1,7 +1,0 @@
-name: Logging
-description: Abstract Logging protocol contract decoupling application components from concrete loggers.
-type: singleton
-category: core/contracts/logging
-options:
-  name: Logging
-defaultPath: "App/Sources/Core/Contracts"

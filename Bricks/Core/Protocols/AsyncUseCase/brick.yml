@@ -1,0 +1,7 @@
+name: AsyncUseCase
+description: Universal AsyncUseCase domain protocol with retry, logging, and fault-tolerance decorators.
+type: singleton
+category: core/protocols/asyncusecase
+options:
+  name: AsyncUseCase
+defaultPath: "App/Sources/Core/Protocols"

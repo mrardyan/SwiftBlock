@@ -501,11 +501,11 @@ let suggestions = trie.words(matchingPrefix: "app") // ["apple", "application"]
 
 ---
 
-## 5. Universal Contracts & Protocol Bricks
+## 5. Universal Protocol Bricks
 
-Contract bricks define universal protocol abstractions, decorators, and combinators that allow feature and utility bricks to be seamlessly composed together with clean dependency inversion.
+Protocol bricks define universal abstractions, decorators, and combinators that allow feature and utility bricks to be seamlessly composed together with clean dependency inversion.
 
-### Available Protocol Contracts (7 Types)
+### Available Protocols (7 Types)
 
 ```bash
 swiftblock snap asyncusecase
@@ -514,8 +514,8 @@ swiftblock snap keyvaluestoring
 ```
 
 - **`AsyncUseCase`**: `public protocol AsyncUseCase<Input, Output>` with `.withRetry()` and `.withTiming()` decorators.
-- **`Logging`**: `public protocol Logging` abstract contract decoupling services from concrete OSLog/third-party loggers.
-- **`KeyValueStoring`**: `public protocol KeyValueStoring` contract for unified memory, disk, keychain, and tiered cache storage.
+- **`Logging`**: `public protocol Logging` abstract protocol decoupling services from concrete OSLog/third-party loggers.
+- **`KeyValueStoring`**: `public protocol KeyValueStoring` protocol for unified memory, disk, keychain, and tiered cache storage.
 - **`Transforming`**: `public protocol Transforming<Source, Target>` for bidirectional mappers and `.pipe()` chaining pipelines.
 - **`Validating`**: `public protocol Validating<Input>` with `.and()`, `.or()`, `.not()`, and `AnyValidator` combinators.
 - **`ValueFormatting`**: `public protocol ValueFormatting<Input>` for composable string formatting and `.optional()` fallback chains.
