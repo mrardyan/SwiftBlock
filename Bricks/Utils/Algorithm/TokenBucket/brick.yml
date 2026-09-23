@@ -1,0 +1,7 @@
+name: TokenBucket
+description: Token bucket rate limiting algorithm with burst allowance and continuous replenishment.
+type: singleton
+category: utils/algorithm/tokenbucket
+options:
+  name: TokenBucket
+defaultPath: "App/Sources/Core/Algorithms/TokenBucket"

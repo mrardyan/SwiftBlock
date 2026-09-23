@@ -1,0 +1,7 @@
+name: BloomFilter
+description: Space-efficient probabilistic set membership filter with 0 false negative rate.
+type: singleton
+category: utils/algorithm/bloomfilter
+options:
+  name: BloomFilter
+defaultPath: "App/Sources/Core/Algorithms/BloomFilter"

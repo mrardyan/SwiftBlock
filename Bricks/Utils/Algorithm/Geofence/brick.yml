@@ -1,0 +1,7 @@
+name: Geofence
+description: Ray-casting Point-in-Polygon, circular radius, and bounding box geofence boundary validator.
+type: singleton
+category: utils/algorithm/geofence
+options:
+  name: Geofence
+defaultPath: "App/Sources/Core/Algorithms/Geofence"

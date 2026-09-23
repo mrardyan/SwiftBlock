@@ -1,0 +1,7 @@
+name: Trie
+description: Prefix tree data structure for O(k) word insertion, exact search, prefix matching, and autocompletion.
+type: singleton
+category: utils/datastructure/trie
+options:
+  name: Trie
+defaultPath: "App/Sources/Core/DataStructures/Trie"

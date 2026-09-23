@@ -430,7 +430,80 @@ print(price.formatted()) // "$49.99"
 
 ---
 
+### Algorithm
+
+Production-Ready Algorithms & Data Structures (18 Algorithms).
+
+```bash
+swiftblock snap debounce
+swiftblock snap lrucache
+swiftblock snap geodistance
+swiftblock snap geohash
+```
+
+- **Available Algorithms (18)**:
+  - **`Debounce`**: Thread-safe task debouncing using async cancellation for search inputs and UI updates.
+  - **`Throttle`**: Execution rate limiting with leading & trailing edge options.
+  - **`TokenBucket`**: Continuous-replenishing token bucket rate limiter with burst support.
+  - **`ExponentialBackoff`**: Exponential retry backoff calculator with Full Jitter and Equal Jitter.
+  - **`CircuitBreaker`**: 3-state (`Closed`, `Open`, `HalfOpen`) circuit breaker protecting failing services.
+  - **`Levenshtein`**: $O(\min(M, N))$ space-efficient edit distance and text similarity ratio calculator.
+  - **`FuzzySearch`**: Ranked subsequence and word-boundary scoring for fast in-app search.
+  - **`LRUCache`**: Thread-safe $O(1)$ Least Recently Used in-memory cache using doubly linked list & map.
+  - **`PriorityQueue`**: Binary heap min-heap and max-heap priority queue with $O(\log n)$ ops.
+  - **`BloomFilter`**: Space-efficient probabilistic set membership filter with 0 false negatives.
+  - **`Luhn`**: Modulo 10 checksum algorithm for card, IMEI, and national identifier validation.
+  - **`ConsistentHash`**: Consistent hash ring with virtual nodes for distributed sharding and caching.
+  - **`BinarySearch`**: Safe binary search, lower bound, and upper bound extensions for sorted collections.
+  - **`GeoDistance`**: Haversine distance, initial/final bearing, compass heading, and destination point calculations.
+  - **`Geohash`**: Base32 hierarchical spatial index encoding, bounding box decoding, and 8-neighbor proximity lookups.
+  - **`PolylineDecoder`**: Google / Mapbox Encoded Polyline algorithm for decoding and encoding compressed GPS routes.
+  - **`Geofence`**: Ray-Casting point-in-polygon and circular radius geofence boundary validator.
+  - **`DouglasPeucker`**: Ramer-Douglas-Peucker polyline decimation and simplification algorithm for GPS tracks.
+
+```swift
+// Code Example: Using GeoDistance and Geofence
+let distance = GeoDistance.distance(from: origin, to: destination)
+let isInside = Geofence.isPointInPolygon(userLocation, vertices: deliveryZoneVertices)
+```
+
+---
+
+### Data Structures
+
+Essential High-Performance Data Structures (8 Types).
+
+```bash
+swiftblock snap deque
+swiftblock snap trie
+swiftblock snap circularbuffer
+```
+
+- **Available Data Structures (8)**:
+  - **`Deque`**: Double-ended queue with $O(1)$ push and pop operations at both ends.
+  - **`Trie`**: Prefix tree for $O(k)$ word search, prefix lookups, and fast autocompletion.
+  - **`CircularBuffer`**: Fixed-capacity circular ring buffer that automatically overwrites oldest items.
+  - **`OrderedDictionary`**: Dictionary maintaining strict insertion order with $O(1)$ key lookups.
+  - **`OrderedSet`**: Unique element set collection that preserves insertion sequence order.
+  - **`Stack`**: Classic Last-In-First-Out (LIFO) stack data structure.
+  - **`Queue`**: First-In-First-Out (FIFO) queue with amortized $O(1)$ enqueue and dequeue.
+  - **`UnionFind`**: Disjoint-set data structure with Path Compression and Union-by-Rank.
+
+```swift
+// Code Example: Using Deque and Trie
+var deque: Deque<Int> = [10, 20]
+deque.prepend(5)
+let first = deque.popFirst() // 5
+
+let trie = Trie(words: ["apple", "application", "banana"])
+let suggestions = trie.words(matchingPrefix: "app") // ["apple", "application"]
+```
+
+---
+
 ## Next Steps
 
 - Learn how to build [Custom Bricks & Box Registries](file:///Users/ardyan/Development/SwiftBlock/Docs/05-Custom-Bricks-and-Boxes.md).
 - See how to compose bricks using [Composition Kits](file:///Users/ardyan/Development/SwiftBlock/Docs/06-Composition-Kits.md).
+
+

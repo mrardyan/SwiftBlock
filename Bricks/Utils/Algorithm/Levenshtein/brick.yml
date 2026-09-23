@@ -1,0 +1,7 @@
+name: Levenshtein
+description: Levenshtein distance and string similarity calculation utility.
+type: singleton
+category: utils/algorithm/levenshtein
+options:
+  name: Levenshtein
+defaultPath: "App/Sources/Core/Algorithms/Levenshtein"

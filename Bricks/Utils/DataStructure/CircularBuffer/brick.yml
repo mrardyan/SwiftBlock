@@ -1,0 +1,7 @@
+name: CircularBuffer
+description: Fixed-capacity circular ring buffer that automatically overwrites oldest items when full.
+type: singleton
+category: utils/datastructure/circularbuffer
+options:
+  name: CircularBuffer
+defaultPath: "App/Sources/Core/DataStructures/CircularBuffer"

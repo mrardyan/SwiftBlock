@@ -1,0 +1,7 @@
+name: ExponentialBackoff
+description: Retry delay calculation algorithm with exponential multiplier and randomized jitter.
+type: singleton
+category: utils/algorithm/exponentialbackoff
+options:
+  name: ExponentialBackoff
+defaultPath: "App/Sources/Core/Algorithms/ExponentialBackoff"

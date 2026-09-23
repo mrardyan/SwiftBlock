@@ -1,0 +1,7 @@
+name: OrderedSet
+description: Set collection maintaining unique elements with strict insertion order preservation.
+type: singleton
+category: utils/datastructure/orderedset
+options:
+  name: OrderedSet
+defaultPath: "App/Sources/Core/DataStructures/OrderedSet"

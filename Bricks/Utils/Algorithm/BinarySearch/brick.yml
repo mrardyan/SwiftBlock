@@ -1,0 +1,7 @@
+name: BinarySearch
+description: Safe binary search, lower bound, and upper bound search algorithms for sorted collections.
+type: singleton
+category: utils/algorithm/binarysearch
+options:
+  name: BinarySearch
+defaultPath: "App/Sources/Core/Algorithms/BinarySearch"

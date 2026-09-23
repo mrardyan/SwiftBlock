@@ -1,0 +1,7 @@
+name: ConsistentHash
+description: Consistent hash ring algorithm with virtual nodes for distributed sharding and load balancing.
+type: singleton
+category: utils/algorithm/consistenthash
+options:
+  name: ConsistentHash
+defaultPath: "App/Sources/Core/Algorithms/ConsistentHash"
