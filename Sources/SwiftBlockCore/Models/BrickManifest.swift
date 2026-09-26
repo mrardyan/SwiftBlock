@@ -294,7 +294,42 @@ public struct BrickManifest {
                             if let id = opt["id"] as? String {
                                 let title = (opt["title"] as? String) ?? id.capitalized
                                 let desc = opt["description"] as? String
-                                options.append(FlavorOptionSpec(id: id, title: title, description: desc))
+
+                                var optFiles: [FileSpec] = []
+                                if let filesList = opt["files"] as? [[String: Any]] {
+                                    for f in filesList {
+                                        if let src = f["source"] as? String, let dest = f["destination"] as? String {
+                                            let cond = f["condition"] as? String
+                                            optFiles.append(FileSpec(source: src, destination: dest, condition: cond))
+                                        }
+                                    }
+                                }
+
+                                var optVars: [String: String] = [:]
+                                if let varsDict = opt["variables"] as? [String: Any] {
+                                    for (k, v) in varsDict {
+                                        optVars[k] = "\(v)"
+                                    }
+                                }
+
+                                var optDeps: BrickDependenciesSpec?
+                                if let depsDict = opt["dependencies"] as? [String: Any] {
+                                    var m: [DependencyItemSpec] = []
+                                    var o: [DependencyItemSpec] = []
+                                    var c: [String] = []
+                                    if let mand = depsDict["mandatory"] as? [Any] {
+                                        m = parseDependencyList(mand)
+                                    }
+                                    if let optl = depsDict["optional"] as? [Any] {
+                                        o = parseDependencyList(optl)
+                                    }
+                                    if let conf = depsDict["conflicts"] as? [Any] {
+                                        c = conf.map { "\($0)".trimmingCharacters(in: .whitespaces) }
+                                    }
+                                    optDeps = BrickDependenciesSpec(mandatory: m, optional: o, conflicts: c)
+                                }
+
+                                options.append(FlavorOptionSpec(id: id, title: title, description: desc, files: optFiles, variables: optVars, dependencies: optDeps))
                             }
                         }
                     }

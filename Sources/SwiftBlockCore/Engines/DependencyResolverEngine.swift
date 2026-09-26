@@ -23,12 +23,14 @@ public struct ResolvedBrickNode: Equatable {
     public let manifest: BrickManifest
     public let isMandatory: Bool
     public let requiredBy: String?
+    public let autoWire: Bool
 
     public static func == (lhs: ResolvedBrickNode, rhs: ResolvedBrickNode) -> Bool {
         lhs.name.lowercased() == rhs.name.lowercased() &&
         lhs.templatePath == rhs.templatePath &&
         lhs.isMandatory == rhs.isMandatory &&
-        lhs.requiredBy == rhs.requiredBy
+        lhs.requiredBy == rhs.requiredBy &&
+        lhs.autoWire == rhs.autoWire
     }
 }
 
@@ -77,6 +79,7 @@ public final class DependencyResolverEngine {
             projectRootPath: projectRootPath,
             requiredBy: nil,
             isMandatory: true,
+            autoWire: false,
             selectedOptionalDeps: selectedOptionalDeps,
             includeMandatory: includeMandatory,
             visited: &visited,
@@ -85,17 +88,29 @@ public final class DependencyResolverEngine {
             skipped: &skipped
         )
 
-        // Conflict check across execution list
+        // Conflict check: against the execution list AND bricks already installed in the project
+        let installedNames = Set(skipped.map { $0.lowercased() })
         for node in executionList {
             for conflict in node.manifest.dependencies.conflicts {
                 let confLower = conflict.lowercased()
-                if executionList.contains(where: { $0.name.lowercased() == confLower }) {
+                let inPlan = executionList.contains { $0.name.lowercased() == confLower }
+                let inProject = installedNames.contains(confLower) || isBrickInstalled(conflict, in: baseTemplatePath, projectRootPath: projectRootPath)
+                if inPlan || inProject {
                     throw DependencyResolutionError.conflictDetected(brick: node.name, conflictsWith: conflict)
                 }
             }
         }
 
         return DependencyResolutionPlan(executionOrder: executionList, skippedAlreadyInstalled: skipped)
+    }
+
+    /// Resolves a conflicting brick's manifest and checks whether its rendered output is installed.
+    private func isBrickInstalled(_ name: String, in baseTemplatePath: String, projectRootPath: String) -> Bool {
+        guard let path = discoveryEngine.resolveBrickPath(named: name, in: baseTemplatePath),
+              let manifest = BrickManifest.load(fromPath: path) else {
+            return false
+        }
+        return isAlreadyInstalled(manifest: manifest, templatePath: path, in: projectRootPath)
     }
 
     private func resolveNode(
@@ -105,6 +120,7 @@ public final class DependencyResolverEngine {
         projectRootPath: String,
         requiredBy: String?,
         isMandatory: Bool,
+        autoWire: Bool,
         selectedOptionalDeps: Set<String>,
         includeMandatory: Bool,
         visited: inout [String: ResolvedBrickNode],
@@ -141,6 +157,7 @@ public final class DependencyResolverEngine {
                     projectRootPath: projectRootPath,
                     requiredBy: manifest.name,
                     isMandatory: true,
+                    autoWire: dep.autoWire,
                     selectedOptionalDeps: selectedOptionalDeps,
                     includeMandatory: includeMandatory,
                     visited: &visited,
@@ -167,6 +184,7 @@ public final class DependencyResolverEngine {
                     projectRootPath: projectRootPath,
                     requiredBy: manifest.name,
                     isMandatory: false,
+                    autoWire: opt.autoWire,
                     selectedOptionalDeps: selectedOptionalDeps,
                     includeMandatory: includeMandatory,
                     visited: &visited,
@@ -184,22 +202,54 @@ public final class DependencyResolverEngine {
             templatePath: templatePath,
             manifest: manifest,
             isMandatory: isMandatory,
-            requiredBy: requiredBy
+            requiredBy: requiredBy,
+            autoWire: autoWire
         )
         visited[nodeName] = node
 
         // Check if already installed in project (idempotency check)
-        if isAlreadyInstalled(manifest: manifest, in: projectRootPath) {
+        if isAlreadyInstalled(manifest: manifest, templatePath: templatePath, in: projectRootPath) {
             skipped.append(manifest.name)
         } else {
             executionList.append(node)
         }
     }
 
-    private func isAlreadyInstalled(manifest: BrickManifest, in projectRootPath: String) -> Bool {
+    /// Determines whether a brick has already been snapped into the project by checking the
+    /// existence of the rendered template output file(s) — not just the containing directory,
+    /// so that sibling bricks sharing a common `defaultPath` (e.g. all protocol bricks living
+    /// in `App/Sources/Core/Protocols`) are not falsely treated as installed.
+    private func isAlreadyInstalled(manifest: BrickManifest, templatePath: String, in projectRootPath: String) -> Bool {
         guard !manifest.defaultPath.isEmpty else { return false }
-        let evaluated = manifest.defaultPath.replacingOccurrences(of: "{module}", with: manifest.name.lowercased())
-        let fullPath = "\(projectRootPath)/\(evaluated)"
-        return fileManager.fileExists(atPath: fullPath)
+
+        let baseDir = "\(projectRootPath)/\(manifest.defaultPath)"
+        guard fileManager.fileExists(atPath: baseDir) else { return false }
+
+        let moduleName = manifest.instantiation == .generative ? "Main" : manifest.defaultInstanceName
+
+        // Enumerate template files (skip metadata) to derive concrete output file names.
+        guard let items = try? fileManager.contentsOfDirectory(atPath: templatePath) else {
+            return fileManager.fileExists(atPath: baseDir)
+        }
+
+        let sourceFiles = items.filter { item in
+            let lower = item.lowercased()
+            return !lower.hasSuffix("brick.yml") &&
+                   !lower.hasSuffix("brick.yaml") &&
+                   lower != "block.json"
+        }
+
+        for item in sourceFiles {
+            let rendered = BrickDiscoveryEngine.evaluateTokens(
+                in: item,
+                moduleName: moduleName,
+                blockName: manifest.name.lowercased()
+            )
+            let fullPath = "\(baseDir)/\(rendered)"
+            if fileManager.fileExists(atPath: fullPath) {
+                return true
+            }
+        }
+        return false
     }
 }

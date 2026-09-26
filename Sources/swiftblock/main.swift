@@ -109,7 +109,18 @@ struct SnapCommand: ParsableCommand {
 
     private func parseVariables() -> [String: String] {
         var dict: [String: String] = [:]
-        for item in variables + flavor {
+        for item in variables {
+            let parts = item.split(separator: "=", maxSplits: 1).map(String.init)
+            if parts.count == 2 {
+                dict[parts[0].trimmingCharacters(in: .whitespaces)] = parts[1].trimmingCharacters(in: .whitespaces)
+            }
+        }
+        return dict
+    }
+
+    private func parseFlavorSelections() -> [String: String] {
+        var dict: [String: String] = [:]
+        for item in flavor {
             let parts = item.split(separator: "=", maxSplits: 1).map(String.init)
             if parts.count == 2 {
                 dict[parts[0].trimmingCharacters(in: .whitespaces)] = parts[1].trimmingCharacters(in: .whitespaces)
@@ -124,6 +135,40 @@ struct SnapCommand: ParsableCommand {
         }
         guard let list = withOptional else { return [] }
         return Set(list.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() })
+    }
+
+    /// Applies flavor selections from `--flavor` flags against the manifest's declared flavors,
+    /// merging selected option variables into the template variables, and adding flavor-scoped
+    /// dependencies into the optional dependency set. Unknown flavor keys fall back to being
+    /// treated as plain template variables for backward compatibility.
+    private func applyFlavors(
+        manifest: BrickManifest,
+        selections: [String: String],
+        variables: inout [String: String],
+        selectedOptionalDeps: inout Set<String>
+    ) {
+        for (flavorKey, selectedValue) in selections {
+            guard let flavor = manifest.flavors[flavorKey.lowercased()] else {
+                // Not a declared flavor — fall back to plain template variable (legacy behavior).
+                variables[flavorKey] = selectedValue
+                continue
+            }
+            guard let option = flavor.options.first(where: { $0.id.lowercased() == selectedValue.lowercased() }) else {
+                let available = flavor.options.map { $0.id }.joined(separator: ", ")
+                print("  \(ANSIColor.yellowText("⚠️ Unknown option '\(selectedValue)' for flavor '\(flavorKey)'. Available: \(available) — ignoring."))")
+                continue
+            }
+
+            for (k, v) in option.variables {
+                variables[k] = v
+            }
+            if let deps = option.dependencies {
+                for dep in deps.optional {
+                    selectedOptionalDeps.insert(dep.name.lowercased())
+                }
+            }
+            print("  \(ANSIColor.greenText("✔ Flavor '\(flavorKey)' → '\(option.id)'"))")
+        }
     }
 
     func run() throws {
@@ -185,30 +230,34 @@ struct SnapCommand: ParsableCommand {
             if !manifest.variables.isEmpty {
                 resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
             }
-            let selectedOpts = parseOptionalDeps(manifest: manifest)
+
+            var selectedOpts = parseOptionalDeps(manifest: manifest)
+            applyFlavors(manifest: manifest, selections: parseFlavorSelections(), variables: &resolvedVars, selectedOptionalDeps: &selectedOpts)
 
             // Resolve Dependency Plan
-            let plan: DependencyResolutionPlan?
             if !noDeps {
-                plan = try? depResolver.resolve(
-                    targetBrickName: brickInput,
-                    baseTemplatePath: baseDir,
-                    projectRootPath: FileManager.default.currentDirectoryPath,
-                    selectedOptionalDeps: selectedOpts,
-                    includeMandatory: !noDeps
-                )
-            } else {
-                plan = nil
-            }
+                do {
+                    let plan = try depResolver.resolve(
+                        targetBrickName: brickInput,
+                        baseTemplatePath: baseDir,
+                        projectRootPath: FileManager.default.currentDirectoryPath,
+                        selectedOptionalDeps: selectedOpts
+                    )
 
-            if let plan = plan {
-                for skipped in plan.skippedAlreadyInstalled {
-                    print("  \(ANSIColor.dimText("ℹ Dependency '\(skipped)' already installed, skipping."))")
-                }
-                for node in plan.executionOrder where node.name.lowercased() != manifest.name.lowercased() {
-                    let depType = Brick(rawValue: (node.templatePath as NSString).lastPathComponent)
-                    let depInstanceName = node.manifest.instantiation == .generative ? "Main" : node.manifest.defaultInstanceName
-                    try executeAddModule(type: depType, moduleName: depInstanceName, templatePath: node.templatePath, isDryRun: dryRun, variables: resolvedVars)
+                    for skipped in plan.skippedAlreadyInstalled {
+                        print("  \(ANSIColor.dimText("ℹ Dependency '\(skipped)' already installed, skipping."))")
+                    }
+                    for node in plan.executionOrder where node.name.lowercased() != manifest.name.lowercased() {
+                        let depType = Brick(rawValue: (node.templatePath as NSString).lastPathComponent)
+                        let depInstanceName = node.manifest.instantiation == .generative ? "Main" : node.manifest.defaultInstanceName
+                        try executeAddModule(type: depType, moduleName: depInstanceName, templatePath: node.templatePath, isDryRun: dryRun, variables: resolvedVars)
+                        if node.autoWire {
+                            print("  \(ANSIColor.greenText("⚡ Auto-wired '\(node.manifest.name)' into '\(manifest.name)'"))")
+                        }
+                    }
+                } catch {
+                    print("❌ Dependency resolution failed: \(error.localizedDescription)")
+                    throw ExitCode.failure
                 }
             }
 

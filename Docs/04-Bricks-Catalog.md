@@ -530,7 +530,8 @@ SwiftBlock's **Structured Composing Engine** automatically resolves dependencies
 ### Dependency Resolution
 - **Mandatory Dependencies**: Automatically detected and snapped prior to the target brick (e.g. `usecase` automatically snaps `asyncusecase`).
 - **Optional Dependencies**: Can be snapped alongside using `--with-optional` or `--all-optional` (e.g. adding `exponentialbackoff` auto-wires `.withRetry()`).
-- **Conflict Prevention**: Detects incompatible bricks and prevents conflicting architectures.
+- **Conflict Prevention**: Detects incompatible bricks — both within the resolution plan and against bricks already installed in the project — and prevents conflicting architectures.
+- **Idempotency**: Already-snapped dependencies are detected per-file (not per-directory) and skipped automatically, so sharing a folder like `App/Sources/Core/Protocols` never causes bricks to be falsely skipped.
 
 ```bash
 # Automatically snaps mandatory contract dependencies
@@ -541,6 +542,38 @@ swiftblock snap usecase FetchUserProfile --with-optional exponentialbackoff,logg
 
 # Skip automatic dependency resolution
 swiftblock snap usecase FetchUserProfile --no-deps
+```
+
+### Flavor Selection
+
+Bricks can declare `flavors` in their `brick.yml` — a set of named option groups. Each option can contribute template variables, extra optional dependencies, and additional files when selected.
+
+```yaml
+flavors:
+  transport:
+    prompt: "Select transport style"
+    default: sync
+    options:
+      - id: sync
+        title: Synchronous
+        variables:
+          asyncStyle: false
+      - id: async-await
+        title: Async Await
+        variables:
+          asyncStyle: true
+        dependencies:
+          optional:
+            - name: exponentialbackoff
+              description: "Auto-retry decorator"
+```
+
+```bash
+# Choose a flavor option per group
+swiftblock snap usecase FetchUserProfile --flavor transport=async-await
+
+# Undeclared keys fall back to plain template variables (legacy behavior)
+swiftblock snap usecase FetchUserProfile --flavor timeout=60
 ```
 
 ---

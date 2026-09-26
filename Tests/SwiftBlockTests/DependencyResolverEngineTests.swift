@@ -24,12 +24,15 @@ final class DependencyResolverEngineTests: XCTestCase {
         category: String = "core",
         mandatory: [String] = [],
         optional: [String] = [],
-        conflicts: [String] = []
+        conflicts: [String] = [],
+        defaultPath: String? = nil,
+        instantiation: String = "generative",
+        templateFiles: [String] = []
     ) {
         let brickDir = "\(tempDirectory!)/Bricks/\(category)/\(name)"
         try? fileManager.createDirectory(atPath: brickDir, withIntermediateDirectories: true)
 
-        var yml = "name: \(name)\ncategory: \(category)\ndefaultPath: App/Sources/\(name)\n"
+        var yml = "name: \(name)\ncategory: \(category)\ninstantiation: \(instantiation)\ndefaultPath: \(defaultPath ?? "App/Sources/\(name)")\n"
         if !mandatory.isEmpty || !optional.isEmpty || !conflicts.isEmpty {
             yml += "dependencies:\n"
             if !mandatory.isEmpty {
@@ -53,6 +56,16 @@ final class DependencyResolverEngineTests: XCTestCase {
         }
 
         try? yml.write(toFile: "\(brickDir)/brick.yml", atomically: true, encoding: .utf8)
+
+        for file in templateFiles {
+            try? "// \(file)".write(toFile: "\(brickDir)/\(file)", atomically: true, encoding: .utf8)
+        }
+    }
+
+    private func createInstalledFile(relativePath: String) {
+        let fullPath = "\(tempDirectory!)/\(relativePath)"
+        try? fileManager.createDirectory(atPath: (fullPath as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+        try? "// installed".write(toFile: fullPath, atomically: true, encoding: .utf8)
     }
 
     func testTopologicalOrderingForMandatoryDependencies() throws {
@@ -115,5 +128,97 @@ final class DependencyResolverEngineTests: XCTestCase {
                 return XCTFail("Expected conflictDetected error but got \(error)")
             }
         }
+    }
+
+    func testConflictAgainstAlreadyInstalledBrickThrowsError() {
+        // brickX conflicts with brickZ; brickZ is already installed (skipped)
+        createMockBrick(name: "brickX", conflicts: ["brickZ"], defaultPath: "App/Sources/Core/Protocols", instantiation: "singleton", templateFiles: ["__MODULE_NAME__.swift"])
+        createMockBrick(name: "brickZ", defaultPath: "App/Sources/Core/Protocols", instantiation: "singleton", templateFiles: ["__MODULE_NAME__.swift"])
+        createInstalledFile(relativePath: "App/Sources/Core/Protocols/BrickZ.swift")
+
+        let engine = DependencyResolverEngine()
+        XCTAssertThrowsError(try engine.resolve(targetBrickName: "brickX", baseTemplatePath: tempDirectory, projectRootPath: tempDirectory)) { error in
+            guard case DependencyResolutionError.conflictDetected = error else {
+                return XCTFail("Expected conflictDetected error but got \(error)")
+            }
+        }
+    }
+
+    func testSharedDefaultPathIsNotFalselySkipped() throws {
+        // Two protocol bricks share the same defaultPath directory.
+        // Only one of them has its rendered file installed — the other must NOT be skipped.
+        createMockBrick(name: "alphaProtocol", defaultPath: "App/Sources/Core/Protocols", instantiation: "singleton", templateFiles: ["__MODULE_NAME__.swift"])
+        createMockBrick(name: "betaProtocol", defaultPath: "App/Sources/Core/Protocols", instantiation: "singleton", templateFiles: ["__MODULE_NAME__.swift"])
+        createMockBrick(name: "consumer", mandatory: ["alphaProtocol", "betaProtocol"])
+
+        createInstalledFile(relativePath: "App/Sources/Core/Protocols/AlphaProtocol.swift")
+
+        let engine = DependencyResolverEngine()
+        let plan = try engine.resolve(targetBrickName: "consumer", baseTemplatePath: tempDirectory, projectRootPath: tempDirectory)
+
+        let executed = plan.executionOrder.map { $0.name.lowercased() }
+        let skipped = plan.skippedAlreadyInstalled.map { $0.lowercased() }
+        XCTAssertTrue(executed.contains("betaprotocol"), "BetaProtocol shares the directory but its file is absent — must be snapped, got executed=\(executed) skipped=\(skipped)")
+        XCTAssertTrue(skipped.contains("alphaprotocol"), "AlphaProtocol's file exists — should be skipped, got skipped=\(skipped)")
+    }
+
+    func testFileBasedIdempotencyUsesRenderedFileName() throws {
+        // defaultPath directory exists but the rendered output file does not → must snap.
+        createMockBrick(name: "renderTarget", defaultPath: "App/Sources/Core/Protocols", instantiation: "singleton", templateFiles: ["__MODULE_NAME__.swift"])
+        try? fileManager.createDirectory(atPath: "\(tempDirectory!)/App/Sources/Core/Protocols", withIntermediateDirectories: true)
+
+        let engine = DependencyResolverEngine()
+        let plan = try engine.resolve(targetBrickName: "renderTarget", baseTemplatePath: tempDirectory, projectRootPath: tempDirectory)
+
+        XCTAssertEqual(plan.executionOrder.map { $0.name }, ["renderTarget"])
+        XCTAssertTrue(plan.skippedAlreadyInstalled.isEmpty)
+    }
+
+    func testFlavorOptionParsesVariablesDependenciesAndFiles() {
+        let brickDir = "\(tempDirectory!)/Bricks/core/flavoredBrick"
+        try? fileManager.createDirectory(atPath: brickDir, withIntermediateDirectories: true)
+
+        let yml = """
+        name: flavoredBrick
+        category: core
+        defaultPath: App/Sources/Flavored
+        flavors:
+          transport:
+            prompt: "Select transport style"
+            default: sync
+            options:
+              - id: sync
+                title: Synchronous
+                variables:
+                  asyncStyle: false
+              - id: async-await
+                title: Async Await
+                variables:
+                  asyncStyle: true
+                dependencies:
+                  optional:
+                    - name: exponentialbackoff
+                      description: "Auto-retry decorator"
+                files:
+                  - source: AsyncVariant.swift
+                    destination: App/Sources/Flavored/AsyncVariant.swift
+        """
+        try? yml.write(toFile: "\(brickDir)/brick.yml", atomically: true, encoding: .utf8)
+
+        let manifest = BrickManifest.load(fromPath: brickDir)
+        XCTAssertNotNil(manifest)
+        guard let flavor = manifest?.flavors["transport"] else {
+            return XCTFail("Expected 'transport' flavor to be parsed")
+        }
+        XCTAssertEqual(flavor.prompt, "Select transport style")
+        XCTAssertEqual(flavor.defaultValue, "sync")
+        XCTAssertEqual(flavor.options.count, 2)
+
+        guard let asyncOption = flavor.options.first(where: { $0.id == "async-await" }) else {
+            return XCTFail("Expected async-await flavor option")
+        }
+        XCTAssertEqual(asyncOption.variables["asyncStyle"], "true")
+        XCTAssertEqual(asyncOption.dependencies?.optional.first?.name, "exponentialbackoff")
+        XCTAssertEqual(asyncOption.files.first?.destination, "App/Sources/Flavored/AsyncVariant.swift")
     }
 }

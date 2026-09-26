@@ -2,119 +2,129 @@ import Foundation
 
 public struct SimpleYAMLParser {
     public static func parse(_ yamlString: String) -> [String: Any] {
-        var result: [String: Any] = [:]
         let lines = yamlString.components(separatedBy: .newlines)
-        
-        var stack: [(indent: Int, key: String, dict: [String: Any], isList: Bool, list: [Any])] = []
-        
-        for rawLine in lines {
-            // Strip comments (preserving # inside double or single quotes)
-            var line = ""
-            var inDoubleQuote = false
-            var inSingleQuote = false
-            for char in rawLine {
-                if char == "\"" && !inSingleQuote {
-                    inDoubleQuote.toggle()
-                } else if char == "'" && !inDoubleQuote {
-                    inSingleQuote.toggle()
-                } else if char == "#" && !inDoubleQuote && !inSingleQuote {
-                    break
-                }
-                line.append(char)
-            }
-            
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.isEmpty { continue }
-            
-            let indent = rawLine.prefix(while: { $0 == " " }).count
-            
-            // Unwind stack if indent decreased
-            while let top = stack.last, indent <= top.indent {
-                let finished = stack.removeLast()
-                if var parent = stack.last?.dict {
-                    if finished.isList && !finished.list.isEmpty {
-                        parent[finished.key] = finished.list
-                    } else {
-                        parent[finished.key] = finished.dict
-                    }
-                    stack[stack.count - 1].dict = parent
-                } else {
-                    if finished.isList && !finished.list.isEmpty {
-                        result[finished.key] = finished.list
-                    } else {
-                        result[finished.key] = finished.dict
-                    }
-                }
-            }
-            
-            if trimmed.hasPrefix("- ") {
-                let itemStr = String(trimmed.dropFirst(2)).trimmingCharacters(in: .whitespaces)
-                let isQuoted = (itemStr.hasPrefix("\"") && itemStr.hasSuffix("\"")) || (itemStr.hasPrefix("'") && itemStr.hasSuffix("'"))
-                if !isQuoted && itemStr.contains(":") {
-                    let parts = itemStr.split(separator: ":", maxSplits: 1).map { String($0).trimmingCharacters(in: .whitespaces) }
-                    let key = parts[0]
-                    let value = parts.count > 1 ? parseValue(parts[1]) : ""
-                    
-                    if let top = stack.last, top.isList {
-                        stack[stack.count - 1].list.append([key: value])
-                    }
-                } else {
-                    let val = parseValue(itemStr)
-                    if let top = stack.last, top.isList {
-                        stack[stack.count - 1].list.append(val)
-                    }
-                }
-            } else if trimmed.contains(":") {
-                let parts = trimmed.split(separator: ":", maxSplits: 1).map { String($0).trimmingCharacters(in: .whitespaces) }
-                let key = parts[0]
-                let valStr = parts.count > 1 ? parts[1] : ""
-                
+            .map(stripComments)
+            .map { (indent: $0.prefix(while: { $0 == " " }).count, content: $0.trimmingCharacters(in: .whitespaces)) }
+            .filter { !$0.content.isEmpty }
+
+        var idx = 0
+
+        func parseDict(at indent: Int) -> [String: Any] {
+            var dict: [String: Any] = [:]
+            while idx < lines.count {
+                let (lineIndent, content) = lines[idx]
+                if lineIndent < indent { break }
+                guard let colon = content.range(of: ":") else { idx += 1; continue }
+
+                let key = String(content[..<colon.lowerBound]).trimmingCharacters(in: .whitespaces)
+                let valStr = String(content[colon.upperBound...]).trimmingCharacters(in: .whitespaces)
+                idx += 1
+
                 if valStr.isEmpty {
-                    // Start of dict or list
-                    stack.append((indent: indent, key: key, dict: [:], isList: true, list: []))
-                } else {
-                    let val = parseValue(valStr)
-                    if !stack.isEmpty {
-                        if stack[stack.count - 1].isList, let lastDict = stack[stack.count - 1].list.last as? [String: Any] {
-                            var mutableDict = lastDict
-                            mutableDict[key] = val
-                            stack[stack.count - 1].list[stack[stack.count - 1].list.count - 1] = mutableDict
+                    if idx < lines.count, lines[idx].indent > lineIndent {
+                        let nextContent = lines[idx].content
+                        if nextContent.hasPrefix("- ") {
+                            dict[key] = parseList(at: lines[idx].indent)
                         } else {
-                            stack[stack.count - 1].dict[key] = val
+                            dict[key] = parseDict(at: lines[idx].indent)
                         }
                     } else {
-                        result[key] = val
+                        dict[key] = ""
                     }
+                } else {
+                    dict[key] = parseValue(valStr)
                 }
             }
+            return dict
         }
-        
-        // Final unwind
-        while let finished = stack.popLast() {
-            if let parent = stack.last {
-                var parentDict = parent.dict
-                if finished.isList && !finished.list.isEmpty {
-                    parentDict[finished.key] = finished.list
+
+        func parseList(at indent: Int) -> [Any] {
+            var list: [Any] = []
+            while idx < lines.count {
+                let (lineIndent, content) = lines[idx]
+                if lineIndent < indent { break }
+                guard content.hasPrefix("- ") else { break }
+                let itemStr = String(content.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+                let itemIndent = lineIndent
+
+                if let colon = itemStr.range(of: ":") {
+                    // Dict-style list item (possibly with continuation attributes)
+                    let key = String(itemStr[..<colon.lowerBound]).trimmingCharacters(in: .whitespaces)
+                    let valStr = String(itemStr[colon.upperBound...]).trimmingCharacters(in: .whitespaces)
+                    var item: [String: Any] = [:]
+                    idx += 1
+
+                    if valStr.isEmpty {
+                        if idx < lines.count, lines[idx].indent > itemIndent {
+                            let nextContent = lines[idx].content
+                            if nextContent.hasPrefix("- ") {
+                                item[key] = parseList(at: lines[idx].indent)
+                            } else {
+                                item[key] = parseDict(at: lines[idx].indent)
+                            }
+                        } else {
+                            item[key] = ""
+                        }
+                    } else {
+                        item[key] = parseValue(valStr)
+                    }
+
+                    // Parse continuation attributes belonging to this list item
+                    while idx < lines.count, lines[idx].indent > itemIndent {
+                        let (contIndent, contContent) = lines[idx]
+                        guard contContent.hasPrefix("- ") == false,
+                              let contColon = contContent.range(of: ":") else { break }
+                        let contKey = String(contContent[..<contColon.lowerBound]).trimmingCharacters(in: .whitespaces)
+                        let contVal = String(contContent[contColon.upperBound...]).trimmingCharacters(in: .whitespaces)
+                        idx += 1
+
+                        if contVal.isEmpty {
+                            if idx < lines.count, lines[idx].indent > contIndent {
+                                let nextContent = lines[idx].content
+                                if nextContent.hasPrefix("- ") {
+                                    item[contKey] = parseList(at: lines[idx].indent)
+                                } else {
+                                    item[contKey] = parseDict(at: lines[idx].indent)
+                                }
+                            } else {
+                                item[contKey] = ""
+                            }
+                        } else {
+                            item[contKey] = parseValue(contVal)
+                        }
+                    }
+
+                    list.append(item)
                 } else {
-                    parentDict[finished.key] = finished.dict
-                }
-                if !stack.isEmpty {
-                    stack[stack.count - 1].dict = parentDict
-                } else {
-                    result[finished.key] = finished.isList && !finished.list.isEmpty ? finished.list : finished.dict
-                }
-            } else {
-                if finished.isList && !finished.list.isEmpty {
-                    result[finished.key] = finished.list
-                } else {
-                    result[finished.key] = finished.dict
+                    // Scalar list item
+                    idx += 1
+                    list.append(parseValue(itemStr))
                 }
             }
+            return list
         }
-        
-        return result
+
+        return parseDict(at: 0)
     }
-    
+
+    /// Strips `#` comments while preserving them inside single or double quotes.
+    private static func stripComments(_ rawLine: String) -> String {
+        var line = ""
+        var inDoubleQuote = false
+        var inSingleQuote = false
+        for char in rawLine {
+            if char == "\"" && !inSingleQuote {
+                inDoubleQuote.toggle()
+            } else if char == "'" && !inDoubleQuote {
+                inSingleQuote.toggle()
+            } else if char == "#" && !inDoubleQuote && !inSingleQuote {
+                break
+            }
+            line.append(char)
+        }
+        return line
+    }
+
     private static func parseValue(_ str: String) -> Any {
         var clean = str.trimmingCharacters(in: .whitespaces)
         if (clean.hasPrefix("\"") && clean.hasSuffix("\"")) || (clean.hasPrefix("'") && clean.hasSuffix("'")) {
