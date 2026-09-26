@@ -4,3 +4,13 @@ instantiation: singleton
 description: "Thread-safe secure storage engine wrapping Keychain with accessibility options and String/Codable support"
 defaultPath: "App/Sources/Core/SecureStorage"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: keyvaluestoring
+      reason: "SecureStorage implements KeyValueStoring contract"
+  optional:
+    - name: biometrics
+      description: "LocalAuthentication biometric prompt before keychain access"
+    - name: logger
+      description: "Secure storage operation diagnostics logging"

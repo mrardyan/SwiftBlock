@@ -29,6 +29,64 @@ struct BoxPublisherTests {
         #expect(report.manifest?.name == "analytics")
     }
 
+    @Test func validateValidFlavorsDependenciesAndBalancedConditionals() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("BoxPubValidFlavor_\(UUID().uuidString)", isDirectory: true).path
+        try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: tempDir) }
+
+        let manifest = """
+        name: repository
+        description: Clean Architecture Repository Pattern
+        dependencies:
+          mandatory:
+            - name: transforming
+              description: "Model transformation and mapping protocol"
+          optional:
+            - name: storage
+              description: "Local persistence database engine"
+          conflicts:
+            - name: legacyrepository
+        flavors:
+          strategy:
+            prompt: Select strategy
+            default: offline-first
+            options:
+              - id: remote-only
+                title: Remote Only
+              - id: offline-first
+                title: Offline First
+                dependencies:
+                  optional:
+                    - name: storage
+        """
+        try manifest.write(toFile: "\(tempDir)/brick.yml", atomically: true, encoding: .utf8)
+
+        let balanced = """
+        import Foundation
+        public final class DefaultRepository {
+        {{#if strategy == 'offline-first'}}
+            private var cache: [String] = []
+        {{else}}
+            private let remoteOnly = true
+        {{/if}}
+        {{#unless isLegacy}}
+            public func fetch() {}
+        {{/unless}}
+        }
+        """
+        try balanced.write(toFile: "\(tempDir)/DefaultRepository.swift", atomically: true, encoding: .utf8)
+
+        let publisher = BoxPublisher()
+        let report = try publisher.validateBox(at: tempDir)
+
+        #expect(report.isValid == true)
+        #expect(report.errors.isEmpty)
+        #expect(report.manifest?.dependencies.mandatory.first?.name == "transforming")
+        #expect(report.manifest?.dependencies.conflicts == ["legacyrepository"])
+        #expect(report.manifest?.flavors["strategy"]?.defaultValue == "offline-first")
+    }
+
     @Test func validateInvalidBrickManifestMissingFile() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("BoxPubInvalid_\(UUID().uuidString)", isDirectory: true).path
@@ -83,5 +141,44 @@ struct BoxPublisherTests {
         #expect(throws: BoxPublisherError.self) {
             try publisher.publishBox(at: tempDir, tag: "1.0.0", isDryRun: false)
         }
+    }
+
+    @Test func validateInvalidFlavorsAndDependencies() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("BoxPubInvalidFlavor_\(UUID().uuidString)", isDirectory: true).path
+        try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: tempDir) }
+
+        let manifest = """
+        name: mybrick
+        description: Test Brick
+        dependencies:
+          mandatory:
+            - name: storage
+          conflicts:
+            - name: storage
+        flavors:
+          driver:
+            prompt: Choose driver
+            default: nonexistent
+            options:
+              - id: coredata
+                title: CoreData
+        """
+        try manifest.write(toFile: "\(tempDir)/brick.yml", atomically: true, encoding: .utf8)
+
+        let invalidSwift = """
+        {{#if driver == 'coredata'}}
+        // Missing endif
+        """
+        try invalidSwift.write(toFile: "\(tempDir)/MyFile.swift", atomically: true, encoding: .utf8)
+
+        let publisher = BoxPublisher()
+        let report = try publisher.validateBox(at: tempDir)
+
+        #expect(report.isValid == false)
+        #expect(report.errors.contains { $0.contains("default value 'nonexistent' does not match") })
+        #expect(report.errors.contains { $0.contains("Contradictory dependency: [storage]") })
+        #expect(report.errors.contains { $0.contains("Mismatched '{{#if}}' tags") })
     }
 }

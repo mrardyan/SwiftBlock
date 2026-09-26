@@ -5,3 +5,10 @@ category: core/validator/card
 options:
   name: CreditCardValidator
 defaultPath: "App/Sources/Core/Validators/CreditCard"
+dependencies:
+  mandatory:
+    - name: validating
+      reason: "CreditCardValidator requires Validating protocol contract"
+  optional:
+    - name: luhn
+      description: "Luhn algorithm helper utility"

@@ -5,3 +5,8 @@ category: core/deeplink
 options:
   name: DeepLinkRouter
 defaultPath: "App/Sources/Core/DeepLink"
+
+dependencies:
+  optional:
+    - name: logger
+      description: "Deep link route resolution diagnostics"

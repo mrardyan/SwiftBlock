@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe representation of speed in kilometers per hour (km/h) with mph and m/s conversions"
 defaultPath: "App/Sources/Core/ValueTypes/Speed"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Speed adheres to DomainValueType protocol contract"

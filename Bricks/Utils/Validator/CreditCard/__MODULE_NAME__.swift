@@ -89,3 +89,14 @@ public final class __MODULE_NAME__: CreditCardValidatorProtocol {
         return cleaned.count == requiredLength
     }
 }
+
+// MARK: - Validating Protocol Conformance
+extension __MODULE_NAME__: Validating {
+    public func validate(_ input: String) -> Result<Void, ValidationError> {
+        if validateNumber(input) {
+            return .success(())
+        } else {
+            return .failure(ValidationError("Invalid credit card number", field: "CreditCard"))
+        }
+    }
+}

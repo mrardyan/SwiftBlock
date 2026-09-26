@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe representation of tax identification numbers with adjustable format patterns"
 defaultPath: "App/Sources/Core/ValueTypes/TaxNumber"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "TaxNumber adheres to DomainValueType protocol contract"

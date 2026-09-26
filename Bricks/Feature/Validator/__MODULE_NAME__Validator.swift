@@ -29,3 +29,16 @@ public struct __MODULE_NAME__Validator<Input>: __MODULE_NAME__Validating {
         validateHandler(input)
     }
 }
+
+// MARK: - Validating Protocol Conformance
+extension __MODULE_NAME__Validator: Validating {
+    public func validate(_ input: Input) -> Result<Void, ValidationError> {
+        let result = validate(input)
+        switch result {
+        case .valid:
+            return .success(())
+        case .invalid(let reason):
+            return .failure(ValidationError(reason, field: "__MODULE_NAME__"))
+        }
+    }
+}

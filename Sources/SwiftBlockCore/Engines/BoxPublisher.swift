@@ -89,7 +89,73 @@ public class BoxPublisher {
             warnings.append("Brick manifest 'description' field is empty.")
         }
 
-        // Verify template file existences if injections are present
+        // 1. Validate Flavors
+        for (flavorKey, flavor) in manifest.flavors {
+            if flavor.options.isEmpty {
+                errors.append("Flavor '\(flavorKey)' has no options defined.")
+            } else {
+                let optionIds = flavor.options.map { $0.id.lowercased() }
+                let uniqueOptionIds = Set(optionIds)
+                if uniqueOptionIds.count != optionIds.count {
+                    errors.append("Flavor '\(flavorKey)' contains duplicate option IDs.")
+                }
+                if let def = flavor.defaultValue, !def.isEmpty {
+                    if !uniqueOptionIds.contains(def.lowercased()) {
+                        errors.append("Flavor '\(flavorKey)' default value '\(def)' does not match any declared option ID.")
+                    }
+                }
+            }
+        }
+
+        // 2. Validate Dependencies & Conflicts
+        let mandatoryNames = Set(manifest.dependencies.mandatory.map { $0.name.lowercased() })
+        let optionalNames = Set(manifest.dependencies.optional.map { $0.name.lowercased() })
+        let conflictNames = Set(manifest.dependencies.conflicts.map { $0.lowercased() })
+        let selfName = manifest.name.lowercased()
+
+        if mandatoryNames.contains(selfName) {
+            errors.append("Brick '\(manifest.name)' cannot declare itself as a mandatory dependency.")
+        }
+        if optionalNames.contains(selfName) {
+            errors.append("Brick '\(manifest.name)' cannot declare itself as an optional dependency.")
+        }
+        if conflictNames.contains(selfName) {
+            errors.append("Brick '\(manifest.name)' cannot declare itself as a conflicting dependency.")
+        }
+
+        let mandatoryConflicts = mandatoryNames.intersection(conflictNames)
+        if !mandatoryConflicts.isEmpty {
+            errors.append("Contradictory dependency: [\(mandatoryConflicts.joined(separator: ", "))] declared in both mandatory dependencies and conflicts.")
+        }
+
+        let optionalConflicts = optionalNames.intersection(conflictNames)
+        if !optionalConflicts.isEmpty {
+            errors.append("Contradictory dependency: [\(optionalConflicts.joined(separator: ", "))] declared in both optional dependencies and conflicts.")
+        }
+
+        // 3. Verify template file existences and conditional template syntax
+        if let enumerator = fileManager.enumerator(atPath: absolutePath) {
+            for case let file as String in enumerator {
+                if file.hasSuffix(".swift") || file.hasSuffix(".stencil") {
+                    let filePath = "\(absolutePath)/\(file)"
+                    if let content = try? String(contentsOfFile: filePath, encoding: .utf8) {
+                        let ifCount = content.components(separatedBy: "{{#if").count - 1
+                        let endifCount = content.components(separatedBy: "{{/if}}").count - 1
+                        if ifCount != endifCount {
+                            errors.append("Mismatched '{{#if}}' tags in '\(file)': \(ifCount) opening vs \(endifCount) closing tags.")
+                        }
+
+                        let unlessCount = content.components(separatedBy: "{{#unless").count - 1
+                        let endunlessCount = content.components(separatedBy: "{{/unless}}").count - 1
+                        if unlessCount != endunlessCount {
+                            errors.append("Mismatched '{{#unless}}' tags in '\(file)': \(unlessCount) opening vs \(endunlessCount) closing tags.")
+                        }
+                    }
+                }
+            }
+        }
+
+        // Verify injection specs
         for injection in manifest.injections {
             if injection.target.trimmingCharacters(in: .whitespaces).isEmpty {
                 errors.append("Injection spec contains empty 'target' field.")

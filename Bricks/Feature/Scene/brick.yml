@@ -7,6 +7,25 @@ requiresNameArgument: true
 namingConvention:
   postfix: "Scene"
 
+dependencies:
+  optional:
+    - name: coordinator
+      description: "Navigation routing coordinator"
+    - name: usecase
+      description: "Domain use case binding"
+    - name: haptics
+      description: "Tactile haptic feedback on UI interactions"
+
+flavors:
+  stateStyle:
+    prompt: "Select state observation style"
+    default: observable
+    options:
+      - id: observable
+        title: "@Observable (Swift 5.9+ / iOS 17+)"
+      - id: combine
+        title: ObservableObject (Combine Legacy)
+
 injections:
   - target: "App/Sources/DependencyContainer.swift"
     marker: "// MARK: - SwiftBlock Dependency Injection Marker"

@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Generic non-negative numeric value type wrapper (>= 0)"
 defaultPath: "App/Sources/Core/ValueTypes/NonNegative"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "NonNegative adheres to DomainValueType protocol contract"

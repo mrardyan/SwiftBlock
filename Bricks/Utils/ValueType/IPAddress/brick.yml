@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe representation of IP addresses (IPv4 and IPv6) with validation and private/loopback checks"
 defaultPath: "App/Sources/Core/ValueTypes/IPAddress"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "IPAddress adheres to DomainValueType protocol contract"

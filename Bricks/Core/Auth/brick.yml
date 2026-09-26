@@ -6,3 +6,27 @@ defaultPath: "App/Sources/Core/Auth"
 baseplates:
   - swiftui
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: keychain
+      reason: "Auth requires Keychain for secure token storage"
+  optional:
+    - name: biometrics
+      description: "Biometric FaceID/TouchID prompt for session unlocking"
+    - name: network
+      description: "Network client for remote token refresh"
+    - name: logger
+      description: "Session lifecycle event tracking"
+  conflicts:
+    - vaporauth
+
+flavors:
+  sessionStore:
+    prompt: "Select session credential store"
+    default: keychain
+    options:
+      - id: keychain
+        title: Keychain Services
+      - id: secure-enclave
+        title: Secure Enclave

@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Telecommunication mobile SMS quota count value type"
 defaultPath: "App/Sources/Core/ValueTypes/MobileSMS"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "MobileSMS adheres to DomainValueType protocol contract"

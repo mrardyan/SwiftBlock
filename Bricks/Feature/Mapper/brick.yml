@@ -6,3 +6,18 @@ defaultPath: "App/Sources/Features"
 requiresNameArgument: true
 namingConvention:
   postfix: "Mapper"
+
+dependencies:
+  mandatory:
+    - name: transforming
+      reason: "Mapper implements Transforming protocol contract"
+
+flavors:
+  direction:
+    prompt: "Select mapping direction"
+    default: bidirectional
+    options:
+      - id: bidirectional
+        title: Bidirectional (DTO <-> Domain)
+      - id: unidirectional
+        title: Unidirectional (DTO -> Domain)

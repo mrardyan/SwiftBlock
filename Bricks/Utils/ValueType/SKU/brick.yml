@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe representation of Stock Keeping Unit (SKU) code with uppercase normalization and alphanumeric validation"
 defaultPath: "App/Sources/Core/ValueTypes/SKU"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "SKU adheres to DomainValueType protocol contract"

@@ -6,3 +6,10 @@ defaultPath: "Sources/App/Core/Auth"
 baseplates:
   - vapor
 requiresNameArgument: false
+
+dependencies:
+  optional:
+    - name: logger
+      description: "JWT verification and backend authentication logging"
+  conflicts:
+    - auth

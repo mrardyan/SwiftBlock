@@ -52,19 +52,26 @@ swiftblock snap <brick-name-or-git-url> [Name] [options]
 ### Options & Flags
 | Flag | Description | Default |
 |---|---|---|
-| `--var <key=value>`, `-v` | Pass custom Stencil template prompt variables. | — |
+| `--flavor <key=value>` | Select a flavor configuration (e.g. `--flavor strategy=offline-first` or `--flavor stateStyle=combine`). | Default option defined in `brick.yml` |
+| `--with-optional <deps>` | Comma-separated list of optional dependencies to resolve and auto-wire. | — |
+| `--all-optional` | Automatically snap and wire all declared optional dependencies. | `false` |
+| `--no-deps` | Skip automatic resolution and snapping of mandatory dependencies. | `false` |
+| `--var <key=value>`, `-v` | Pass custom template prompt variables. | — |
 | `--path <customPath>` | Override default destination output directory. | Set in `config.yml` |
 | `--dry-run` | Preview file generations and injection diffs. | `false` |
 
 ### Examples
 ```bash
-# Snap infrastructure brick
-swiftblock snap network
+# Snap infrastructure brick with flavor and optional decorator dependencies
+swiftblock snap network --flavor client=urlsession --with-optional circuitbreaker,exponentialbackoff
 
-# Snap feature brick with custom module name
-swiftblock snap scene Home
+# Snap feature scene with legacy Combine state style
+swiftblock snap scene Profile --flavor stateStyle=combine
 
-# Pass Stencil template variables
+# Snap repository with offline-first caching strategy
+swiftblock snap repository User --flavor strategy=offline-first
+
+# Pass custom template variables
 swiftblock snap network --var timeoutInterval=60
 
 # Snap directly from Git URL
@@ -194,4 +201,24 @@ Configure IDE shortcuts and code completion snippets for Xcode or VS Code.
 
 ```bash
 swiftblock ide setup
+```
+
+---
+
+## 8. `swiftblock completion`
+
+Generate shell autocompletion scripts for Zsh, Bash, or Fish.
+
+```bash
+# Zsh completion setup
+swiftblock completion zsh > ~/.zfunc/_swiftblock
+echo 'fpath=(~/.zfunc $fpath)' >> ~/.zshrc
+echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
+
+# Bash completion setup
+swiftblock completion bash > ~/.swiftblock-completion.bash
+echo 'source ~/.swiftblock-completion.bash' >> ~/.bashrc
+
+# Fish completion setup
+swiftblock completion fish > ~/.config/fish/completions/swiftblock.fish
 ```

@@ -67,4 +67,167 @@ struct TemplateRendererTests {
         #expect(result["timeoutInterval"] == "45")
         #expect(result["enableLogging"] == "true")
     }
+
+    @Test func renderConditionalIfElseBranches() {
+        let template = """
+        struct MyView {
+        {{#if stateStyle == 'observable'}}
+            @State var vm: MyVM
+        {{else}}
+            @StateObject var vm: MyVM
+        {{/if}}
+        }
+        """
+
+        let observableRendered = TemplateRenderer.render(
+            template: template,
+            variables: ["stateStyle": "observable"]
+        )
+        #expect(observableRendered.contains("@State var vm: MyVM"))
+        #expect(!observableRendered.contains("@StateObject"))
+
+        let combineRendered = TemplateRenderer.render(
+            template: template,
+            variables: ["stateStyle": "combine"]
+        )
+        #expect(!combineRendered.contains("@State var vm: MyVM"))
+        #expect(combineRendered.contains("@StateObject var vm: MyVM"))
+    }
+
+    @Test func renderConditionalUnlessBranches() {
+        let template = """
+        {{#unless isLegacy}}
+        ModernSwiftCode()
+        {{/unless}}
+        """
+
+        let truthy = TemplateRenderer.render(template: template, variables: ["isLegacy": "true"])
+        #expect(!truthy.contains("ModernSwiftCode()"))
+
+        let falsy = TemplateRenderer.render(template: template, variables: ["isLegacy": "false"])
+        #expect(falsy.contains("ModernSwiftCode()"))
+    }
+
+    @Test func renderConditionalNotEqual() {
+        let template = """
+        {{#if stateStyle != 'combine'}}
+        ModernState()
+        {{else}}
+        CombineState()
+        {{/if}}
+        """
+
+        let modern = TemplateRenderer.render(template: template, variables: ["stateStyle": "observable"])
+        #expect(modern.contains("ModernState()"))
+        #expect(!modern.contains("CombineState()"))
+
+        let combine = TemplateRenderer.render(template: template, variables: ["stateStyle": "combine"])
+        #expect(!combine.contains("ModernState()"))
+        #expect(combine.contains("CombineState()"))
+    }
+
+    @Test func renderConditionalBareVariableTruthyFalsy() {
+        let template = """
+        {{#if hasLocalCache}}
+        let cache = Cache()
+        {{/if}}
+        """
+
+        let truthy = TemplateRenderer.render(template: template, variables: ["hasLocalCache": "true"])
+        #expect(truthy.contains("let cache = Cache()"))
+
+        let falsy = TemplateRenderer.render(template: template, variables: ["hasLocalCache": "false"])
+        #expect(!falsy.contains("let cache = Cache()"))
+    }
+
+    @Test func renderConditionalUndefinedVariableIsFalse() {
+        let template = """
+        {{#if missingVar}}
+        NeverShown()
+        {{/if}}
+        """
+        let rendered = TemplateRenderer.render(template: template, variables: ["other": "1"])
+        #expect(!rendered.contains("NeverShown()"))
+    }
+
+    @Test func renderConditionalNestedBlocks() {
+        let template = """
+        {{#if strategy == 'offline-first'}}
+        {{#if hasLocalCache}}
+        cacheLayer()
+        {{else}}
+        cacheFallback()
+        {{/if}}
+        {{else}}
+        remoteOnly()
+        {{/if}}
+        """
+
+        let offline = TemplateRenderer.render(
+            template: template,
+            variables: ["strategy": "offline-first", "hasLocalCache": "true"]
+        )
+        #expect(offline.contains("cacheLayer()"))
+        #expect(!offline.contains("cacheFallback()"))
+        #expect(!offline.contains("remoteOnly()"))
+
+        let remote = TemplateRenderer.render(template: template, variables: ["strategy": "remote-only"])
+        #expect(remote.contains("remoteOnly()"))
+        #expect(!remote.contains("cacheLayer()"))
+    }
+
+    @Test func renderConditionalWithoutElseBranch() {
+        let template = """
+        {{#if stateStyle == 'observable'}}
+        import Observation
+        {{/if}}
+        import Foundation
+        """
+
+        let rendered = TemplateRenderer.render(template: template, variables: ["stateStyle": "observable"])
+        #expect(rendered.contains("import Observation"))
+        #expect(rendered.contains("import Foundation"))
+
+        let combine = TemplateRenderer.render(template: template, variables: ["stateStyle": "combine"])
+        #expect(!combine.contains("import Observation"))
+        #expect(combine.contains("import Foundation"))
+    }
+
+    @Test func renderConditionalEvaluatesVariableToVariableComparison() {
+        let template = """
+        {{#if mode == expectedMode}}
+        Match()
+        {{else}}
+        NoMatch()
+        {{/if}}
+        """
+        let rendered = TemplateRenderer.render(
+            template: template,
+            variables: ["mode": "fast", "expectedMode": "fast"]
+        )
+        #expect(rendered.contains("Match()"))
+        #expect(!rendered.contains("NoMatch()"))
+
+        let mismatch = TemplateRenderer.render(
+            template: template,
+            variables: ["mode": "fast", "expectedMode": "slow"]
+        )
+        #expect(!mismatch.contains("\nMatch()\n"))
+        #expect(mismatch.contains("NoMatch()"))
+    }
+
+    @Test func renderConditionalPreservesContentOutsideBlocks() {
+        let template = """
+        import SwiftUI
+        {{#if stateStyle == 'combine'}}
+        @StateObject private var vm: MyVM
+        {{/if}}
+        public struct MyView: View { }
+        """
+
+        let rendered = TemplateRenderer.render(template: template, variables: [:])
+        #expect(rendered.contains("import SwiftUI"))
+        #expect(rendered.contains("public struct MyView: View { }"))
+        #expect(!rendered.contains("@StateObject"))
+    }
 }

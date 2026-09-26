@@ -5,3 +5,8 @@ category: core/biometrics
 options:
   name: BiometricAuthManager
 defaultPath: "App/Sources/Core/Biometrics"
+
+dependencies:
+  optional:
+    - name: logger
+      description: "Biometric authentication attempt logging"

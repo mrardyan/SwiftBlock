@@ -4,3 +4,25 @@ instantiation: singleton
 description: "Async remote image loader with in-memory caching (SwiftUI/UIKit)"
 defaultPath: "App/Sources/Core/ImageLoader"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: network
+      reason: "ImageLoader requires network transport to fetch remote image assets"
+    - name: cache
+      reason: "ImageLoader requires cache engine for asset memory/disk storage"
+  optional:
+    - name: lrucache
+      description: "O(1) memory cache eviction"
+    - name: logger
+      description: "Image download diagnostics"
+
+flavors:
+  cachingPolicy:
+    prompt: "Select image caching policy"
+    default: memory-and-disk
+    options:
+      - id: memory-and-disk
+        title: Memory and Disk Cache
+      - id: memory-only
+        title: Memory Only Cache

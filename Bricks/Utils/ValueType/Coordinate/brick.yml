@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Geographic coordinate value type with distance calculation"
 defaultPath: "App/Sources/Core/ValueTypes/Coordinate"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Coordinate adheres to DomainValueType protocol contract"

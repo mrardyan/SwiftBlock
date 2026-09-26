@@ -31,3 +31,14 @@ public final class __MODULE_NAME__: PhoneValidatorProtocol {
         return regex?.firstMatch(in: cleaned, options: [], range: range) != nil
     }
 }
+
+// MARK: - Validating Protocol Conformance
+extension __MODULE_NAME__: Validating {
+    public func validate(_ input: String) -> Result<Void, ValidationError> {
+        if validate(input) {
+            return .success(())
+        } else {
+            return .failure(ValidationError("Invalid phone number format", field: "Phone"))
+        }
+    }
+}

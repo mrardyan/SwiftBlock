@@ -45,3 +45,10 @@ public final class __MODULE_NAME__: @unchecked Sendable, DateFormatterProtocol {
         return newFmt
     }
 }
+
+// MARK: - ValueFormatting Protocol Conformance
+extension __MODULE_NAME__: ValueFormatting {
+    public func format(_ value: Date) -> String {
+        string(from: value)
+    }
+}

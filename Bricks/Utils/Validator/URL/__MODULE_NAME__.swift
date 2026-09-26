@@ -77,3 +77,14 @@ public final class __MODULE_NAME__: URLValidatorProtocol {
         return true
     }
 }
+
+// MARK: - Validating Protocol Conformance
+extension __MODULE_NAME__: Validating {
+    public func validate(_ input: String) -> Result<Void, ValidationError> {
+        if validate(input) {
+            return .success(())
+        } else {
+            return .failure(ValidationError("Invalid URL address format", field: "URL"))
+        }
+    }
+}

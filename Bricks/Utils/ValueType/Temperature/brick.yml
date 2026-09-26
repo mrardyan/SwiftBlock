@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe representation of temperature in Celsius with Fahrenheit and Kelvin conversions"
 defaultPath: "App/Sources/Core/ValueTypes/Temperature"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Temperature adheres to DomainValueType protocol contract"

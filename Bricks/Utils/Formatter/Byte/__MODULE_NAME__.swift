@@ -28,3 +28,10 @@ public final class __MODULE_NAME__: @unchecked Sendable, ByteFormatterProtocol {
         return formatter.string(fromByteCount: byteCount)
     }
 }
+
+// MARK: - ValueFormatting Protocol Conformance
+extension __MODULE_NAME__: ValueFormatting {
+    public func format(_ value: Int64) -> String {
+        string(fromByteCount: value)
+    }
+}

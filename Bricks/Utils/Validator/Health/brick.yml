@@ -5,3 +5,7 @@ category: core/validator/health
 options:
   name: HealthValidator
 defaultPath: "App/Sources/Core/Validators/Health"
+dependencies:
+  mandatory:
+    - name: validating
+      reason: "HealthValidator requires Validating protocol contract"

@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Percentage value type with ratio calculations and clamping"
 defaultPath: "App/Sources/Core/ValueTypes/Percentage"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Percentage adheres to DomainValueType protocol contract"

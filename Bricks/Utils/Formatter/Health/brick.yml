@@ -5,3 +5,7 @@ category: core/formatter/health
 options:
   name: HealthFormatter
 defaultPath: "App/Sources/Core/Formatters/Health"
+dependencies:
+  mandatory:
+    - name: valueformatting
+      reason: "HealthFormatter requires ValueFormatting protocol contract"

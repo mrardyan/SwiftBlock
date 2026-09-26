@@ -4,3 +4,25 @@ instantiation: singleton
 description: "Thread-safe in-memory cache engine with expiration (TTL) policies and entry count limits"
 defaultPath: "App/Sources/Core/Cache"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: keyvaluestoring
+      reason: "Cache engine implements KeyValueStoring contract"
+  optional:
+    - name: lrucache
+      description: "O(1) memory cache eviction policy"
+    - name: logger
+      description: "Cache hit/miss diagnostics logging"
+
+flavors:
+  tier:
+    prompt: "Select caching tier strategy"
+    default: two-tier
+    options:
+      - id: two-tier
+        title: Two-Tier (In-Memory + On-Disk)
+      - id: memory-only
+        title: Memory Only Cache
+      - id: disk-only
+        title: Disk Only Cache

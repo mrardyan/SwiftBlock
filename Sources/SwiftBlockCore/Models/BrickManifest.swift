@@ -276,7 +276,14 @@ public struct BrickManifest {
                 optionalDeps = parseDependencyList(suggList)
             }
             if let confList = depsDict["conflicts"] as? [Any] {
-                conflictDeps = confList.map { "\($0)".trimmingCharacters(in: .whitespaces) }
+                conflictDeps = confList.compactMap { item in
+                    if let str = item as? String {
+                        return str.trimmingCharacters(in: .whitespaces)
+                    } else if let dict = item as? [String: Any], let name = dict["name"] as? String {
+                        return name.trimmingCharacters(in: .whitespaces)
+                    }
+                    return "\(item)".trimmingCharacters(in: .whitespaces)
+                }
             }
         }
         let dependencies = BrickDependenciesSpec(mandatory: mandatoryDeps, optional: optionalDeps, conflicts: conflictDeps)

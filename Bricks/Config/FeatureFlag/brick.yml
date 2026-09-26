@@ -4,3 +4,25 @@ instantiation: singleton
 description: "Remote feature flags & toggles engine"
 defaultPath: "App/Sources/Core/FeatureFlag"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: keyvaluestoring
+      reason: "FeatureFlag requires KeyValueStoring contract for caching evaluated flags"
+  optional:
+    - name: network
+      description: "Remote feature flag synchronization client"
+    - name: logger
+      description: "Feature flag evaluation tracking"
+
+flavors:
+  provider:
+    prompt: "Select feature flag backend provider"
+    default: local-plist
+    options:
+      - id: local-plist
+        title: Local Plist / Static Configuration
+      - id: remote-config
+        title: Remote Configuration API
+      - id: in-memory
+        title: In-Memory (Test / Ephemeral)

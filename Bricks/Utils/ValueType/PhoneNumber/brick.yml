@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Semantic phone number value type with RawRepresentable and E.164 formatting"
 defaultPath: "App/Sources/Core/ValueTypes/PhoneNumber"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "PhoneNumber adheres to DomainValueType protocol contract"

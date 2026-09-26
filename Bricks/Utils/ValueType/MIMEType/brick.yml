@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe representation of MIME types (media types) with category helpers and parsing"
 defaultPath: "App/Sources/Core/ValueTypes/MIMEType"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "MIMEType adheres to DomainValueType protocol contract"

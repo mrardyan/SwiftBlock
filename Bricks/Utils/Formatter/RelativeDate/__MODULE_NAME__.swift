@@ -38,3 +38,11 @@ public final class __MODULE_NAME__: @unchecked Sendable, RelativeDateFormatterPr
         return formatter.localizedString(fromTimeInterval: timeInterval)
     }
 }
+
+// MARK: - ValueFormatting Protocol Conformance
+@available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
+extension __MODULE_NAME__: ValueFormatting {
+    public func format(_ value: Date) -> String {
+        localizedString(for: value)
+    }
+}

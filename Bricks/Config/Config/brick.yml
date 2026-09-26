@@ -4,3 +4,18 @@ instantiation: singleton
 description: "App runtime environment configuration"
 defaultPath: "App/Sources/Core/Config"
 requiresNameArgument: false
+
+dependencies:
+  optional:
+    - name: logger
+      description: "Log active configuration parameters on app startup"
+
+flavors:
+  source:
+    prompt: "Select environment configuration source"
+    default: xcconfig-bundle
+    options:
+      - id: xcconfig-bundle
+        title: XCConfig & Bundle Info.plist
+      - id: environment-variables
+        title: Process Environment Variables

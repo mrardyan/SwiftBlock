@@ -643,6 +643,53 @@ public class InteractiveWizard {
         return resolved
     }
 
+    public static func runBrickFlavorsWizard(
+        manifest: BrickManifest,
+        providedSelections: [String: String] = [:],
+        readLine: () -> String? = { InteractiveWizard.readLine() }
+    ) throws -> [String: String] {
+        var resolved = providedSelections
+
+        if manifest.flavors.isEmpty {
+            return resolved
+        }
+
+        let unconfigured = manifest.flavors.filter { key, flavor in
+            resolved[key.lowercased()] == nil && resolved[flavor.id.lowercased()] == nil && !flavor.options.isEmpty
+        }
+
+        if unconfigured.isEmpty {
+            return resolved
+        }
+
+        print("┌  \(ANSIColor.boldText("Configure Flavors for '\(manifest.name)'"))")
+        print("│")
+
+        for (flavorKey, flavor) in manifest.flavors.sorted(by: { $0.key < $1.key }) {
+            if resolved[flavorKey.lowercased()] != nil || resolved[flavor.id.lowercased()] != nil {
+                continue
+            }
+            if flavor.options.isEmpty {
+                continue
+            }
+
+            let defaultId = flavor.defaultValue ?? flavor.options.first?.id ?? ""
+            let defaultIdx = flavor.options.firstIndex(where: { $0.id.lowercased() == defaultId.lowercased() }) ?? 0
+            let choices = flavor.options.enumerated().map { idx, opt in
+                ChoiceOption(
+                    title: "\(opt.title.isEmpty ? opt.id : opt.title)\(idx == defaultIdx ? " (Default)" : "")",
+                    subtitle: (opt.description?.isEmpty == false) ? opt.description : "ID: \(opt.id)"
+                )
+            }
+
+            let promptTitle = flavor.prompt.isEmpty ? "Select option for \(flavorKey)" : flavor.prompt
+            let selectedIdx = promptChoiceWithOptions(title: promptTitle, options: choices, readLine: readLine)
+            resolved[flavorKey.lowercased()] = flavor.options[selectedIdx].id
+        }
+
+        return resolved
+    }
+
     public static func runRenameWizard(
         projectPath: String = FileManager.default.currentDirectoryPath,
         readLine: () -> String? = { InteractiveWizard.readLine() }

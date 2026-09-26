@@ -34,3 +34,10 @@ public final class __MODULE_NAME__: @unchecked Sendable, CurrencyFormatterProtoc
         return string(from: Decimal(value), code: code, locale: locale)
     }
 }
+
+// MARK: - ValueFormatting Protocol Conformance
+extension __MODULE_NAME__: ValueFormatting {
+    public func format(_ value: Decimal) -> String {
+        string(from: value) ?? "\(value)"
+    }
+}

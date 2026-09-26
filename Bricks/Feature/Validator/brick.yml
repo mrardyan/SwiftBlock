@@ -6,3 +6,8 @@ defaultPath: "App/Sources/Features"
 requiresNameArgument: true
 namingConvention:
   postfix: "Validator"
+
+dependencies:
+  mandatory:
+    - name: validating
+      reason: "Validator requires Validating protocol contract"

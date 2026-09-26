@@ -5,6 +5,27 @@ description: "HTTP Network Transport engine with URLSession & Concurrency"
 defaultPath: "App/Sources/Core/Network"
 requiresNameArgument: false
 
+dependencies:
+  optional:
+    - name: logger
+      description: "Structured network request and response logging"
+    - name: connectivity
+      description: "Network reachability check before dispatching requests"
+    - name: circuitbreaker
+      description: "Circuit breaker to isolate and prevent cascading network failures"
+    - name: exponentialbackoff
+      description: "Automatic retry backoff calculation with jitter"
+
+flavors:
+  client:
+    prompt: "Select HTTP transport client implementation"
+    default: urlsession
+    options:
+      - id: urlsession
+        title: URLSession (Native Swift Concurrency)
+      - id: mock
+        title: Mock / Stub Transport (Offline & Testing)
+
 injections:
   - target: "App/Sources/DependencyContainer.swift"
     marker: "// MARK: - SwiftBlock Dependency Injection Marker"

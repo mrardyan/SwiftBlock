@@ -67,3 +67,15 @@ public struct __MODULE_NAME__: Sendable {
         return false
     }
 }
+
+// MARK: - Validating Protocol Conformance
+extension __MODULE_NAME__: Validating {
+    public func validate(_ input: String) -> Result<Void, ValidationError> {
+        switch validate(input) as Result<Void, IBANValidationError> {
+        case .success:
+            return .success(())
+        case .failure(let err):
+            return .failure(ValidationError("\(err)", field: "IBAN"))
+        }
+    }
+}

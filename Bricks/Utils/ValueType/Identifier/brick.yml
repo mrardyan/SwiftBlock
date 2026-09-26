@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe Phantom Type Identifier wrapper to prevent entity ID mixing bugs at compile time"
 defaultPath: "App/Sources/Core/ValueTypes/Identifier"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Identifier adheres to DomainValueType protocol contract"

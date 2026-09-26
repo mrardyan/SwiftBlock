@@ -5,3 +5,23 @@ category: core/notification
 options:
   name: AppNotificationScheduler
 defaultPath: "App/Sources/Core/Notification"
+
+dependencies:
+  mandatory:
+    - name: permissions
+      reason: "Notification scheduler requires Permissions engine"
+  optional:
+    - name: logger
+      description: "Notification delivery & interaction logging"
+    - name: deeplink
+      description: "Push notification deep link router"
+
+flavors:
+  scope:
+    prompt: "Select notification scope"
+    default: both
+    options:
+      - id: both
+        title: Local and Remote APNs
+      - id: local-only
+        title: Local Notifications Only

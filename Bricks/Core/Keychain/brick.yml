@@ -4,3 +4,13 @@ instantiation: singleton
 description: "Keychain-backed secure storage for credentials and tokens (Security framework)"
 defaultPath: "App/Sources/Core/Keychain"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: keyvaluestoring
+      reason: "Keychain secure storage implements KeyValueStoring contract"
+  optional:
+    - name: biometrics
+      description: "LocalAuthentication biometric prompt before keychain read"
+    - name: logger
+      description: "Keychain transaction logging"

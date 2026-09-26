@@ -6,3 +6,25 @@ defaultPath: "App/Sources/Features"
 requiresNameArgument: true
 namingConvention:
   postfix: "Service"
+
+dependencies:
+  mandatory:
+    - name: network
+      reason: "Feature Service requires Network transport engine"
+  optional:
+    - name: circuitbreaker
+      description: "Circuit breaker to isolate API failures"
+    - name: exponentialbackoff
+      description: "Auto-retry backoff calculation"
+    - name: logger
+      description: "Structured service call logging"
+
+flavors:
+  transport:
+    prompt: "Select network transport style"
+    default: urlsession
+    options:
+      - id: urlsession
+        title: Async URLSession HTTP
+      - id: mock
+        title: Mock Test Provider

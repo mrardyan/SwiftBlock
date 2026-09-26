@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Monetary value type with currency, arithmetic, and localized formatting"
 defaultPath: "App/Sources/Core/ValueTypes/Money"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Money adheres to DomainValueType protocol contract"

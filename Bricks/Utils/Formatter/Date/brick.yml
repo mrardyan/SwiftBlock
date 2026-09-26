@@ -5,3 +5,7 @@ category: core/formatter/date
 options:
   name: DateFormatter
 defaultPath: "App/Sources/Core/Formatters/Date"
+dependencies:
+  mandatory:
+    - name: valueformatting
+      reason: "DateFormatter requires ValueFormatting protocol contract"

@@ -5,3 +5,8 @@ category: core/permissions
 options:
   name: SystemPermissionManager
 defaultPath: "App/Sources/Core/Permissions"
+
+dependencies:
+  optional:
+    - name: logger
+      description: "Permission request outcome diagnostics"

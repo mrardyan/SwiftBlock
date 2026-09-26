@@ -468,5 +468,139 @@ struct E2ETests {
         #expect(updatedContainer.contains("register(CheckoutViewModel.self)"))
         #expect(updatedCoordinator.contains("case checkout"))
     }
+
+    @Test func testE2EConditionalCodegenAndFlavorResolution() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("E2E_Flavor_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let projectPath = tempDir.appendingPathComponent("FlavorApp").path
+        let config = SwiftBlockConfig(projectName: "FlavorApp", bundlePrefix: "com.test", coreBlocks: [])
+        let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+        try "// Main App".write(toFile: "\(mockTemplate)/App/Sources/Main.swift", atomically: true, encoding: .utf8)
+
+        let projOpts = ProjectGeneratorOptions(
+            projectName: "FlavorApp",
+            bundlePrefix: "com.test",
+            templatePath: mockTemplate,
+            outputPath: projectPath,
+            customConfig: config
+        )
+        let projectGen = ProjectGenerator()
+        try projectGen.generateProject(options: projOpts)
+
+        // Create a flavored brick template with conditional blocks and protocol dependencies
+        let sceneTemplate = tempDir.appendingPathComponent("FlavoredScene", isDirectory: true).path
+        try FileManager.default.createDirectory(atPath: sceneTemplate, withIntermediateDirectories: true)
+
+        let manifest = """
+        name: flavoredscene
+        category: feature
+        instantiation: generative
+        defaultPath: App/Sources/Features
+        dependencies:
+          mandatory:
+            - name: transforming
+              reason: "FlavoredScene requires Transforming protocol"
+          optional:
+            - name: logger
+              description: "Scene logging"
+        flavors:
+          stateStyle:
+            prompt: Select state style
+            default: observable
+            options:
+              - id: observable
+                title: @Observable
+                variables:
+                  usesObservation: true
+              - id: combine
+                title: ObservableObject
+                variables:
+                  usesObservation: false
+        """
+        try manifest.write(toFile: "\(sceneTemplate)/brick.yml", atomically: true, encoding: .utf8)
+
+        let viewModelTemplate = """
+        import Foundation
+        {{#if stateStyle == 'observable'}}
+        import Observation
+        @Observable
+        public final class __MODULE_NAME__ViewModel {
+            public private(set) var state: Int = 0
+        }
+        {{else}}
+        import Combine
+        public final class __MODULE_NAME__ViewModel: ObservableObject {
+            @Published public private(set) var state: Int = 0
+        }
+        {{/if}}
+        """
+        try viewModelTemplate.write(toFile: "\(sceneTemplate)/__MODULE_NAME__ViewModel.swift", atomically: true, encoding: .utf8)
+
+        // Create the transforming dependency template it requires
+        let transformingTemplate = tempDir.appendingPathComponent("Transforming", isDirectory: true).path
+        try FileManager.default.createDirectory(atPath: transformingTemplate, withIntermediateDirectories: true)
+        let transformingManifest = """
+        name: transforming
+        category: core
+        instantiation: singleton
+        defaultPath: App/Sources/Core/Protocols
+        """
+        try transformingManifest.write(toFile: "\(transformingTemplate)/brick.yml", atomically: true, encoding: .utf8)
+        try "public protocol Transforming<Source, Target> {}".write(toFile: "\(transformingTemplate)/__MODULE_NAME__.swift", atomically: true, encoding: .utf8)
+
+        // Resolve flavor through the resolver
+        let discovery = BrickDiscoveryEngine()
+        let resolvedPath = discovery.resolveBrickPath(named: "flavoredscene", in: tempDir.path)
+        #expect(resolvedPath != nil)
+        let manifestLoaded = BrickManifest.load(fromPath: resolvedPath!)
+        #expect(manifestLoaded != nil)
+
+        let flavorResult = FlavorResolver.resolve(
+            manifest: manifestLoaded!,
+            selections: ["stateStyle": "combine"]
+        )
+        #expect(flavorResult.variables["stateStyle"] == "combine")
+        #expect(flavorResult.variables["usesObservation"] == "false")
+
+        // Generate the brick with resolved flavor variables
+        let brickGen = BrickGenerator()
+        let brickOptions = BrickGeneratorOptions(
+            type: Brick(rawValue: "flavoredscene"),
+            name: "Profile",
+            projectRootPath: projectPath,
+            modulesTemplatePath: resolvedPath!,
+            isDryRun: false,
+            variables: flavorResult.variables
+        )
+        _ = try brickGen.generateBrick(options: brickOptions)
+
+        let generatedVM = try String(contentsOfFile: "\(projectPath)/App/Sources/Features/Profile/ProfileViewModel.swift", encoding: .utf8)
+        #expect(generatedVM.contains("import Combine"))
+        #expect(generatedVM.contains("ObservableObject"))
+        #expect(!generatedVM.contains("@Observable"))
+
+        // Default flavor resolution (no selection) produces @Observable variant
+        let defaultResult = FlavorResolver.resolve(manifest: manifestLoaded!, selections: [:])
+        let defaultOptions = BrickGeneratorOptions(
+            type: Brick(rawValue: "flavoredscene"),
+            name: "Settings",
+            projectRootPath: projectPath,
+            modulesTemplatePath: resolvedPath!,
+            isDryRun: false,
+            variables: defaultResult.variables
+        )
+        _ = try brickGen.generateBrick(options: defaultOptions)
+
+        let generatedDefaultVM = try String(contentsOfFile: "\(projectPath)/App/Sources/Features/Settings/SettingsViewModel.swift", encoding: .utf8)
+        #expect(generatedDefaultVM.contains("import Observation"))
+        #expect(generatedDefaultVM.contains("@Observable"))
+        #expect(!generatedDefaultVM.contains("ObservableObject"))
+    }
 }
 

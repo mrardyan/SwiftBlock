@@ -73,20 +73,57 @@ func buildScene(for route: AppRoute) -> some View {
 
 ---
 
-## 3. Stencil Variable Engine & Interactive Wizard Mode
+---
 
-Every Brick in SwiftBlock uses **Stencil template syntax**. Bricks declare input variables in their `brick.yml` manifest.
+## 3. Structured Composing Engine & Flavors
 
-### Interactive Wizard Mode
-If you run `swiftblock snap` without providing required variables, SwiftBlock launches an interactive terminal wizard:
+SwiftBlock features a **Structured Composing Engine** that automatically analyzes dependency graphs, detects incompatible architecture conflicts, and renders conditional Swift template blocks.
+
+### A. Automatic Dependency Graph Resolution
+- **Mandatory Dependencies**: Automatically resolved and generated prior to the target brick (e.g. `usecase` auto-snaps `asyncusecase`).
+- **Optional Dependencies & Auto-Wiring**: Selected via `--with-optional` or `--all-optional` (e.g., adding `exponentialbackoff` automatically wires `.withRetry()` decorator into UseCases).
+- **Conflict Guardrails**: Detects incompatible bricks (e.g., `auth` vs `vaporauth`) both within the resolution plan and against already-installed bricks in the project.
+
+### B. Interactive Flavors System
+Bricks can declare `flavors` in their `brick.yml` to allow developers to customize generation interactively or via `--flavor <key>=<value>`:
 
 ```bash
-$ swiftblock snap network
-? Default request timeout in seconds? (30): 60
+# Snap Scene with legacy Combine ObservableObject instead of iOS 17 @Observable
+swiftblock snap scene Profile --flavor stateStyle=combine
+
+# Snap Repository with offline-first local database caching strategy
+swiftblock snap repository User --flavor strategy=offline-first
 ```
 
-### CLI Variable Overrides
-Pass variables directly on the command line using `--var key=value` or `-v key=value`:
+### C. Template Engine & Conditional Code Generation
+Bricks use conditional template evaluation to generate clean code without clutter:
+
+```swift
+{{#if stateStyle == 'combine'}}
+final class {{MODULE_NAME}}ViewModel: ObservableObject {
+    @Published var state: ViewState = .idle
+}
+{{else}}
+@Observable
+final class {{MODULE_NAME}}ViewModel {
+    var state: ViewState = .idle
+}
+{{/if}}
+```
+
+### D. Interactive Wizard Mode & CLI Overrides
+If required variables or flavors are not supplied via CLI flags, SwiftBlock launches an arrow-key terminal wizard menu:
+
+```bash
+$ swiftblock snap scene Profile
+┌  Configure Flavors for 'scene'
+│
+│  ?  Select state observation style (↑/↓ to navigate, ESC/Ctrl+C to exit)
+│    ❯ @Observable (Swift 5.9+ / iOS 17+) (Default)
+│      ObservableObject (Combine Legacy)
+```
+
+CLI variables can also be passed directly using `--var key=value` or `-v key=value`:
 
 ```bash
 swiftblock snap network --var timeoutInterval=60

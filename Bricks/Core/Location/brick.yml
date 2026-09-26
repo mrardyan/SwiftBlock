@@ -5,3 +5,25 @@ category: core/location
 options:
   name: LocationService
 defaultPath: "App/Sources/Core/Location"
+
+dependencies:
+  mandatory:
+    - name: permissions
+      reason: "Location requires Permissions engine for CoreLocation authorization prompt"
+  optional:
+    - name: geofence
+      description: "Geofence boundary monitoring"
+    - name: geodistance
+      description: "Haversine distance and bearing calculator"
+    - name: geohash
+      description: "Base32 spatial indexing"
+
+flavors:
+  precision:
+    prompt: "Select GPS tracking precision"
+    default: high-accuracy
+    options:
+      - id: high-accuracy
+        title: Best Accuracy (Navigation / Live GPS)
+      - id: significant-changes
+        title: Significant Location Changes (Battery-Optimized)

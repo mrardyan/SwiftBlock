@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe representation of food/active energy in kilocalories (kCal) and kilojoules (kJ)"
 defaultPath: "App/Sources/Core/ValueTypes/Calorie"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Calorie adheres to DomainValueType protocol contract"

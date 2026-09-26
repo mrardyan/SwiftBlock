@@ -5,3 +5,7 @@ category: core/formatter/duration
 options:
   name: DurationFormatter
 defaultPath: "App/Sources/Core/Formatters/Duration"
+dependencies:
+  mandatory:
+    - name: valueformatting
+      reason: "DurationFormatter requires ValueFormatting protocol contract"

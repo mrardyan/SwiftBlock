@@ -1,11 +1,21 @@
 import Foundation
 import SwiftUI
+{{#if stateStyle == 'observable'}}
+import Observation
 
+/// ViewModel managing state and simulated data fetching for `__MODULE_NAME__`.
+@Observable
+@MainActor
+public final class __MODULE_NAME__ViewModel {
+    public private(set) var state: State
+    private let delayDuration: TimeInterval
+{{else}}
 /// ViewModel managing state and simulated data fetching for `__MODULE_NAME__`.
 @MainActor
 public final class __MODULE_NAME__ViewModel: ObservableObject {
     @Published public private(set) var state: State
     private let delayDuration: TimeInterval
+{{/if}}
 
     /// Initializes ViewModel with optional state and configurable simulated network delay (in seconds).
     public init(state: State = State(), delayDuration: TimeInterval = 1.0) {

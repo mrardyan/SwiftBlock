@@ -135,5 +135,91 @@ struct InteractiveWizardTests {
         })
         #expect(newName == "NewAwesomeProject")
     }
+
+    @Test func runBrickFlavorsWizardReturnsProvidedSelectionsWhenNoFlavors() throws {
+        let manifest = BrickManifest(name: "plain")
+        var inputs: [String] = ["1"]
+        let result = try InteractiveWizard.runBrickFlavorsWizard(
+            manifest: manifest,
+            providedSelections: ["custom": "value"],
+            readLine: { inputs.isEmpty ? nil : inputs.removeFirst() }
+        )
+        #expect(result["custom"] == "value")
+    }
+
+    @Test func runBrickFlavorsWizardPromptsForEachUnconfiguredFlavor() throws {
+        let manifest = BrickManifest(
+            name: "scene",
+            flavors: [
+                "stateStyle": FlavorSpec(
+                    id: "stateStyle",
+                    prompt: "Select state observation style",
+                    defaultValue: "observable",
+                    options: [
+                        FlavorOptionSpec(id: "observable", title: "@Observable"),
+                        FlavorOptionSpec(id: "combine", title: "ObservableObject")
+                    ]
+                )
+            ]
+        )
+        // Select option 2 (combine) via 1-based fallback choice
+        var inputs = ["2"]
+        let result = try InteractiveWizard.runBrickFlavorsWizard(
+            manifest: manifest,
+            providedSelections: [:],
+            readLine: { inputs.isEmpty ? nil : inputs.removeFirst() }
+        )
+        #expect(result["statestyle"] == "combine")
+    }
+
+    @Test func runBrickFlavorsWizardSkipsProvidedSelections() throws {
+        let manifest = BrickManifest(
+            name: "scene",
+            flavors: [
+                "stateStyle": FlavorSpec(
+                    id: "stateStyle",
+                    prompt: "Select state observation style",
+                    defaultValue: "observable",
+                    options: [
+                        FlavorOptionSpec(id: "observable", title: "@Observable"),
+                        FlavorOptionSpec(id: "combine", title: "ObservableObject")
+                    ]
+                )
+            ]
+        )
+        var inputs: [String] = ["1"]
+        let result = try InteractiveWizard.runBrickFlavorsWizard(
+            manifest: manifest,
+            providedSelections: ["stateStyle": "combine"],
+            readLine: { inputs.isEmpty ? nil : inputs.removeFirst() }
+        )
+        #expect(result["stateStyle"] == "combine")
+    }
+
+    @Test func runBrickFlavorsWizardSelectsByNumber() throws {
+        let manifest = BrickManifest(
+            name: "repository",
+            flavors: [
+                "strategy": FlavorSpec(
+                    id: "strategy",
+                    prompt: "Select repository data fetching strategy",
+                    defaultValue: "offline-first",
+                    options: [
+                        FlavorOptionSpec(id: "remote-only", title: "Remote Only"),
+                        FlavorOptionSpec(id: "offline-first", title: "Offline-First"),
+                        FlavorOptionSpec(id: "local-only", title: "Local Only")
+                    ]
+                )
+            ]
+        )
+        // Select option 3 (local-only) via 1-based fallback choice
+        var inputs = ["3"]
+        let result = try InteractiveWizard.runBrickFlavorsWizard(
+            manifest: manifest,
+            providedSelections: [:],
+            readLine: { inputs.isEmpty ? nil : inputs.removeFirst() }
+        )
+        #expect(result["strategy"] == "local-only")
+    }
 }
 

@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe representation of heart rate in beats per minute (BPM) with cardiac zone classification"
 defaultPath: "App/Sources/Core/ValueTypes/HeartRate"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "HeartRate adheres to DomainValueType protocol contract"

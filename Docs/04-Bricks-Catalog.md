@@ -13,10 +13,13 @@ App & Configuration bricks manage global application state, environment setup, f
 Runtime Environment Configuration Manager.
 
 ```bash
-swiftblock snap config
+swiftblock snap config --flavor source=xcconfig
 ```
 
 - **Output**: `App/Sources/Core/Config/AppConfig.swift`
+- **Flavors**:
+  - `source`: `xcconfig` (Default), `plist`, `in-memory`
+- **Optional Dependencies**: `logger`
 - **Features**: Staging/Production environment configuration, API base URL resolution.
 
 ```swift
@@ -44,10 +47,14 @@ swiftblock snap appstate
 Dynamic Feature Toggle Engine.
 
 ```bash
-swiftblock snap featureflag
+swiftblock snap featureflag --flavor provider=in-memory
 ```
 
 - **Output**: `App/Sources/Core/FeatureFlag/FeatureFlagService.swift`
+- **Flavors**:
+  - `provider`: `in-memory` (Default), `remote-config`, `custom`
+- **Mandatory Dependencies**: `keyvaluestoring`
+- **Optional Dependencies**: `network`, `logger`
 - **Features**: Dynamic local and remote feature flag evaluation.
 
 ---
@@ -61,6 +68,7 @@ swiftblock snap deeplink
 ```
 
 - **Output**: `App/Sources/Core/DeepLink/DeepLinkService.swift`
+- **Optional Dependencies**: `logger`
 - **Features**: Deep link URL route parser and application launch handler.
 
 ---
@@ -74,10 +82,13 @@ Infrastructure bricks provide shared low-level I/O, security, storage, analytics
 Unified HTTP Transport Engine.
 
 ```bash
-swiftblock snap network
+swiftblock snap network --flavor client=urlsession --with-optional circuitbreaker,exponentialbackoff
 ```
 
 - **Output**: `App/Sources/Core/Network/NetworkService.swift`
+- **Flavors**:
+  - `client`: `urlsession` (Default), `mock`
+- **Optional Dependencies**: `logger`, `connectivity`, `circuitbreaker`, `exponentialbackoff`
 - **Features**: `URLSession` wrapper, Swift Concurrency `async/await`, custom request interceptors, automatic JSON decoding.
 
 ```swift
@@ -97,6 +108,8 @@ swiftblock snap securestorage
 ```
 
 - **Output**: `App/Sources/Core/SecureStorage/SecureStorageService.swift`
+- **Mandatory Dependencies**: `keyvaluestoring`
+- **Optional Dependencies**: `biometrics`, `logger`
 - **Features**: Hardware-backed iOS/macOS Keychain reader/writer for OAuth tokens and sensitive credentials.
 
 ```swift
@@ -112,11 +125,16 @@ try secureStorage.save(token, forKey: "authToken")
 iOS / macOS Keychain Authentication & Session Manager.
 
 ```bash
-swiftblock snap auth
+swiftblock snap auth --flavor sessionStore=keychain
 ```
 
 - **Output**: `App/Sources/Core/Auth/AuthService.swift`
 - **Platform**: `swiftui`
+- **Flavors**:
+  - `sessionStore`: `keychain` (Default), `secure-enclave`
+- **Mandatory Dependencies**: `keychain`
+- **Optional Dependencies**: `biometrics`, `network`, `logger`
+- **Conflicts With**: `vaporauth`
 - **Features**: Keychain token storage, session state machine, token refresh handling, secure login/logout hooks.
 
 ---
@@ -131,6 +149,8 @@ swiftblock snap vaporauth
 
 - **Output**: `Sources/App/Core/Auth/UserAuth.swift`
 - **Platform**: `vapor`
+- **Optional Dependencies**: `logger`
+- **Conflicts With**: `auth`
 - **Features**: Pure Swift JWT payload claim generator, bearer token validator, in-memory session revocation manager without Keychain dependency.
 
 ```swift
@@ -149,10 +169,14 @@ if let payload = auth.validateToken(token) {
 SwiftData / Local Database Engine.
 
 ```bash
-swiftblock snap storage
+swiftblock snap storage --flavor driver=swiftdata
 ```
 
 - **Output**: `App/Sources/Core/Storage/StorageService.swift`
+- **Flavors**:
+  - `driver`: `swiftdata` (Default), `coredata`, `in-memory`
+- **Mandatory Dependencies**: `keyvaluestoring`
+- **Optional Dependencies**: `logger`
 - **Features**: Type-safe local database abstraction supporting SwiftData or CoreData.
 
 ---
@@ -162,10 +186,14 @@ swiftblock snap storage
 Telemetry & Event Tracking Engine.
 
 ```bash
-swiftblock snap analytics
+swiftblock snap analytics --flavor provider=oslog-console
 ```
 
 - **Output**: `App/Sources/Core/Analytics/AnalyticsService.swift`
+- **Flavors**:
+  - `provider`: `oslog-console` (Default), `multi-provider`
+- **Mandatory Dependencies**: `logging`
+- **Optional Dependencies**: `queue`, `storage`
 - **Features**: Unified analytics provider interface for tracking user events and telemetry.
 
 ---
@@ -175,10 +203,13 @@ swiftblock snap analytics
 SwiftLog Unified Logging Engine.
 
 ```bash
-swiftblock snap logger
+swiftblock snap logger --flavor backend=oslog
 ```
 
 - **Output**: `App/Sources/Core/Logger/LoggerService.swift`
+- **Flavors**:
+  - `backend`: `oslog` (Default), `console`
+- **Mandatory Dependencies**: `logging`
 - **Features**: Structured OSLog integration with privacy-redacted log formatting.
 
 ---
@@ -192,6 +223,7 @@ swiftblock snap biometrics
 ```
 
 - **Output**: `App/Sources/Core/Biometrics/BiometricAuthService.swift`
+- **Optional Dependencies**: `logger`
 - **Features**: `LocalAuthentication` wrapper for FaceID/TouchID prompt workflows.
 
 ---
@@ -201,11 +233,32 @@ swiftblock snap biometrics
 Memory & Disk Cache Engine.
 
 ```bash
-swiftblock snap cache
+swiftblock snap cache --flavor tier=two-tier
 ```
 
 - **Output**: `App/Sources/Core/Cache/CacheService.swift`
+- **Flavors**:
+  - `tier`: `two-tier` (Default), `memory-only`, `disk-only`
+- **Mandatory Dependencies**: `keyvaluestoring`
+- **Optional Dependencies**: `lrucache`, `logger`
 - **Features**: Two-tier memory and disk cache with TTL expiry policy.
+
+---
+
+### ImageLoader
+
+Async Image Downloader and Caching Engine.
+
+```bash
+swiftblock snap imageloader --flavor cachingPolicy=two-tier
+```
+
+- **Output**: `App/Sources/Core/ImageLoader/ImageLoaderService.swift`
+- **Flavors**:
+  - `cachingPolicy`: `two-tier` (Default), `memory-only`, `disabled`
+- **Mandatory Dependencies**: `network`, `cache`
+- **Optional Dependencies**: `lrucache`, `logger`
+- **Features**: Memory/disk cached async image loading with cache-busting and placeholder fallbacks.
 
 ---
 
@@ -214,10 +267,14 @@ swiftblock snap cache
 Push & Local Notification Manager.
 
 ```bash
-swiftblock snap notification
+swiftblock snap notification --flavor scope=local-and-remote
 ```
 
 - **Output**: `App/Sources/Core/Notification/NotificationService.swift`
+- **Flavors**:
+  - `scope`: `local-and-remote` (Default), `local-only`
+- **Mandatory Dependencies**: `permissions`
+- **Optional Dependencies**: `logger`, `deeplink`
 - **Features**: `UNUserNotificationCenter` authorization, local alert scheduling, and APNs token handler.
 
 ---
@@ -231,6 +288,7 @@ swiftblock snap permissions
 ```
 
 - **Output**: `App/Sources/Core/Permissions/PermissionsService.swift`
+- **Optional Dependencies**: `logger`
 - **Features**: Unified permission request coordinator for Camera, Microphone, Photo Library, and Contacts.
 
 ---
@@ -244,12 +302,15 @@ Feature bricks generate architectural layers for specific feature modules (e.g.,
 SwiftUI View + ViewModel.
 
 ```bash
-swiftblock snap scene Home
+swiftblock snap scene Home --flavor stateStyle=observable
 ```
 
 - **Output**:
   - `App/Sources/Features/Home/HomeView.swift`
   - `App/Sources/Features/Home/HomeViewModel.swift`
+- **Flavors**:
+  - `stateStyle`: `observable` (Default, Swift 5.9+ `@Observable`), `combine` (`ObservableObject` & `@Published`)
+- **Optional Dependencies**: `coordinator`, `usecase`, `haptics`
 
 ```swift
 // Code Example: Generated HomeView
@@ -271,10 +332,12 @@ struct HomeView: View {
 Domain Logic Unit.
 
 ```bash
-swiftblock snap usecase AuthenticateUser
+swiftblock snap usecase AuthenticateUser --with-optional exponentialbackoff
 ```
 
 - **Output**: `App/Sources/Features/AuthenticateUser/AuthenticateUserUseCase.swift`
+- **Mandatory Dependencies**: `asyncusecase`
+- **Optional Dependencies**: `exponentialbackoff`, `logger`
 - **Features**: Encapsulates single-responsibility business logic according to Clean Architecture.
 
 ---
@@ -284,11 +347,15 @@ swiftblock snap usecase AuthenticateUser
 Data Access Abstraction.
 
 ```bash
-swiftblock snap repository User
+swiftblock snap repository User --flavor strategy=offline-first
 ```
 
 - **Output**: `App/Sources/Features/User/UserRepository.swift`
-- **Features**: Mediates between remote API services and local database cache.
+- **Flavors**:
+  - `strategy`: `remote-only` (Default), `offline-first`, `local-only`
+- **Mandatory Dependencies**: `transforming`
+- **Optional Dependencies**: `network`, `storage`, `logger`
+- **Features**: Mediates between remote API services and local database cache with conditional code generation.
 
 ---
 
@@ -297,10 +364,14 @@ swiftblock snap repository User
 Remote API Client Service.
 
 ```bash
-swiftblock snap service Payment
+swiftblock snap service Payment --flavor transport=urlsession
 ```
 
 - **Output**: `App/Sources/Features/Payment/PaymentService.swift`
+- **Flavors**:
+  - `transport`: `urlsession` (Default), `mock`
+- **Mandatory Dependencies**: `network`
+- **Optional Dependencies**: `circuitbreaker`, `exponentialbackoff`, `logger`
 
 ---
 
@@ -309,11 +380,30 @@ swiftblock snap service Payment
 Navigation Flow Coordinator.
 
 ```bash
-swiftblock snap coordinator Main
+swiftblock snap coordinator Main --flavor navigationType=navigation-stack
 ```
 
 - **Output**: `App/Sources/Features/Main/MainCoordinator.swift`
+- **Flavors**:
+  - `navigationType`: `navigation-stack` (Default), `sheet-modal`
+- **Optional Dependencies**: `deeplink`, `analytics`
 - **Features**: Decouples navigation routing from SwiftUI Views using NavigationPath.
+
+---
+
+### Form
+
+Reactive Input Form with Validation & Feedback.
+
+```bash
+swiftblock snap form Registration --flavor validationTrigger=on-change
+```
+
+- **Output**: `App/Sources/Features/Registration/RegistrationFormView.swift`
+- **Flavors**:
+  - `validationTrigger`: `on-change` (Default), `on-submit`
+- **Mandatory Dependencies**: `validating`
+- **Optional Dependencies**: `debounce`, `haptics`
 
 ---
 
@@ -346,10 +436,13 @@ swiftblock snap entity Transaction
 Model Transformer.
 
 ```bash
-swiftblock snap mapper User
+swiftblock snap mapper User --flavor direction=bidirectional
 ```
 
 - **Output**: `App/Sources/Features/User/UserMapper.swift`
+- **Flavors**:
+  - `direction`: `bidirectional` (Default), `domain-only`
+- **Mandatory Dependencies**: `transforming`
 - **Features**: Transforms DTO models into Domain entities cleanly.
 
 ---
@@ -366,6 +459,8 @@ Input Validation Engine.
 swiftblock snap validator Email
 ```
 
+- **Mandatory Dependencies**: `validating`
+- **Protocol Conformance**: Conforms to `Validating` protocol with `.validate(_:)` method and `.and()`, `.or()`, `.not()` combinators.
 - **Available Types (7)**: `CreditCard`, `Email`, `Health`, `IBAN`, `Password`, `Phone`, `URL`.
 
 ```swift
@@ -382,6 +477,8 @@ Data Formatter Helpers.
 swiftblock snap formatter Currency
 ```
 
+- **Mandatory Dependencies**: `valueformatting`
+- **Protocol Conformance**: Conforms to `ValueFormatting` protocol with `.format(_:)` method and `.optional()` fallback chains.
 - **Available Types (7)**: `Byte`, `Currency`, `Date`, `Duration`, `Health`, `Number`, `RelativeDate`.
 
 ---
@@ -395,6 +492,7 @@ swiftblock snap connectivity
 ```
 
 - **Output**: `App/Sources/Core/Connectivity/ConnectivityService.swift`
+- **Optional Dependencies**: `logger`
 - **Features**: Real-time network interface reachability tracking using `NWPathMonitor`.
 
 ---
@@ -404,10 +502,14 @@ swiftblock snap connectivity
 CoreLocation Engine.
 
 ```bash
-swiftblock snap location
+swiftblock snap location --flavor precision=best
 ```
 
 - **Output**: `App/Sources/Core/Location/LocationService.swift`
+- **Flavors**:
+  - `precision`: `best` (Default), `hundred-meters`, `kilometer`
+- **Mandatory Dependencies**: `permissions`
+- **Optional Dependencies**: `geofence`, `geodistance`, `geohash`, `logger`
 - **Features**: `CoreLocation` wrapper for GPS positioning and geofencing.
 
 ---
@@ -420,6 +522,8 @@ Domain Value Objects (37 Types).
 swiftblock snap valuetype Money
 ```
 
+- **Mandatory Dependencies**: `domainvaluetype`
+- **Protocol Conformance**: Conforms to `DomainValueType` protocol with immutable value semantics and type safety.
 - **Available Types (37)**: `BatteryLevel`, `BloodPressure`, `Calorie`, `Coordinate`, `Credit`, `DateRange`, `Dimensions`, `Distance`, `Duration`, `EmailAddress`, `ExchangeRate`, `HeartRate`, `HexColor`, `IPAddress`, `Identifier`, `LicensePlate`, `MIMEType`, `MobileCredit`, `MobileData`, `MobileMinutes`, `MobileSMS`, `Money`, `NationalID`, `NonNegative`, `Percentage`, `PhoneNumber`, `Point`, `Quantity`, `Rating`, `SKU`, `SemanticVersion`, `Speed`, `TaxNumber`, `Temperature`, `TimeSlot`, `VirtualAccount`, `Weight`.
 
 ```swift

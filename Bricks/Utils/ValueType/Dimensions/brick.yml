@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe representation of 3D package dimensions (length x width x height) and volume calculation"
 defaultPath: "App/Sources/Core/ValueTypes/Dimensions"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Dimensions adheres to DomainValueType protocol contract"

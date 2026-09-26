@@ -2,12 +2,21 @@ import SwiftUI
 
 /// SwiftUI view for `__MODULE_NAME__` with finite state rendering.
 public struct __MODULE_NAME__View: View {
+{{#if stateStyle == 'observable'}}
+    @State private var viewModel: __MODULE_NAME__ViewModel
+
+    @MainActor
+    public init(viewModel: __MODULE_NAME__ViewModel? = nil) {
+        _viewModel = State(wrappedValue: viewModel ?? __MODULE_NAME__ViewModel())
+    }
+{{else}}
     @StateObject private var viewModel: __MODULE_NAME__ViewModel
 
     @MainActor
     public init(viewModel: __MODULE_NAME__ViewModel? = nil) {
         _viewModel = StateObject(wrappedValue: viewModel ?? __MODULE_NAME__ViewModel())
     }
+{{/if}}
 
     public var body: some View {
         VStack(spacing: 16) {

@@ -5,3 +5,7 @@ category: core/formatter/currency
 options:
   name: CurrencyFormatter
 defaultPath: "App/Sources/Core/Formatters/Currency"
+dependencies:
+  mandatory:
+    - name: valueformatting
+      reason: "CurrencyFormatter requires ValueFormatting protocol contract"

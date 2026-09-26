@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Type-safe representation of user or product rating values (0.0 to 5.0 stars)"
 defaultPath: "App/Sources/Core/ValueTypes/Rating"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Rating adheres to DomainValueType protocol contract"

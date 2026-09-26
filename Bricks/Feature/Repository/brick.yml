@@ -6,3 +6,27 @@ defaultPath: "App/Sources/Features"
 requiresNameArgument: true
 namingConvention:
   postfix: "Repository"
+
+dependencies:
+  mandatory:
+    - name: transforming
+      reason: "Repository requires Transforming protocol for entity mapping"
+  optional:
+    - name: network
+      description: "Remote API transport data source"
+    - name: storage
+      description: "Local persistence storage cache"
+    - name: logger
+      description: "Repository query and execution logging"
+
+flavors:
+  strategy:
+    prompt: "Select repository data fetching strategy"
+    default: remote-only
+    options:
+      - id: remote-only
+        title: Remote Only (API Direct)
+      - id: offline-first
+        title: Offline-First (Cache + Network Sync)
+      - id: local-only
+        title: Local Only (Storage Direct)

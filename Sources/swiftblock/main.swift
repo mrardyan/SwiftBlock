@@ -14,7 +14,8 @@ struct SwiftBlock: ParsableCommand {
             BoxCommand.self,
             DoctorCommand.self,
             IDECommand.self,
-            RenameCommand.self
+            RenameCommand.self,
+            CompletionCommand.self
         ],
         defaultSubcommand: DoctorCommand.self
     )
@@ -123,7 +124,7 @@ struct SnapCommand: ParsableCommand {
         for item in flavor {
             let parts = item.split(separator: "=", maxSplits: 1).map(String.init)
             if parts.count == 2 {
-                dict[parts[0].trimmingCharacters(in: .whitespaces)] = parts[1].trimmingCharacters(in: .whitespaces)
+                dict[parts[0].trimmingCharacters(in: .whitespaces).lowercased()] = parts[1].trimmingCharacters(in: .whitespaces)
             }
         }
         return dict
@@ -147,27 +148,23 @@ struct SnapCommand: ParsableCommand {
         variables: inout [String: String],
         selectedOptionalDeps: inout Set<String>
     ) {
-        for (flavorKey, selectedValue) in selections {
-            guard let flavor = manifest.flavors[flavorKey.lowercased()] else {
-                // Not a declared flavor — fall back to plain template variable (legacy behavior).
-                variables[flavorKey] = selectedValue
-                continue
-            }
-            guard let option = flavor.options.first(where: { $0.id.lowercased() == selectedValue.lowercased() }) else {
-                let available = flavor.options.map { $0.id }.joined(separator: ", ")
-                print("  \(ANSIColor.yellowText("⚠️ Unknown option '\(selectedValue)' for flavor '\(flavorKey)'. Available: \(available) — ignoring."))")
-                continue
-            }
+        let result = FlavorResolver.resolve(
+            manifest: manifest,
+            selections: selections,
+            variables: variables,
+            selectedOptionalDeps: selectedOptionalDeps
+        )
+        variables = result.variables
+        selectedOptionalDeps = result.selectedOptionalDeps
 
-            for (k, v) in option.variables {
-                variables[k] = v
+        for (flavorKey, flavor) in manifest.flavors {
+            let selectedValue = selections[flavorKey.lowercased()] ?? selections[flavor.id.lowercased()]
+            guard let val = selectedValue else { continue }
+            if let warning = FlavorResolver.validateSelection(manifest: manifest, flavorKey: flavorKey, selectedValue: val) {
+                print("  \(ANSIColor.yellowText("⚠️ \(warning)"))")
+            } else {
+                print("  \(ANSIColor.greenText("✔ Flavor '\(flavorKey)' → '\(val)'"))")
             }
-            if let deps = option.dependencies {
-                for dep in deps.optional {
-                    selectedOptionalDeps.insert(dep.name.lowercased())
-                }
-            }
-            print("  \(ANSIColor.greenText("✔ Flavor '\(flavorKey)' → '\(option.id)'"))")
         }
     }
 
@@ -231,8 +228,13 @@ struct SnapCommand: ParsableCommand {
                 resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
             }
 
+            var flavorSelections = parseFlavorSelections()
+            if isatty(STDIN_FILENO) != 0 && !manifest.flavors.isEmpty {
+                flavorSelections = try InteractiveWizard.runBrickFlavorsWizard(manifest: manifest, providedSelections: flavorSelections)
+            }
+
             var selectedOpts = parseOptionalDeps(manifest: manifest)
-            applyFlavors(manifest: manifest, selections: parseFlavorSelections(), variables: &resolvedVars, selectedOptionalDeps: &selectedOpts)
+            applyFlavors(manifest: manifest, selections: flavorSelections, variables: &resolvedVars, selectedOptionalDeps: &selectedOpts)
 
             // Resolve Dependency Plan
             if !noDeps {
@@ -676,6 +678,22 @@ struct RenameCommand: ParsableCommand {
             print("✖ \(error.localizedDescription)")
             throw ExitCode.failure
         }
+    }
+}
+
+struct CompletionCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "completion",
+        abstract: "Generate shell autocompletion script for zsh, bash, or fish"
+    )
+
+    @Argument(help: "Target shell: zsh, bash, or fish (default: zsh)")
+    var shell: String = "zsh"
+
+    func run() throws {
+        let shellType = ShellType(rawValue: shell.lowercased()) ?? .zsh
+        let script = CompletionGenerator.generate(for: shellType)
+        print(script)
     }
 }
 

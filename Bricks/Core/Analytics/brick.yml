@@ -4,3 +4,23 @@ instantiation: singleton
 description: "Analytics event tracking & engine integration"
 defaultPath: "App/Sources/Core/Analytics"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: logging
+      reason: "Analytics requires Logging protocol contract"
+  optional:
+    - name: queue
+      description: "FIFO buffer queue for offline telemetry batches"
+    - name: storage
+      description: "Persistent disk storage for offline analytics events"
+
+flavors:
+  provider:
+    prompt: "Select analytics provider strategy"
+    default: oslog-console
+    options:
+      - id: oslog-console
+        title: OSLog / Console (Local Debug)
+      - id: multi-provider
+        title: Composite Multi-Provider (Telemetry Hub)

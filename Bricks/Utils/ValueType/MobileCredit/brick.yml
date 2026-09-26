@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Mobile credit / pulsa balance value type with currency and expiry handling"
 defaultPath: "App/Sources/Core/ValueTypes/MobileCredit"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "MobileCredit adheres to DomainValueType protocol contract"

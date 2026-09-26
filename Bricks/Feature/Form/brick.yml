@@ -4,3 +4,23 @@ instantiation: generative
 description: "Validated form scene with field state, error handling, and submit flow"
 defaultPath: "App/Sources/Features/{module}/{block}"
 requiresNameArgument: true
+
+dependencies:
+  mandatory:
+    - name: validating
+      reason: "Form requires Validating protocol contract for field verification"
+  optional:
+    - name: debounce
+      description: "Debounce real-time form input validation"
+    - name: haptics
+      description: "Haptic feedback on validation errors and submit"
+
+flavors:
+  validationTrigger:
+    prompt: "Select form validation trigger"
+    default: on-change
+    options:
+      - id: on-change
+        title: On Field Value Change (Real-Time)
+      - id: on-submit
+        title: On Form Submit (Deferred)

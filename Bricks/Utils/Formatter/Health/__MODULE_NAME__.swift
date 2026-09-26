@@ -83,3 +83,10 @@ public final class __MODULE_NAME__: @unchecked Sendable, HealthFormatterProtocol
         return "\(systolic)/\(diastolic) mmHg"
     }
 }
+
+// MARK: - ValueFormatting Protocol Conformance
+extension __MODULE_NAME__: ValueFormatting {
+    public func format(_ value: Double) -> String {
+        formatEnergy(calories: value)
+    }
+}

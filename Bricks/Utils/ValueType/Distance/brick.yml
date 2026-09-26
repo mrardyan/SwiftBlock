@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Distance measurement value type with unit conversions"
 defaultPath: "App/Sources/Core/ValueTypes/Distance"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Distance adheres to DomainValueType protocol contract"

@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Duration measurement value type with time conversions and HH:MM:SS formatting"
 defaultPath: "App/Sources/Core/ValueTypes/Duration"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Duration adheres to DomainValueType protocol contract"

@@ -6,3 +6,20 @@ defaultPath: "App/Sources/Features"
 requiresNameArgument: true
 namingConvention:
   postfix: "Coordinator"
+
+dependencies:
+  optional:
+    - name: deeplink
+      description: "Deep link route parser and routing coordinator"
+    - name: analytics
+      description: "Screen view telemetry tracking"
+
+flavors:
+  navigationType:
+    prompt: "Select navigation flow style"
+    default: navigation-stack
+    options:
+      - id: navigation-stack
+        title: NavigationStack (iOS 16+)
+      - id: sheet-modal
+        title: Modal Sheet Flow

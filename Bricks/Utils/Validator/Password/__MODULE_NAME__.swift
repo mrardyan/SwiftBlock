@@ -78,3 +78,16 @@ public final class __MODULE_NAME__: PasswordValidatorProtocol {
         return errors
     }
 }
+
+// MARK: - Validating Protocol Conformance
+extension __MODULE_NAME__: Validating {
+    public func validate(_ input: String) -> Result<Void, ValidationError> {
+        let errors = validateWithDetails(input)
+        if errors.isEmpty {
+            return .success(())
+        } else {
+            let message = errors.map { "\($0)" }.joined(separator: ", ")
+            return .failure(ValidationError(message, field: "Password"))
+        }
+    }
+}

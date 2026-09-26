@@ -5,3 +5,7 @@ category: core/validator/password
 options:
   name: PasswordValidator
 defaultPath: "App/Sources/Core/Validators/Password"
+dependencies:
+  mandatory:
+    - name: validating
+      reason: "PasswordValidator requires Validating protocol contract"

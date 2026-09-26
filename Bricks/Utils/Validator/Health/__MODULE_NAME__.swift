@@ -52,3 +52,14 @@ public final class __MODULE_NAME__: HealthValidatorProtocol {
         return (20.0...600.0).contains(mgDL)
     }
 }
+
+// MARK: - Validating Protocol Conformance
+extension __MODULE_NAME__: Validating {
+    public func validate(_ input: Double) -> Result<Void, ValidationError> {
+        if validateBMI(input) {
+            return .success(())
+        } else {
+            return .failure(ValidationError("Invalid BMI measurement", field: "BMI"))
+        }
+    }
+}

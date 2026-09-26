@@ -4,3 +4,18 @@ instantiation: singleton
 description: "Unified OSLog logger wrapper"
 defaultPath: "App/Sources/Core/Logger"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: logging
+      reason: "Logger implements Logging protocol contract"
+
+flavors:
+  backend:
+    prompt: "Select logging output backend"
+    default: oslog
+    options:
+      - id: oslog
+        title: Apple Unified OSLog
+      - id: console
+        title: Standard Console (print)

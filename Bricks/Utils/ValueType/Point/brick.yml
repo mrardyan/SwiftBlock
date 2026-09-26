@@ -4,3 +4,8 @@ instantiation: singleton
 description: "Loyalty/reward points value type with integer literal conformance"
 defaultPath: "App/Sources/Core/ValueTypes/Point"
 requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "Point adheres to DomainValueType protocol contract"

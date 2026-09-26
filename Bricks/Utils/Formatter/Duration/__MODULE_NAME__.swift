@@ -28,3 +28,10 @@ public final class __MODULE_NAME__: @unchecked Sendable, DurationFormatterProtoc
         return formatter.string(from: timeInterval)
     }
 }
+
+// MARK: - ValueFormatting Protocol Conformance
+extension __MODULE_NAME__: ValueFormatting {
+    public func format(_ value: TimeInterval) -> String {
+        string(from: value) ?? "\(value)s"
+    }
+}

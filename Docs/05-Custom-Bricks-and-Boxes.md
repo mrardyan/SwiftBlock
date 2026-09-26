@@ -21,26 +21,57 @@ Every custom Brick directory must contain a manifest file named `brick.yml` (or 
 ### Example `brick.yml` Manifest:
 
 ```yaml
-name: toast
-category: ui
-description: "Custom SwiftUI Toast Notification Banner Component"
+name: repository
+category: feature
+description: "Clean Architecture Repository Pattern"
 version: "1.0.0"
-defaultPath: "App/Sources/UI/Components"
+defaultPath: "App/Sources/Features"
+
+dependencies:
+  mandatory:
+    - name: transforming
+      description: "Model transformation and mapping protocol"
+  optional:
+    - name: network
+      description: "HTTP remote API transport client"
+    - name: storage
+      description: "Local persistence database engine"
+    - name: logger
+      description: "OSLog structured diagnostic logger"
+
+flavors:
+  strategy:
+    prompt: "Select repository data caching strategy"
+    default: remote-only
+    options:
+      - id: remote-only
+        title: "Remote Only"
+        description: "Fetch directly from backend API without local caching"
+        variables:
+          hasLocalCache: false
+      - id: offline-first
+        title: "Offline First"
+        description: "Cache remote responses in local database with fallback"
+        variables:
+          hasLocalCache: true
+        dependencies:
+          optional:
+            - name: storage
 
 variables:
   - name: duration
     type: string
-    prompt: "Default toast display duration in seconds?"
-    default: "3"
+    prompt: "Default cache TTL in seconds?"
+    default: "300"
 
 injections:
   - target: "App/Sources/Core/DependencyContainer.swift"
-    marker: "// MARK: - Register UI Components"
-    content: "        container.register(ToastPresenterProtocol.self) { _ in ToastPresenter(duration: {{duration}}) }"
+    marker: "// MARK: - Register Repositories"
+    content: "        container.register({{MODULE_NAME}}RepositoryProtocol.self) { _ in Default{{MODULE_NAME}}Repository() }"
 
 hooks:
   pre_snap:
-    - "echo 'Preparing Toast brick generation...'"
+    - "echo 'Preparing repository brick generation...'"
   post_snap:
     - "make generate"
 ```
@@ -50,10 +81,12 @@ hooks:
 | Field | Type | Description |
 |---|---|---|
 | `name` | String | Unique identifier of the brick used in `swiftblock snap <name>`. |
-| `category` | String | Functional category (`infrastructure`, `feature`, `ui`). |
+| `category` | String | Functional category (`feature`, `core`, `utils`, `config`). |
 | `description` | String | Description displayed during `swiftblock box list` or TUI prompts. |
 | `defaultPath` | String | Default directory path where files are written. |
-| `variables` | Array | List of Stencil template variables prompted interactively or overridden via `--var`. |
+| `dependencies` | Object | Architectural dependency graph rules (`mandatory`, `optional`, `conflicts`). |
+| `flavors` | Object | Interactive option groups (`prompt`, `default`, `options`) that configure template variables and dependencies. |
+| `variables` | Array | List of template variables prompted interactively or overridden via `--var`. |
 | `injections` | Array | Code injection rules targetting existing files in the user project. |
 | `hooks` | Object | Shell commands executed before (`pre_snap`) or after (`post_snap`) generation. |
 
