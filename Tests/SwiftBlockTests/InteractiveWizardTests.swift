@@ -1,84 +1,81 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct InteractiveWizardTests {
-
-    @Test func initWizardInstance() {
+final class InteractiveWizardTests: XCTestCase {
+    func testInitWizardInstance() {
         let wizard = InteractiveWizard()
-        #expect(type(of: wizard) == InteractiveWizard.self)
+        XCTAssertTrue(type(of: wizard) == InteractiveWizard.self)
     }
 
-    @Test func promptCustomInputAndFallback() {
+    func testPromptCustomInputAndFallback() {
         let customInput = InteractiveWizard.prompt(message: "Name", readLine: { "MyCustomApp" })
-        #expect(customInput == "MyCustomApp")
+        XCTAssertEqual(customInput, "MyCustomApp")
 
         let fallbackInput = InteractiveWizard.prompt(message: "Prefix", defaultValue: "com.example", readLine: { "" })
-        #expect(fallbackInput == "com.example")
+        XCTAssertEqual(fallbackInput, "com.example")
 
         let noDefaultInput = InteractiveWizard.prompt(message: "Optional", defaultValue: nil, readLine: { nil })
-        #expect(noDefaultInput == "")
+        XCTAssertEqual(noDefaultInput, "")
     }
 
-    @Test func promptChoiceValidAndRetry() {
+    func testPromptChoiceValidAndRetry() {
         var inputs = ["invalid", "99", "1"]
         let choiceIndex = InteractiveWizard.promptChoice(title: "Select Block", options: ["Scene", "UseCase"], readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
-        #expect(choiceIndex == 0)
+        XCTAssertEqual(choiceIndex, 0)
     }
 
-    @Test func promptConfirmDefaultsAndExplicit() {
+    func testPromptConfirmDefaultsAndExplicit() {
         let confirmDefaultYes = InteractiveWizard.promptConfirm(message: "Proceed?", defaultYes: true, readLine: { "" })
-        #expect(confirmDefaultYes == true)
+        XCTAssertEqual(confirmDefaultYes, true)
 
         let confirmDefaultNo = InteractiveWizard.promptConfirm(message: "Proceed?", defaultYes: false, readLine: { "" })
-        #expect(confirmDefaultNo == false)
+        XCTAssertEqual(confirmDefaultNo, false)
 
         let confirmExplicitYes = InteractiveWizard.promptConfirm(message: "Proceed?", readLine: { "y" })
-        #expect(confirmExplicitYes == true)
+        XCTAssertEqual(confirmExplicitYes, true)
 
         let confirmExplicitNo = InteractiveWizard.promptConfirm(message: "Proceed?", readLine: { "n" })
-        #expect(confirmExplicitNo == false)
+        XCTAssertEqual(confirmExplicitNo, false)
     }
 
-    @Test func runProjectWizardSuccess() throws {
+    func testRunProjectWizardSuccess() throws {
         var inputs = ["1", "AwesomeApp", "com.mycompany", "1", "1", "1", "1", "y", "1", "1", "y", "y"]
         let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
 
-        #expect(options.projectName == "AwesomeApp")
-        #expect(options.bundlePrefix == "com.mycompany")
-        #expect(options.templatePath == "/tmp/template")
-        #expect(options.baseplateName == "swiftui")
+        XCTAssertEqual(options.projectName, "AwesomeApp")
+        XCTAssertEqual(options.bundlePrefix, "com.mycompany")
+        XCTAssertEqual(options.templatePath, "/tmp/template")
+        XCTAssertEqual(options.baseplateName, "swiftui")
     }
 
-    @Test func runVaporProjectWizardSuccess() throws {
+    func testRunVaporProjectWizardSuccess() throws {
         var inputs = ["2", "MyVaporApi", "com.mycompany.api", "1", "y", "y"]
         let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
 
-        #expect(options.projectName == "MyVaporApi")
-        #expect(options.bundlePrefix == "com.mycompany.api")
-        #expect(options.templatePath == "/tmp/template")
-        #expect(options.baseplateName == "vapor")
+        XCTAssertEqual(options.projectName, "MyVaporApi")
+        XCTAssertEqual(options.bundlePrefix, "com.mycompany.api")
+        XCTAssertEqual(options.templatePath, "/tmp/template")
+        XCTAssertEqual(options.baseplateName, "vapor")
     }
 
-    @Test func runProjectWizardCancelled() {
+    func testRunProjectWizardCancelled() {
         var inputs = ["1", "AwesomeApp", "com.mycompany", "1", "1", "1", "1", "y", "1", "1", "y", "n"]
-        #expect(throws: InteractiveWizardError.cancelled) {
-            try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
-                inputs.isEmpty ? nil : inputs.removeFirst()
-            })
-        }
+        XCTAssertThrowsError(try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
+            inputs.isEmpty ? nil : inputs.removeFirst()
+        }))
     }
 
-    @Test func runModuleWizardSuccess() throws {
+    func testRunModuleWizardSuccess() throws {
         let blocks = BrickRegistry.featureBricks.filter { $0.isCompatible(withVapor: false) }
         guard let repoIndex = blocks.firstIndex(where: { $0.commandName == "repository" }) else {
-            Issue.record("repository brick not found in catalog")
+            XCTFail("repository brick not found in catalog")
             return
         }
         var inputs = ["\(repoIndex + 1)", "", "UserRepo"]
@@ -86,15 +83,15 @@ struct InteractiveWizardTests {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
 
-        #expect(options.type == .repository)
-        #expect(options.name == "UserRepo")
-        #expect(options.modulesTemplatePath == "/tmp/modules")
+        XCTAssertEqual(options.type, .repository)
+        XCTAssertEqual(options.name, "UserRepo")
+        XCTAssertEqual(options.modulesTemplatePath, "/tmp/modules")
     }
 
-    @Test func runCoreWizardSuccess() throws {
+    func testRunCoreWizardSuccess() throws {
         let blocks = BrickRegistry.coreBricks.filter { $0.isCompatible(withVapor: false) }
         guard let storageIndex = blocks.firstIndex(where: { $0.commandName == "storage" }) else {
-            Issue.record("storage brick not found in catalog")
+            XCTFail("storage brick not found in catalog")
             return
         }
         var inputs = ["\(storageIndex + 1)", "", "UserStorage"]
@@ -102,52 +99,52 @@ struct InteractiveWizardTests {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
 
-        #expect(options.type == .storage)
-        #expect(options.name == "UserStorage")
-        #expect(options.modulesTemplatePath == "/tmp/core")
+        XCTAssertEqual(options.type, .storage)
+        XCTAssertEqual(options.name, "UserStorage")
+        XCTAssertEqual(options.modulesTemplatePath, "/tmp/core")
     }
 
-    @Test func runKitCreateWizardSuccess() throws {
+    func testRunKitCreateWizardSuccess() throws {
         var inputs = ["", "my_custom_kit", "a"] // a = toggle all blocks
         let result = try InteractiveWizard.runKitCreateWizard(readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
 
-        #expect(result.name == "my_custom_kit")
-        #expect(!result.blocks.isEmpty)
+        XCTAssertEqual(result.name, "my_custom_kit")
+        XCTAssertFalse(result.blocks.isEmpty)
     }
 
-    @Test func errorDescription() {
+    func testErrorDescription() {
         let err = InteractiveWizardError.cancelled
-        #expect(err.errorDescription == "Operation cancelled by user.")
+        XCTAssertEqual(err.errorDescription, "Operation cancelled by user.")
     }
 
-    @Test func stripANSIEscapeCodes() {
+    func testStripANSIEscapeCodes() {
         let dirtyInput = "MyCompany\u{001B}[D\u{001B}[CApp"
         let cleanInput = InteractiveWizard.stripANSIEscapeCodes(dirtyInput)
-        #expect(cleanInput == "MyCompanyApp")
+        XCTAssertEqual(cleanInput, "MyCompanyApp")
     }
 
-    @Test func runRenameWizardSuccess() throws {
+    func testRunRenameWizardSuccess() throws {
         var inputs = ["", "NewAwesomeProject"]
         let newName = try InteractiveWizard.runRenameWizard(projectPath: ".", readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
-        #expect(newName == "NewAwesomeProject")
+        XCTAssertEqual(newName, "NewAwesomeProject")
     }
 
-    @Test func runBrickFlavorsWizardReturnsProvidedSelectionsWhenNoFlavors() throws {
+    func testRunBrickFlavorsWizardReturnsProvidedSelectionsWhenNoFlavors() throws {
         let manifest = BrickManifest(name: "plain")
-        var inputs: [String] = ["1"]
+        var inputs = ["1"]
         let result = try InteractiveWizard.runBrickFlavorsWizard(
             manifest: manifest,
             providedSelections: ["custom": "value"],
             readLine: { inputs.isEmpty ? nil : inputs.removeFirst() }
         )
-        #expect(result["custom"] == "value")
+        XCTAssertEqual(result["custom"], "value")
     }
 
-    @Test func runBrickFlavorsWizardPromptsForEachUnconfiguredFlavor() throws {
+    func testRunBrickFlavorsWizardPromptsForEachUnconfiguredFlavor() throws {
         let manifest = BrickManifest(
             name: "scene",
             flavors: [
@@ -157,9 +154,9 @@ struct InteractiveWizardTests {
                     defaultValue: "observable",
                     options: [
                         FlavorOptionSpec(id: "observable", title: "@Observable"),
-                        FlavorOptionSpec(id: "combine", title: "ObservableObject")
+                        FlavorOptionSpec(id: "combine", title: "ObservableObject"),
                     ]
-                )
+                ),
             ]
         )
         // Select option 2 (combine) via 1-based fallback choice
@@ -169,10 +166,10 @@ struct InteractiveWizardTests {
             providedSelections: [:],
             readLine: { inputs.isEmpty ? nil : inputs.removeFirst() }
         )
-        #expect(result["statestyle"] == "combine")
+        XCTAssertEqual(result["statestyle"], "combine")
     }
 
-    @Test func runBrickFlavorsWizardSkipsProvidedSelections() throws {
+    func testRunBrickFlavorsWizardSkipsProvidedSelections() throws {
         let manifest = BrickManifest(
             name: "scene",
             flavors: [
@@ -182,21 +179,21 @@ struct InteractiveWizardTests {
                     defaultValue: "observable",
                     options: [
                         FlavorOptionSpec(id: "observable", title: "@Observable"),
-                        FlavorOptionSpec(id: "combine", title: "ObservableObject")
+                        FlavorOptionSpec(id: "combine", title: "ObservableObject"),
                     ]
-                )
+                ),
             ]
         )
-        var inputs: [String] = ["1"]
+        var inputs = ["1"]
         let result = try InteractiveWizard.runBrickFlavorsWizard(
             manifest: manifest,
             providedSelections: ["stateStyle": "combine"],
             readLine: { inputs.isEmpty ? nil : inputs.removeFirst() }
         )
-        #expect(result["stateStyle"] == "combine")
+        XCTAssertEqual(result["stateStyle"], "combine")
     }
 
-    @Test func runBrickFlavorsWizardSelectsByNumber() throws {
+    func testRunBrickFlavorsWizardSelectsByNumber() throws {
         let manifest = BrickManifest(
             name: "repository",
             flavors: [
@@ -207,9 +204,9 @@ struct InteractiveWizardTests {
                     options: [
                         FlavorOptionSpec(id: "remote-only", title: "Remote Only"),
                         FlavorOptionSpec(id: "offline-first", title: "Offline-First"),
-                        FlavorOptionSpec(id: "local-only", title: "Local Only")
+                        FlavorOptionSpec(id: "local-only", title: "Local Only"),
                     ]
-                )
+                ),
             ]
         )
         // Select option 3 (local-only) via 1-based fallback choice
@@ -219,7 +216,6 @@ struct InteractiveWizardTests {
             providedSelections: [:],
             readLine: { inputs.isEmpty ? nil : inputs.removeFirst() }
         )
-        #expect(result["strategy"] == "local-only")
+        XCTAssertEqual(result["strategy"], "local-only")
     }
 }
-

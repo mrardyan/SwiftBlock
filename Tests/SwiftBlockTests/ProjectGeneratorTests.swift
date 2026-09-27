@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct ProjectGeneratorTests {
-
-    @Test func placeholderReplacement() throws {
+final class ProjectGeneratorTests: XCTestCase {
+    func testPlaceholderReplacement() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -28,13 +27,13 @@ struct ProjectGeneratorTests {
         )
 
         let updatedContent = try String(contentsOf: sampleFile, encoding: .utf8)
-        #expect(updatedContent.contains("MyAwesomeApp"))
-        #expect(updatedContent.contains("com.example.MyAwesomeApp"))
-        #expect(!updatedContent.contains("__PROJECT_NAME__"))
-        #expect(!updatedContent.contains("__BUNDLE_PREFIX__"))
+        XCTAssertTrue(updatedContent.contains("MyAwesomeApp"))
+        XCTAssertTrue(updatedContent.contains("com.example.MyAwesomeApp"))
+        XCTAssertFalse(updatedContent.contains("__PROJECT_NAME__"))
+        XCTAssertFalse(updatedContent.contains("__BUNDLE_PREFIX__"))
     }
 
-    @Test func folderNamePlaceholderReplacement() throws {
+    func testFolderNamePlaceholderReplacement() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -53,11 +52,11 @@ struct ProjectGeneratorTests {
         let expectedSubFolder = tempDir.appendingPathComponent("FooAppTests")
         let expectedFile = expectedSubFolder.appendingPathComponent("FooAppTests.swift")
 
-        #expect(FileManager.default.fileExists(atPath: expectedSubFolder.path))
-        #expect(FileManager.default.fileExists(atPath: expectedFile.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedSubFolder.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedFile.path))
     }
 
-    @Test func dryRunModeDoesNotWriteToDisk() throws {
+    func testDryRunModeDoesNotWriteToDisk() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -79,10 +78,10 @@ struct ProjectGeneratorTests {
         let generator = ProjectGenerator()
         try generator.generateProject(options: options)
 
-        #expect(!FileManager.default.fileExists(atPath: outputURL.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: outputURL.path))
     }
 
-    @Test func templateNotFoundThrowsError() {
+    func testTemplateNotFoundThrowsError() {
         let generator = ProjectGenerator()
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -93,12 +92,10 @@ struct ProjectGeneratorTests {
             outputPath: tempDir.appendingPathComponent("TestApp").path
         )
 
-        #expect(throws: ProjectGeneratorError.self) {
-            try generator.generateProject(options: options)
-        }
+        XCTAssertThrowsError(try generator.generateProject(options: options))
     }
 
-    @Test func successfulGeneration() throws {
+    func testSuccessfulGeneration() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -125,24 +122,27 @@ struct ProjectGeneratorTests {
         try generator.generateProject(options: options)
 
         let generatedFileExists = FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Main.swift").path)
-        #expect(generatedFileExists)
+        XCTAssertTrue(generatedFileExists)
 
         let generatedContent = try String(contentsOfFile: outputURL.appendingPathComponent("Main.swift").path, encoding: .utf8)
-        #expect(generatedContent == "struct GeneratedAppApp {}\n")
+        XCTAssertEqual(generatedContent, "struct GeneratedAppApp {}\n")
     }
 
-    @Test func projectGeneratorErrorDescriptions() {
+    func testProjectGeneratorErrorDescriptions() {
         let err1 = ProjectGeneratorError.templateNotFound("/path/to/template")
-        #expect(err1.errorDescription == "Template not found at /path/to/template")
+        XCTAssertEqual(err1.errorDescription, "Template not found at /path/to/template")
 
         let err2 = ProjectGeneratorError.destinationAlreadyExists("/path/to/dest")
-        #expect(err2.errorDescription == "Directory already exists at /path/to/dest. Please specify a different project name or remove the existing folder.")
+        XCTAssertEqual(
+            err2.errorDescription,
+            "Directory already exists at /path/to/dest. Please specify a different project name or remove the existing folder."
+        )
 
         let err3 = ProjectGeneratorError.generationFailed("Disk full")
-        #expect(err3.errorDescription == "Failed to generate project: Disk full")
+        XCTAssertEqual(err3.errorDescription, "Failed to generate project: Disk full")
     }
 
-    @Test func destinationAlreadyExistsThrowsErrorAndPreservesDirectory() throws {
+    func testDestinationAlreadyExistsThrowsErrorAndPreservesDirectory() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -166,15 +166,13 @@ struct ProjectGeneratorTests {
 
         let generator = ProjectGenerator()
 
-        #expect(throws: ProjectGeneratorError.destinationAlreadyExists(existingFolderURL.path)) {
-            try generator.generateProject(options: options)
-        }
+        XCTAssertThrowsError(try generator.generateProject(options: options))
 
-        #expect(FileManager.default.fileExists(atPath: existingFolderURL.path))
-        #expect(FileManager.default.fileExists(atPath: dummyFile.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: existingFolderURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: dummyFile.path))
     }
 
-    @Test func replacePlaceholdersIgnoresUnsupportedFiles() throws {
+    func testReplacePlaceholdersIgnoresUnsupportedFiles() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -194,10 +192,10 @@ struct ProjectGeneratorTests {
         )
 
         let contentAfter = try Data(contentsOf: binFile)
-        #expect(contentAfter == rawBytes)
+        XCTAssertEqual(contentAfter, rawBytes)
     }
 
-    @Test func coreSwiftExecutableInjections() throws {
+    func testCoreSwiftExecutableInjections() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -214,15 +212,15 @@ struct ProjectGeneratorTests {
         try pkgGen.generateCorePackage(in: tempDir.path, config: config)
 
         let coreSwiftFile = tempDir.appendingPathComponent("Packages/Core/Sources/Core/Core.swift").path
-        #expect(FileManager.default.fileExists(atPath: coreSwiftFile))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: coreSwiftFile))
 
         let content = try String(contentsOfFile: coreSwiftFile, encoding: .utf8)
-        #expect(content.contains("AppStorage()"))
-        #expect(content.contains("AppLogger()"))
-        #expect(content.contains("AppConfig()"))
+        XCTAssertTrue(content.contains("AppStorage()"))
+        XCTAssertTrue(content.contains("AppLogger()"))
+        XCTAssertTrue(content.contains("AppConfig()"))
     }
 
-    @Test func generateVaporBaseplate() throws {
+    func testGenerateVaporBaseplate() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -247,18 +245,18 @@ struct ProjectGeneratorTests {
         let generator = ProjectGenerator()
         try generator.generateProject(options: options)
 
-        #expect(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Package.swift").path))
-        #expect(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Dockerfile").path))
-        #expect(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("docker-compose.yml").path))
-        #expect(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Sources/App/entrypoint.swift").path))
-        #expect(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Sources/App/Controllers/HealthController.swift").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Package.swift").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Dockerfile").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("docker-compose.yml").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Sources/App/entrypoint.swift").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.appendingPathComponent("Sources/App/Controllers/HealthController.swift").path))
 
         let packageContent = try String(contentsOfFile: outputURL.appendingPathComponent("Package.swift").path, encoding: .utf8)
-        #expect(packageContent.contains("MyVaporServer"))
-        #expect(!packageContent.contains("__PROJECT_NAME__"))
+        XCTAssertTrue(packageContent.contains("MyVaporServer"))
+        XCTAssertFalse(packageContent.contains("__PROJECT_NAME__"))
 
         let healthContent = try String(contentsOfFile: outputURL.appendingPathComponent("Sources/App/Controllers/HealthController.swift").path, encoding: .utf8)
-        #expect(healthContent.contains("MyVaporServer"))
-        #expect(!healthContent.contains("__PROJECT_NAME__"))
+        XCTAssertTrue(healthContent.contains("MyVaporServer"))
+        XCTAssertFalse(healthContent.contains("__PROJECT_NAME__"))
     }
 }

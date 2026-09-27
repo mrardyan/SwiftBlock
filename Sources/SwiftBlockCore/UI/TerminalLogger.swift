@@ -8,7 +8,7 @@ public enum ANSIColor {
     public static let green = "\u{001B}[32m"
     public static let yellow = "\u{001B}[33m"
     public static let red = "\u{001B}[31m"
-    
+
     public static func boldText(_ text: String) -> String { "\(bold)\(text)\(reset)" }
     public static func dimText(_ text: String) -> String { "\(dim)\(text)\(reset)" }
     public static func cyanText(_ text: String) -> String { "\(cyan)\(text)\(reset)" }

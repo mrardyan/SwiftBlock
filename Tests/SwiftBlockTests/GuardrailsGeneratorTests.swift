@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct GuardrailsGeneratorTests {
-
-    @Test func injectAllGuardrails() throws {
+final class GuardrailsGeneratorTests: XCTestCase {
+    func testInjectAllGuardrails() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -30,15 +29,15 @@ struct GuardrailsGeneratorTests {
         let generator = GuardrailsGenerator()
         try generator.generateGuardrails(in: tempDir.path, config: config)
 
-        #expect(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftlint.yml").path))
-        #expect(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftformat").path))
-        #expect(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".pre-commit-config.yaml").path))
-        #expect(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".periphery.yml").path))
-        #expect(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent("Dangerfile.swift").path))
-        #expect(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent("swiftgen.yml").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftlint.yml").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftformat").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".pre-commit-config.yaml").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".periphery.yml").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent("Dangerfile.swift").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent("swiftgen.yml").path))
     }
 
-    @Test func injectSelectiveGuardrails() throws {
+    func testInjectSelectiveGuardrails() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -64,8 +63,8 @@ struct GuardrailsGeneratorTests {
         let generator = GuardrailsGenerator()
         try generator.generateGuardrails(in: tempDir.path, config: config)
 
-        #expect(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftlint.yml").path))
-        #expect(!FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftformat").path))
-        #expect(!FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".pre-commit-config.yaml").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftlint.yml").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".swiftformat").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: tempDir.appendingPathComponent(".pre-commit-config.yaml").path))
     }
 }

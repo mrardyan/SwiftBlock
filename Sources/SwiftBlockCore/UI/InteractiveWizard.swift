@@ -1,15 +1,15 @@
 import Foundation
 #if canImport(Darwin)
-import Darwin
+    import Darwin
 #elseif canImport(Glibc)
-import Glibc
+    import Glibc
 #endif
 
 public class InteractiveWizard {
     public init() {}
 
     public static func stripANSIEscapeCodes(_ input: String) -> String {
-        return input.replacingOccurrences(
+        input.replacingOccurrences(
             of: #"\x1B\[[0-9;?]*[a-zA-Z~]"#,
             with: "",
             options: .regularExpression
@@ -53,24 +53,6 @@ public class InteractiveWizard {
         var buffer: [Character] = []
         var cursor = 0
 
-        func getByte() -> UInt8? {
-            var byte: UInt8 = 0
-            let n = read(STDIN_FILENO, &byte, 1)
-            return n == 1 ? byte : nil
-        }
-
-        func redraw(startIndex: Int) {
-            let tail = String(buffer[startIndex...])
-            print(tail + " ", terminator: "")
-            let printedLength = tail.count + 1
-            let offsetFromStart = cursor - startIndex
-            let moveBack = printedLength - offsetFromStart
-            if moveBack > 0 {
-                print("\u{001B}[\(moveBack)D", terminator: "")
-            }
-            fflush(stdout)
-        }
-
         while true {
             guard let byte = getByte() else { break }
 
@@ -83,89 +65,116 @@ public class InteractiveWizard {
                 }
                 return nil
             } else if byte == 0x7F || byte == 0x08 { // Backspace
-                if cursor > 0 {
-                    cursor -= 1
-                    buffer.remove(at: cursor)
-                    if cursor == buffer.count {
-                        print("\u{001B}[1D \u{001B}[1D", terminator: "")
-                        fflush(stdout)
-                    } else {
-                        print("\u{001B}[1D", terminator: "")
-                        redraw(startIndex: cursor)
-                    }
-                }
+                handleBackspace(&buffer, &cursor)
             } else if byte == 0x1B { // Escape sequence (\u{1B})
-                if let b2 = getByte(), (b2 == 0x5B || b2 == 0x4F) { // '[' or 'O'
-                    if let b3 = getByte() {
-                        switch b3 {
-                        case 0x44: // Left arrow ('D')
-                            if cursor > 0 {
-                                cursor -= 1
-                                print("\u{001B}[1D", terminator: "")
-                                fflush(stdout)
-                            }
-                        case 0x43: // Right arrow ('C')
-                            if cursor < buffer.count {
-                                cursor += 1
-                                print("\u{001B}[1C", terminator: "")
-                                fflush(stdout)
-                            }
-                        case 0x48: // Home ('H')
-                            if cursor > 0 {
-                                print("\u{001B}[\(cursor)D", terminator: "")
-                                cursor = 0
-                                fflush(stdout)
-                            }
-                        case 0x46: // End ('F')
-                            if cursor < buffer.count {
-                                let dist = buffer.count - cursor
-                                print("\u{001B}[\(dist)C", terminator: "")
-                                cursor = buffer.count
-                                fflush(stdout)
-                            }
-                        case 0x33: // Delete ('3~')
-                            if let b4 = getByte(), b4 == 0x7E { // '~'
-                                if cursor < buffer.count {
-                                    buffer.remove(at: cursor)
-                                    redraw(startIndex: cursor)
-                                }
-                            }
-                        default:
-                            break
-                        }
-                    }
-                }
+                handleEscapeSequence(&buffer, &cursor)
             } else if byte >= 0x20 { // Printable ASCII or UTF-8
-                var bytes = [byte]
-                var expectedLen = 1
-                if (byte & 0xE0) == 0xC0 { expectedLen = 2 }
-                else if (byte & 0xF0) == 0xE0 { expectedLen = 3 }
-                else if (byte & 0xF8) == 0xF0 { expectedLen = 4 }
-
-                while bytes.count < expectedLen {
-                    if let nextByte = getByte() {
-                        bytes.append(nextByte)
-                    } else {
-                        break
-                    }
-                }
-
-                if let str = String(bytes: bytes, encoding: .utf8), let ch = str.first {
-                    if cursor == buffer.count {
-                        buffer.append(ch)
-                        cursor += 1
-                        print(ch, terminator: "")
-                        fflush(stdout)
-                    } else {
-                        buffer.insert(ch, at: cursor)
-                        cursor += 1
-                        redraw(startIndex: cursor - 1)
-                    }
-                }
+                handlePrintable(byte, &buffer, &cursor)
             }
         }
 
         return String(buffer)
+    }
+
+    private static func getByte() -> UInt8? {
+        var byte: UInt8 = 0
+        let bytesRead = read(STDIN_FILENO, &byte, 1)
+        return bytesRead == 1 ? byte : nil
+    }
+
+    private static func redraw(startIndex: Int, buffer: [Character], cursor: Int) {
+        let tail = String(buffer[startIndex...])
+        print(tail + " ", terminator: "")
+        let printedLength = tail.count + 1
+        let offsetFromStart = cursor - startIndex
+        let moveBack = printedLength - offsetFromStart
+        if moveBack > 0 {
+            print("\u{001B}[\(moveBack)D", terminator: "")
+        }
+        fflush(stdout)
+    }
+
+    private static func handleBackspace(_ buffer: inout [Character], _ cursor: inout Int) {
+        if cursor > 0 {
+            cursor -= 1
+            buffer.remove(at: cursor)
+            if cursor == buffer.count {
+                print("\u{001B}[1D \u{001B}[1D", terminator: "")
+                fflush(stdout)
+            } else {
+                print("\u{001B}[1D", terminator: "")
+                redraw(startIndex: cursor, buffer: buffer, cursor: cursor)
+            }
+        }
+    }
+
+    private static func handleEscapeSequence(_ buffer: inout [Character], _ cursor: inout Int) {
+        if let b2 = getByte(), b2 == 0x5B || b2 == 0x4F { // '[' or 'O'
+            guard let b3 = getByte() else { return }
+            switch b3 {
+                case 0x44: // Left arrow ('D')
+                    if cursor > 0 {
+                        cursor -= 1
+                        print("\u{001B}[1D", terminator: "")
+                        fflush(stdout)
+                    }
+                case 0x43: // Right arrow ('C')
+                    if cursor < buffer.count {
+                        cursor += 1
+                        print("\u{001B}[1C", terminator: "")
+                        fflush(stdout)
+                    }
+                case 0x48: // Home ('H')
+                    if cursor > 0 {
+                        print("\u{001B}[\(cursor)D", terminator: "")
+                        cursor = 0
+                        fflush(stdout)
+                    }
+                case 0x46: // End ('F')
+                    if cursor < buffer.count {
+                        let dist = buffer.count - cursor
+                        print("\u{001B}[\(dist)C", terminator: "")
+                        cursor = buffer.count
+                        fflush(stdout)
+                    }
+                case 0x33: // Delete ('3~')
+                    if let b4 = getByte(), b4 == 0x7E { // '~'
+                        if cursor < buffer.count {
+                            buffer.remove(at: cursor)
+                            redraw(startIndex: cursor, buffer: buffer, cursor: cursor)
+                        }
+                    }
+                default:
+                    break
+            }
+        }
+    }
+
+    private static func handlePrintable(_ byte: UInt8, _ buffer: inout [Character], _ cursor: inout Int) {
+        var bytes = [byte]
+        var expectedLen = 1
+        if (byte & 0xE0) == 0xC0 { expectedLen = 2 } else if (byte & 0xF0) == 0xE0 { expectedLen = 3 } else if (byte & 0xF8) == 0xF0 { expectedLen = 4 }
+
+        while bytes.count < expectedLen {
+            if let nextByte = getByte() {
+                bytes.append(nextByte)
+            } else {
+                break
+            }
+        }
+
+        if let str = String(bytes: bytes, encoding: .utf8), let ch = str.first {
+            if cursor == buffer.count {
+                buffer.append(ch)
+                cursor += 1
+                print(ch, terminator: "")
+                fflush(stdout)
+            } else {
+                buffer.insert(ch, at: cursor)
+                cursor += 1
+                redraw(startIndex: cursor - 1, buffer: buffer, cursor: cursor)
+            }
+        }
     }
 
     public static func prompt(
@@ -173,7 +182,7 @@ public class InteractiveWizard {
         defaultValue: String? = nil,
         readLine: () -> String? = { InteractiveWizard.readLine() }
     ) -> String {
-        return TerminalPrompt.promptInput(title: message, defaultValue: defaultValue, readLineFallback: readLine)
+        TerminalPrompt.promptInput(title: message, defaultValue: defaultValue, readLineFallback: readLine)
     }
 
     public static func promptChoice(
@@ -190,7 +199,7 @@ public class InteractiveWizard {
         options: [ChoiceOption],
         readLine: () -> String? = { InteractiveWizard.readLine() }
     ) -> Int {
-        return TerminalPrompt.selectChoice(title: title, options: options, readLineFallback: readLine) ?? 0
+        TerminalPrompt.selectChoice(title: title, options: options, readLineFallback: readLine) ?? 0
     }
 
     public static func promptConfirm(
@@ -198,7 +207,7 @@ public class InteractiveWizard {
         defaultYes: Bool = true,
         readLine: () -> String? = { InteractiveWizard.readLine() }
     ) -> Bool {
-        return TerminalPrompt.confirm(title: message, defaultYes: defaultYes, readLineFallback: readLine)
+        TerminalPrompt.confirm(title: message, defaultYes: defaultYes, readLineFallback: readLine)
     }
 
     public static func runProjectWizard(
@@ -211,7 +220,7 @@ public class InteractiveWizard {
 
         let baseplateChoices = [
             ChoiceOption(title: "SwiftUI App", subtitle: "Apple platform application (iOS, macOS) with Tuist or XcodeGen"),
-            ChoiceOption(title: "Vapor Backend API", subtitle: "High-performance Swift backend web API service powered by Vapor & SPM")
+            ChoiceOption(title: "Vapor Backend API", subtitle: "High-performance Swift backend web API service powered by Vapor & SPM"),
         ]
         let baseplateChoiceIndex = promptChoiceWithOptions(title: "What do you want to create?", options: baseplateChoices, readLine: readLine)
 
@@ -252,7 +261,7 @@ public class InteractiveWizard {
 
         let corePkgChoices = [
             ChoiceOption(title: "Monolithic Main Target", subtitle: "e.g. App/Sources/Core/Storage/..."),
-            ChoiceOption(title: "SPM Core Package Target", subtitle: "e.g. Packages/Core/Sources/Core/Storage/...")
+            ChoiceOption(title: "SPM Core Package Target", subtitle: "e.g. Packages/Core/Sources/Core/Storage/..."),
         ]
         let corePkgChoice = promptChoiceWithOptions(title: "Select Core Packaging Strategy", options: corePkgChoices, readLine: readLine)
         let corePkg = corePkgChoice == 0 ? "monolithic" : "spm"
@@ -265,7 +274,7 @@ public class InteractiveWizard {
 
         let orgChoices = [
             ChoiceOption(title: "Feature-First", subtitle: "e.g. Home/Scene, Home/UseCase, Payment/Scene"),
-            ChoiceOption(title: "Technical-First", subtitle: "e.g. Scenes/Home, UseCases/Home, Repositories/Payment")
+            ChoiceOption(title: "Technical-First", subtitle: "e.g. Scenes/Home, UseCases/Home, Repositories/Payment"),
         ]
         let orgChoice = promptChoiceWithOptions(title: "Select Code Organization Strategy", options: orgChoices, readLine: readLine)
         let orgStrategy = orgChoice == 0 ? "feature-first" : "technical-first"
@@ -281,9 +290,18 @@ public class InteractiveWizard {
             TerminalPrompt.MultiChoiceOption(id: "gitleaks", title: "Gitleaks", subtitle: "Secret & credential leak prevention scanner", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "danger", title: "Danger", subtitle: "Automated PR code review engine", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "swiftgen", title: "SwiftGen", subtitle: "Type-safe asset & string generator", isSelected: true),
-            TerminalPrompt.MultiChoiceOption(id: "licenseplist", title: "LicensePlist", subtitle: "Open-source license acknowledgements generator", isSelected: true)
+            TerminalPrompt.MultiChoiceOption(
+                id: "licenseplist",
+                title: "LicensePlist",
+                subtitle: "Open-source license acknowledgements generator",
+                isSelected: true
+            ),
         ]
-        let selectedGuardrailIds = TerminalPrompt.selectMultiChoice(title: "Select Guardrails (Space: toggle, Enter: submit)", options: guardrailOptions, readLineFallback: readLine)
+        let selectedGuardrailIds = TerminalPrompt.selectMultiChoice(
+            title: "Select Guardrails (Space: toggle, Enter: submit)",
+            options: guardrailOptions,
+            readLineFallback: readLine
+        )
 
         let activeGuardrails = GuardrailsConfig(
             swiftlint: selectedGuardrailIds.contains("swiftlint"),
@@ -303,12 +321,21 @@ public class InteractiveWizard {
             TerminalPrompt.MultiChoiceOption(id: "storage", title: "Storage", subtitle: "Local persistence storage engine", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "network", title: "Network", subtitle: "Network client & HTTP engine", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "logger", title: "Logger", subtitle: "Unified OSLog & crash logger", isSelected: true),
-            TerminalPrompt.MultiChoiceOption(id: "config", title: "Config", subtitle: "Multi-environment (.xcconfig) & Dev/Staging/Prod schemes", isSelected: true),
+            TerminalPrompt.MultiChoiceOption(
+                id: "config",
+                title: "Config",
+                subtitle: "Multi-environment (.xcconfig) & Dev/Staging/Prod schemes",
+                isSelected: true
+            ),
             TerminalPrompt.MultiChoiceOption(id: "auth", title: "Auth", subtitle: "User session & token state manager", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "analytics", title: "Analytics", subtitle: "Event analytics & metrics engine", isSelected: false),
-            TerminalPrompt.MultiChoiceOption(id: "featureflag", title: "FeatureFlag", subtitle: "Remote feature flags & toggles", isSelected: false)
+            TerminalPrompt.MultiChoiceOption(id: "featureflag", title: "FeatureFlag", subtitle: "Remote feature flags & toggles", isSelected: false),
         ]
-        let selectedCoreBlockIds = TerminalPrompt.selectMultiChoice(title: "Select Core Foundation Modules to include", options: coreBlockOptions, readLineFallback: readLine)
+        let selectedCoreBlockIds = TerminalPrompt.selectMultiChoice(
+            title: "Select Core Foundation Modules to include",
+            options: coreBlockOptions,
+            readLineFallback: readLine
+        )
         var selectedCoreBlocks = selectedCoreBlockIds.compactMap { Brick(rawValue: $0) }
 
         let multiEnvConfirm = promptConfirm(message: "Setup Multi-Environment Configurations (.xcconfig & Schemes)?", defaultYes: true, readLine: readLine)
@@ -342,18 +369,16 @@ public class InteractiveWizard {
             throw InteractiveWizardError.cancelled
         }
 
-        let featureTemplate: String
-        if orgStrategy == "technical-first" {
-            featureTemplate = "App/Sources/{block}s/{module}"
+        let featureTemplate = if orgStrategy == "technical-first" {
+            "App/Sources/{block}s/{module}"
         } else {
-            featureTemplate = "App/Sources/Features/{module}/{block}"
+            "App/Sources/Features/{module}/{block}"
         }
 
-        let coreTemplate: String
-        if corePkg == "spm" {
-            coreTemplate = "Packages/Core/Sources/Core/{block}"
+        let coreTemplate = if corePkg == "spm" {
+            "Packages/Core/Sources/Core/{block}"
         } else {
-            coreTemplate = "App/Sources/Core/{block}"
+            "App/Sources/Core/{block}"
         }
 
         let config = SwiftBlockConfig(
@@ -368,7 +393,7 @@ public class InteractiveWizard {
             gitInit: gitInitConfirm,
             pathTemplates: [
                 "feature": featureTemplate,
-                "core": coreTemplate
+                "core": coreTemplate,
             ],
             testFramework: selectedTestFramework
         )
@@ -409,9 +434,13 @@ public class InteractiveWizard {
             TerminalPrompt.MultiChoiceOption(id: "swiftlint", title: "SwiftLint", subtitle: "Swift server code style analyzer", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "swiftformat", title: "SwiftFormat", subtitle: "Automated code formatter & make target", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "precommit", title: "Pre-commit Hooks", subtitle: "Git pre-commit framework integration", isSelected: true),
-            TerminalPrompt.MultiChoiceOption(id: "gitleaks", title: "Gitleaks", subtitle: "Secret & API key leak scanner", isSelected: true)
+            TerminalPrompt.MultiChoiceOption(id: "gitleaks", title: "Gitleaks", subtitle: "Secret & API key leak scanner", isSelected: true),
         ]
-        let selectedGuardrailIds = TerminalPrompt.selectMultiChoice(title: "Select Server Guardrails (Space: toggle, Enter: submit)", options: guardrailOptions, readLineFallback: readLine)
+        let selectedGuardrailIds = TerminalPrompt.selectMultiChoice(
+            title: "Select Server Guardrails (Space: toggle, Enter: submit)",
+            options: guardrailOptions,
+            readLineFallback: readLine
+        )
 
         let activeGuardrails = GuardrailsConfig(
             swiftlint: selectedGuardrailIds.contains("swiftlint"),
@@ -432,9 +461,13 @@ public class InteractiveWizard {
             TerminalPrompt.MultiChoiceOption(id: "logger", title: "Logger", subtitle: "Structured SwiftLog server logger", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "config", title: "Config", subtitle: "Environment variables & dotenv manager", isSelected: true),
             TerminalPrompt.MultiChoiceOption(id: "auth", title: "Auth", subtitle: "JWT & Session Auth Manager", isSelected: true),
-            TerminalPrompt.MultiChoiceOption(id: "storage", title: "Storage", subtitle: "Database & Fluent ORM persistence", isSelected: false)
+            TerminalPrompt.MultiChoiceOption(id: "storage", title: "Storage", subtitle: "Database & Fluent ORM persistence", isSelected: false),
         ]
-        let selectedServerBlockIds = TerminalPrompt.selectMultiChoice(title: "Select Server Services to include", options: serverBlockOptions, readLineFallback: readLine)
+        let selectedServerBlockIds = TerminalPrompt.selectMultiChoice(
+            title: "Select Server Services to include",
+            options: serverBlockOptions,
+            readLineFallback: readLine
+        )
         let selectedCoreBlocks = selectedServerBlockIds.map { id -> Brick in
             return id == "auth" ? .vaporauth : Brick(rawValue: id)
         }
@@ -467,7 +500,7 @@ public class InteractiveWizard {
             gitInit: gitInitConfirm,
             pathTemplates: [
                 "feature": "Sources/App/Features/{module}/{block}",
-                "core": "Sources/App/Core/{block}"
+                "core": "Sources/App/Core/{block}",
             ]
         )
 
@@ -539,7 +572,7 @@ public class InteractiveWizard {
     }
 
     public static func runKitCreateWizard(
-        projectPath: String = FileManager.default.currentDirectoryPath,
+        projectPath _: String = FileManager.default.currentDirectoryPath,
         readLine: () -> String? = { InteractiveWizard.readLine() }
     ) throws -> (name: String, blocks: [String]) {
         print("┌  \(ANSIColor.boldText("Design Architecture Kit"))")
@@ -558,13 +591,17 @@ public class InteractiveWizard {
             TerminalPrompt.MultiChoiceOption(id: $0.commandName, title: $0.title, subtitle: $0.description, isSelected: true)
         }
 
-        let selectedBlockIds = TerminalPrompt.selectMultiChoice(title: "Select composed bricks for '\(kitName)'", options: blockOptions, readLineFallback: readLine)
+        let selectedBlockIds = TerminalPrompt.selectMultiChoice(
+            title: "Select composed bricks for '\(kitName)'",
+            options: blockOptions,
+            readLineFallback: readLine
+        )
         guard !selectedBlockIds.isEmpty else {
             print("└  \(ANSIColor.redText("✖ Kit creation cancelled (no bricks selected)."))")
             throw InteractiveWizardError.cancelled
         }
 
-        if selectedBlockIds.contains("scene") && selectedBlockIds.contains("repository") && !selectedBlockIds.contains("usecase") {
+        if selectedBlockIds.contains("scene"), selectedBlockIds.contains("repository"), !selectedBlockIds.contains("usecase") {
             print("  \(ANSIColor.dimText("ℹ Note: ViewModel will access Repository directly without a UseCase layer."))")
         }
 
@@ -577,14 +614,14 @@ public class InteractiveWizard {
     ) throws -> (relativePath: String, manifest: BrickManifest) {
         print("┌  \(ANSIColor.boldText("Monorepo Git Repository Detected"))")
         print("│  Multiple bricks found in repository:")
-        
+
         let options = bricks.map { item in
             ChoiceOption(
                 title: "\(item.manifest.name) (\(item.manifest.instantiation.rawValue.capitalized))",
                 subtitle: item.relativePath
             )
         }
-        
+
         let selectedIndex = promptChoiceWithOptions(title: "Select brick to snap", options: options, readLine: readLine)
         return bricks[selectedIndex]
     }
@@ -619,11 +656,10 @@ public class InteractiveWizard {
             } else {
                 var value = ""
                 while value.isEmpty {
-                    let promptMsg: String
-                    if let def = variable.defaultValue {
-                        promptMsg = "\(variable.prompt) (default: \(def))"
+                    let promptMsg: String = if let def = variable.defaultValue {
+                        "\(variable.prompt) (default: \(def))"
                     } else {
-                        promptMsg = variable.prompt
+                        variable.prompt
                     }
                     let input = prompt(message: promptMsg, readLine: readLine)
                     if input.isEmpty, let def = variable.defaultValue {
@@ -719,8 +755,8 @@ public enum InteractiveWizardError: Error, LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .cancelled:
-            return "Operation cancelled by user."
+            case .cancelled:
+                "Operation cancelled by user."
         }
     }
 }

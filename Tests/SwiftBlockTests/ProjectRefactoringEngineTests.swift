@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct ProjectRefactoringEngineTests {
-
-    @Test func renameTuistProject() throws {
+final class ProjectRefactoringEngineTests: XCTestCase {
+    func testRenameTuistProject() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("RenameTuist_\(UUID().uuidString)", isDirectory: true).path
         try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
@@ -50,7 +49,7 @@ struct ProjectRefactoringEngineTests {
         @testable import OldAppName
 
         struct OldAppNameTests {
-            @Test func sample() {}
+            func testSample() {}
         }
         """
         try oldTest.write(toFile: "\(testDir)/OldAppNameTests.swift", atomically: true, encoding: .utf8)
@@ -59,31 +58,31 @@ struct ProjectRefactoringEngineTests {
         let engine = ProjectRefactoringEngine()
         let result = try engine.renameProject(projectPath: tempDir, newName: "NewSuperApp")
 
-        #expect(result.oldName == "OldAppName")
-        #expect(result.newName == "NewSuperApp")
+        XCTAssertEqual(result.oldName, "OldAppName")
+        XCTAssertEqual(result.newName, "NewSuperApp")
 
         // Verify config
         let updatedConfig = try SwiftBlockConfig.load(from: tempDir)
-        #expect(updatedConfig.projectName == "NewSuperApp")
+        XCTAssertEqual(updatedConfig.projectName, "NewSuperApp")
 
         // Verify Project.swift
         let updatedManifest = try String(contentsOfFile: "\(tempDir)/Project.swift", encoding: .utf8)
-        #expect(updatedManifest.contains("name: \"NewSuperApp\""))
-        #expect(updatedManifest.contains("bundleId: \"com.test.NewSuperApp\""))
+        XCTAssertTrue(updatedManifest.contains("name: \"NewSuperApp\""))
+        XCTAssertTrue(updatedManifest.contains("bundleId: \"com.test.NewSuperApp\""))
 
         // Verify Main.swift
         let updatedMain = try String(contentsOfFile: "\(appDir)/Main.swift", encoding: .utf8)
-        #expect(updatedMain.contains("struct NewSuperAppApp: App"))
+        XCTAssertTrue(updatedMain.contains("struct NewSuperAppApp: App"))
 
         // Verify renamed test file
         let newTestFile = "\(testDir)/NewSuperAppTests.swift"
-        #expect(FileManager.default.fileExists(atPath: newTestFile))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: newTestFile))
         let updatedTestContent = try String(contentsOfFile: newTestFile, encoding: .utf8)
-        #expect(updatedTestContent.contains("@testable import NewSuperApp"))
-        #expect(updatedTestContent.contains("struct NewSuperAppTests"))
+        XCTAssertTrue(updatedTestContent.contains("@testable import NewSuperApp"))
+        XCTAssertTrue(updatedTestContent.contains("struct NewSuperAppTests"))
     }
 
-    @Test func renameDryRunMode() throws {
+    func testRenameDryRunMode() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("RenameDryRun_\(UUID().uuidString)", isDirectory: true).path
         try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
@@ -95,22 +94,20 @@ struct ProjectRefactoringEngineTests {
         let engine = ProjectRefactoringEngine()
         let result = try engine.renameProject(projectPath: tempDir, newName: "AppTwo", isDryRun: true)
 
-        #expect(result.isDryRun == true)
-        #expect(result.oldName == "AppOne")
-        #expect(result.newName == "AppTwo")
+        XCTAssertEqual(result.isDryRun, true)
+        XCTAssertEqual(result.oldName, "AppOne")
+        XCTAssertEqual(result.newName, "AppTwo")
 
         let configUnchanged = try SwiftBlockConfig.load(from: tempDir)
-        #expect(configUnchanged.projectName == "AppOne")
+        XCTAssertEqual(configUnchanged.projectName, "AppOne")
     }
 
-    @Test func renameInvalidNameThrowsError() throws {
+    func testRenameInvalidNameThrowsError() throws {
         let engine = ProjectRefactoringEngine()
-        #expect(throws: ProjectRefactoringError.self) {
-            try engine.renameProject(newName: "123 Invalid Name!")
-        }
+        XCTAssertThrowsError(try engine.renameProject(newName: "123 Invalid Name!"))
     }
 
-    @Test func renameFromSubdirectoryFallback() throws {
+    func testRenameFromSubdirectoryFallback() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("RenameSubdir_\(UUID().uuidString)", isDirectory: true).path
         try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
@@ -125,10 +122,10 @@ struct ProjectRefactoringEngineTests {
         let engine = ProjectRefactoringEngine()
         let result = try engine.renameProject(projectPath: subDir, newName: "RenamedNestedApp")
 
-        #expect(result.oldName == "NestedApp")
-        #expect(result.newName == "RenamedNestedApp")
+        XCTAssertEqual(result.oldName, "NestedApp")
+        XCTAssertEqual(result.newName, "RenamedNestedApp")
 
         let updatedConfig = try SwiftBlockConfig.load(from: tempDir)
-        #expect(updatedConfig.projectName == "RenamedNestedApp")
+        XCTAssertEqual(updatedConfig.projectName, "RenamedNestedApp")
     }
 }

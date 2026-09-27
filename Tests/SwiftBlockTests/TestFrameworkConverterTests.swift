@@ -1,5 +1,5 @@
-import XCTest
 @testable import SwiftBlockCore
+import XCTest
 
 final class TestFrameworkConverterTests: XCTestCase {
     func testConvertXCTestToSwiftTesting() {

@@ -7,12 +7,12 @@ public enum DependencyResolutionError: Error, LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .circularDependency(let chain):
-            return "Circular dependency detected: \(chain.joined(separator: " -> "))"
-        case .dependencyNotFound(let brick, let requiredBy):
-            return "Required dependency '\(brick)' (by '\(requiredBy)') was not found in registry or local bricks."
-        case .conflictDetected(let brick, let conflictsWith):
-            return "Conflict detected: Brick '\(brick)' cannot be installed alongside '\(conflictsWith)'."
+            case let .circularDependency(chain):
+                "Circular dependency detected: \(chain.joined(separator: " -> "))"
+            case let .dependencyNotFound(brick, requiredBy):
+                "Required dependency '\(brick)' (by '\(requiredBy)') was not found in registry or local bricks."
+            case let .conflictDetected(brick, conflictsWith):
+                "Conflict detected: Brick '\(brick)' cannot be installed alongside '\(conflictsWith)'."
         }
     }
 }
@@ -27,10 +27,10 @@ public struct ResolvedBrickNode: Equatable {
 
     public static func == (lhs: ResolvedBrickNode, rhs: ResolvedBrickNode) -> Bool {
         lhs.name.lowercased() == rhs.name.lowercased() &&
-        lhs.templatePath == rhs.templatePath &&
-        lhs.isMandatory == rhs.isMandatory &&
-        lhs.requiredBy == rhs.requiredBy &&
-        lhs.autoWire == rhs.autoWire
+            lhs.templatePath == rhs.templatePath &&
+            lhs.isMandatory == rhs.isMandatory &&
+            lhs.requiredBy == rhs.requiredBy &&
+            lhs.autoWire == rhs.autoWire
     }
 }
 
@@ -63,7 +63,8 @@ public final class DependencyResolverEngine {
         includeMandatory: Bool = true
     ) throws -> DependencyResolutionPlan {
         guard let targetPath = discoveryEngine.resolveBrickPath(named: targetBrickName, in: baseTemplatePath),
-              let targetManifest = BrickManifest.load(fromPath: targetPath) else {
+              let targetManifest = BrickManifest.load(fromPath: targetPath)
+        else {
             throw DependencyResolutionError.dependencyNotFound(brick: targetBrickName, requiredBy: "CLI")
         }
 
@@ -107,7 +108,8 @@ public final class DependencyResolverEngine {
     /// Resolves a conflicting brick's manifest and checks whether its rendered output is installed.
     private func isBrickInstalled(_ name: String, in baseTemplatePath: String, projectRootPath: String) -> Bool {
         guard let path = discoveryEngine.resolveBrickPath(named: name, in: baseTemplatePath),
-              let manifest = BrickManifest.load(fromPath: path) else {
+              let manifest = BrickManifest.load(fromPath: path)
+        else {
             return false
         }
         return isAlreadyInstalled(manifest: manifest, templatePath: path, in: projectRootPath)
@@ -146,7 +148,8 @@ public final class DependencyResolverEngine {
             for dep in manifest.dependencies.mandatory {
                 let depName = dep.name.lowercased()
                 guard let depPath = discoveryEngine.resolveBrickPath(named: depName, in: baseTemplatePath),
-                      let depManifest = BrickManifest.load(fromPath: depPath) else {
+                      let depManifest = BrickManifest.load(fromPath: depPath)
+                else {
                     throw DependencyResolutionError.dependencyNotFound(brick: dep.name, requiredBy: manifest.name)
                 }
 
@@ -173,7 +176,8 @@ public final class DependencyResolverEngine {
             let optName = opt.name.lowercased()
             if selectedOptionalDeps.contains(optName) || selectedOptionalDeps.contains(opt.name) {
                 guard let optPath = discoveryEngine.resolveBrickPath(named: optName, in: baseTemplatePath),
-                      let optManifest = BrickManifest.load(fromPath: optPath) else {
+                      let optManifest = BrickManifest.load(fromPath: optPath)
+                else {
                     continue
                 }
 
@@ -235,8 +239,8 @@ public final class DependencyResolverEngine {
         let sourceFiles = items.filter { item in
             let lower = item.lowercased()
             return !lower.hasSuffix("brick.yml") &&
-                   !lower.hasSuffix("brick.yaml") &&
-                   lower != "block.json"
+                !lower.hasSuffix("brick.yaml") &&
+                lower != "block.json"
         }
 
         for item in sourceFiles {

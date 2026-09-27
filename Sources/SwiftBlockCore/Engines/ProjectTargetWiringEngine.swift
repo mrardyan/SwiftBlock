@@ -6,10 +6,10 @@ public enum TargetWiringError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .manifestNotFound(let path):
-            return "Project manifest not found at: \(path)"
-        case .wiringFailed(let message):
-            return "Target wiring failed: \(message)"
+            case let .manifestNotFound(path):
+                "Project manifest not found at: \(path)"
+            case let .wiringFailed(message):
+                "Target wiring failed: \(message)"
         }
     }
 }
@@ -25,7 +25,7 @@ public class ProjectTargetWiringEngine {
     public func wireFeatureTarget(
         moduleName: String,
         projectPath: String = FileManager.default.currentDirectoryPath,
-        config: SwiftBlockConfig? = nil,
+        config _: SwiftBlockConfig? = nil,
         isDryRun: Bool = false
     ) throws -> Bool {
         let absolutePath = (projectPath as NSString).isAbsolutePath
@@ -66,19 +66,19 @@ public class ProjectTargetWiringEngine {
 
         let targetDeclaration = """
 
-        // MARK: - Auto-Wired Feature Target: \(moduleName)
-        Target.target(
-            name: "\(moduleName)",
-            destinations: .iOS,
-            product: .framework,
-            bundleId: "$(PRODUCT_BUNDLE_IDENTIFIER).\(moduleName.lowercased())",
-            infoPlist: .default,
-            sources: ["App/Sources/Features/\(moduleName)/**"],
-            dependencies: [
-                .target(name: "Core")
-            ]
-        ),
-"""
+                // MARK: - Auto-Wired Feature Target: \(moduleName)
+                Target.target(
+                    name: "\(moduleName)",
+                    destinations: .iOS,
+                    product: .framework,
+                    bundleId: "$(PRODUCT_BUNDLE_IDENTIFIER).\(moduleName.lowercased())",
+                    infoPlist: .default,
+                    sources: ["App/Sources/Features/\(moduleName)/**"],
+                    dependencies: [
+                        .target(name: "Core")
+                    ]
+                ),
+        """
 
         var lines = content.components(separatedBy: "\n")
         if let targetsIndex = lines.firstIndex(where: { $0.contains("targets: [") }) {
@@ -115,14 +115,14 @@ public class ProjectTargetWiringEngine {
 
         let targetDeclaration = """
 
-  \(moduleName):
-    type: framework
-    platform: iOS
-    sources:
-      - path: App/Sources/Features/\(moduleName)
-    dependencies:
-      - target: Core
-"""
+          \(moduleName):
+            type: framework
+            platform: iOS
+            sources:
+              - path: App/Sources/Features/\(moduleName)
+            dependencies:
+              - target: Core
+        """
 
         var lines = content.components(separatedBy: "\n")
         if let targetsIndex = lines.firstIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "targets:" }) {
@@ -139,10 +139,8 @@ public class ProjectTargetWiringEngine {
 
 private extension Array {
     func rIndex(where predicate: (Element) -> Bool) -> Int? {
-        for index in stride(from: count - 1, through: 0, by: -1) {
-            if predicate(self[index]) {
-                return index
-            }
+        for index in stride(from: count - 1, through: 0, by: -1) where predicate(self[index]) {
+            return index
         }
         return nil
     }

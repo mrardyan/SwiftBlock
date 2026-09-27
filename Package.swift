@@ -8,10 +8,10 @@ let package = Package(
     platforms: [.macOS(.v12)],
     products: [
         .executable(name: "swiftblock", targets: ["swiftblock"]),
-        .library(name: "SwiftBlockCore", targets: ["SwiftBlockCore"])
+        .library(name: "SwiftBlockCore", targets: ["SwiftBlockCore"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0")
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
     ],
     targets: [
         .target(
@@ -22,12 +22,12 @@ let package = Package(
             name: "swiftblock",
             dependencies: [
                 "SwiftBlockCore",
-                .product(name: "ArgumentParser", package: "swift-argument-parser")
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
             ]
         ),
         .testTarget(
             name: "SwiftBlockTests",
             dependencies: ["SwiftBlockCore"]
-        )
+        ),
     ]
 )

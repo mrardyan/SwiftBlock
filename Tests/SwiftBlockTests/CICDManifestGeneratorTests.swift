@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct CICDManifestGeneratorTests {
-
-    @Test func generateGitHubActions() throws {
+final class CICDManifestGeneratorTests: XCTestCase {
+    func testGenerateGitHubActions() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -22,14 +21,14 @@ struct CICDManifestGeneratorTests {
         try generator.generateCICDPipeline(in: tempDir.path, config: config)
 
         let workflow = tempDir.appendingPathComponent(".github/workflows/ci.yml")
-        #expect(FileManager.default.fileExists(atPath: workflow.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: workflow.path))
 
         let content = try String(contentsOf: workflow, encoding: .utf8)
-        #expect(content.contains("name: CI"))
-        #expect(content.contains("xcodebuild test"))
+        XCTAssertTrue(content.contains("name: CI"))
+        XCTAssertTrue(content.contains("xcodebuild test"))
     }
 
-    @Test func generateGitLabCI() throws {
+    func testGenerateGitLabCI() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -47,14 +46,14 @@ struct CICDManifestGeneratorTests {
         try generator.generateCICDPipeline(in: tempDir.path, config: config)
 
         let workflow = tempDir.appendingPathComponent(".gitlab-ci.yml")
-        #expect(FileManager.default.fileExists(atPath: workflow.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: workflow.path))
 
         let content = try String(contentsOf: workflow, encoding: .utf8)
-        #expect(content.contains("stages:"))
-        #expect(content.contains("xcodebuild test"))
+        XCTAssertTrue(content.contains("stages:"))
+        XCTAssertTrue(content.contains("xcodebuild test"))
     }
 
-    @Test func generateXcodeCloud() throws {
+    func testGenerateXcodeCloud() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -72,10 +71,10 @@ struct CICDManifestGeneratorTests {
         try generator.generateCICDPipeline(in: tempDir.path, config: config)
 
         let script = tempDir.appendingPathComponent("ci_scripts/ci_post_clone.sh")
-        #expect(FileManager.default.fileExists(atPath: script.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: script.path))
 
         let content = try String(contentsOf: script, encoding: .utf8)
-        #expect(content.contains("#!/usr/bin/env bash"))
-        #expect(content.contains("mise install"))
+        XCTAssertTrue(content.contains("#!/usr/bin/env bash"))
+        XCTAssertTrue(content.contains("mise install"))
     }
 }

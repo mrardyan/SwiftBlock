@@ -11,15 +11,16 @@ public struct PackagingConfig: Codable, Equatable {
 
     public init(from decoder: Decoder) throws {
         if let container = try? decoder.container(keyedBy: CodingKeys.self) {
-            self.feature = (try? container.decode(String.self, forKey: .feature)) ?? "monolithic"
-            self.core = (try? container.decode(String.self, forKey: .core)) ?? "spm"
+            feature = (try? container.decode(String.self, forKey: .feature)) ?? "monolithic"
+            core = (try? container.decode(String.self, forKey: .core)) ?? "spm"
         } else if let single = try? decoder.singleValueContainer(),
-                  let value = try? single.decode(String.self) {
-            self.feature = value
-            self.core = value == "spm" ? "spm" : "monolithic"
+                  let value = try? single.decode(String.self)
+        {
+            feature = value
+            core = value == "spm" ? "spm" : "monolithic"
         } else {
-            self.feature = "monolithic"
-            self.core = "spm"
+            feature = "monolithic"
+            core = "spm"
         }
     }
 }

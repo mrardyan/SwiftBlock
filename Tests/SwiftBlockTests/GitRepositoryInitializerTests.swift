@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct GitRepositoryInitializerTests {
-
-    @Test func initializeGitRepo() throws {
+final class GitRepositoryInitializerTests: XCTestCase {
+    func testInitializeGitRepo() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -24,11 +23,11 @@ struct GitRepositoryInitializerTests {
         let gitDir = tempDir.appendingPathComponent(".git")
         let gitignore = tempDir.appendingPathComponent(".gitignore")
 
-        #expect(FileManager.default.fileExists(atPath: gitDir.path))
-        #expect(FileManager.default.fileExists(atPath: gitignore.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: gitDir.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: gitignore.path))
 
         let gitignoreContent = try String(contentsOf: gitignore, encoding: .utf8)
-        #expect(gitignoreContent.contains("DerivedData"))
-        #expect(gitignoreContent.contains(".build/"))
+        XCTAssertTrue(gitignoreContent.contains("DerivedData"))
+        XCTAssertTrue(gitignoreContent.contains(".build/"))
     }
 }

@@ -7,7 +7,7 @@ public class IDEConfigGenerator {
         self.fileManager = fileManager
     }
 
-    public func generateVSCodeTasks(projectPath: String, config: SwiftBlockConfig) throws {
+    public func generateVSCodeTasks(projectPath: String, config _: SwiftBlockConfig) throws {
         let vscodeDir = "\(projectPath)/.vscode"
         try fileManager.createDirectory(atPath: vscodeDir, withIntermediateDirectories: true)
 
@@ -73,35 +73,36 @@ public class IDEConfigGenerator {
     public func updateMakefileShortcuts(projectPath: String) throws {
         let makefilePath = "\(projectPath)/Makefile"
         guard fileManager.fileExists(atPath: makefilePath),
-              var content = try? String(contentsOfFile: makefilePath, encoding: .utf8) else {
+              var content = try? String(contentsOfFile: makefilePath, encoding: .utf8)
+        else {
             return
         }
 
         if !content.contains("snap-scene:") {
             var shortcuts = """
 
-# SwiftBlock IDE & Developer Shortcuts
-"""
+            # SwiftBlock IDE & Developer Shortcuts
+            """
             if !content.contains("\nopen:") {
                 shortcuts += """
-open:
-	open *.xcworkspace 2>/dev/null || open *.xcodeproj 2>/dev/null || tuist generate
+                open:
+                	open *.xcworkspace 2>/dev/null || open *.xcodeproj 2>/dev/null || tuist generate
 
-"""
+                """
             }
             shortcuts += """
-snap-scene:
-	swiftblock snap scene $(NAME)
+            snap-scene:
+            	swiftblock snap scene $(NAME)
 
-snap-core:
-	swiftblock snap $(BLOCK) $(NAME)
+            snap-core:
+            	swiftblock snap $(BLOCK) $(NAME)
 
-kit-run:
-	swiftblock kit run $(KIT) $(NAME)
+            kit-run:
+            	swiftblock kit run $(KIT) $(NAME)
 
-doctor:
-	swiftblock doctor
-"""
+            doctor:
+            	swiftblock doctor
+            """
             content += shortcuts
             try content.write(toFile: makefilePath, atomically: true, encoding: .utf8)
         }

@@ -1,9 +1,8 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct FlavorResolverTests {
-
+final class FlavorResolverTests: XCTestCase {
     private func makeManifest(withFlavorYAML: String) throws -> BrickManifest {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("FlavorResolver_\(UUID().uuidString)", isDirectory: true)
@@ -45,51 +44,51 @@ struct FlavorResolverTests {
               usesObservation: false
     """
 
-    @Test func appliesDefaultOptionWhenNoSelection() throws {
+    func testAppliesDefaultOptionWhenNoSelection() throws {
         let manifest = try makeManifest(withFlavorYAML: Self.sceneYAML)
         let result = FlavorResolver.resolve(manifest: manifest, selections: [:])
-        #expect(result.variables["stateStyle"] == "observable")
-        #expect(result.variables["usesObservation"] == "true")
+        XCTAssertEqual(result.variables["stateStyle"], "observable")
+        XCTAssertEqual(result.variables["usesObservation"], "true")
     }
 
-    @Test func appliesSelectedOption() throws {
+    func testAppliesSelectedOption() throws {
         let manifest = try makeManifest(withFlavorYAML: Self.sceneYAML)
         let result = FlavorResolver.resolve(manifest: manifest, selections: ["stateStyle": "combine"])
-        #expect(result.variables["stateStyle"] == "combine")
-        #expect(result.variables["usesObservation"] == "false")
+        XCTAssertEqual(result.variables["stateStyle"], "combine")
+        XCTAssertEqual(result.variables["usesObservation"], "false")
     }
 
-    @Test func selectionIsCaseInsensitive() throws {
+    func testSelectionIsCaseInsensitive() throws {
         let manifest = try makeManifest(withFlavorYAML: Self.sceneYAML)
         let result = FlavorResolver.resolve(manifest: manifest, selections: ["STATESTYLE": "Combine"])
-        #expect(result.variables["stateStyle"] == "combine")
+        XCTAssertEqual(result.variables["stateStyle"], "combine")
     }
 
-    @Test func ignoresUnknownOptionKeepsDefault() throws {
+    func testIgnoresUnknownOptionKeepsDefault() throws {
         let manifest = try makeManifest(withFlavorYAML: Self.sceneYAML)
         let result = FlavorResolver.resolve(manifest: manifest, selections: ["stateStyle": "nope"])
         // Unknown selection falls back to default behavior (first option)
-        #expect(result.variables["stateStyle"] == "observable")
+        XCTAssertEqual(result.variables["stateStyle"], "observable")
     }
 
-    @Test func undeclaredKeysBecomeTemplateVariables() throws {
+    func testUndeclaredKeysBecomeTemplateVariables() throws {
         let manifest = try makeManifest(withFlavorYAML: Self.sceneYAML)
         let result = FlavorResolver.resolve(manifest: manifest, selections: ["timeout": "60"])
-        #expect(result.variables["timeout"] == "60")
+        XCTAssertEqual(result.variables["timeout"], "60")
     }
 
-    @Test func preservesProvidedVariables() throws {
+    func testPreservesProvidedVariables() throws {
         let manifest = try makeManifest(withFlavorYAML: Self.sceneYAML)
         let result = FlavorResolver.resolve(
             manifest: manifest,
             selections: [:],
             variables: ["timeoutInterval": "45"]
         )
-        #expect(result.variables["timeoutInterval"] == "45")
-        #expect(result.variables["stateStyle"] == "observable")
+        XCTAssertEqual(result.variables["timeoutInterval"], "45")
+        XCTAssertEqual(result.variables["stateStyle"], "observable")
     }
 
-    @Test func addsFlavorScopedOptionalDependencies() throws {
+    func testAddsFlavorScopedOptionalDependencies() throws {
         let manifest = try makeManifest(withFlavorYAML: """
         flavors:
           strategy:
@@ -106,15 +105,16 @@ struct FlavorResolverTests {
                       description: Local cache
         """)
         let result = FlavorResolver.resolve(manifest: manifest, selections: ["strategy": "offline-first"])
-        #expect(result.selectedOptionalDeps.contains("storage"))
+        XCTAssertTrue(result.selectedOptionalDeps.contains("storage"))
 
         let remoteResult = FlavorResolver.resolve(manifest: manifest, selections: ["strategy": "remote-only"])
-        #expect(remoteResult.selectedOptionalDeps.isEmpty)
+        XCTAssertTrue(remoteResult.selectedOptionalDeps.isEmpty)
     }
 
-    @Test func validateSelectionReportsUnknownOption() throws {
+    func testValidateSelectionReportsUnknownOption() throws {
         let manifest = try makeManifest(withFlavorYAML: Self.sceneYAML)
-        #expect(FlavorResolver.validateSelection(manifest: manifest, flavorKey: "stateStyle", selectedValue: "combine") == nil)
-        #expect(FlavorResolver.validateSelection(manifest: manifest, flavorKey: "stateStyle", selectedValue: "bad")?.contains("Unknown option 'bad'") == true)
+        XCTAssertNil(FlavorResolver.validateSelection(manifest: manifest, flavorKey: "stateStyle", selectedValue: "combine"))
+        XCTAssertTrue(FlavorResolver.validateSelection(manifest: manifest, flavorKey: "stateStyle", selectedValue: "bad")?
+            .contains("Unknown option 'bad'") == true)
     }
 }

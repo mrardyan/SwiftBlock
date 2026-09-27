@@ -1,8 +1,8 @@
 import Foundation
 #if canImport(Darwin)
-import Darwin
+    import Darwin
 #elseif canImport(Glibc)
-import Glibc
+    import Glibc
 #endif
 
 public struct ChoiceOption {
@@ -16,7 +16,6 @@ public struct ChoiceOption {
 }
 
 public class TerminalPrompt {
-    
     private static func visibleLength(_ text: String) -> Int {
         let clean = text.replacingOccurrences(
             of: #"\x1B\[[0-9;?]*[a-zA-Z~]"#,
@@ -28,7 +27,7 @@ public class TerminalPrompt {
 
     private static func getTerminalColumns() -> Int {
         var ws = winsize()
-        if ioctl(STDOUT_FILENO, UInt(TIOCGWINSZ), &ws) == 0 && ws.ws_col > 0 {
+        if ioctl(STDOUT_FILENO, UInt(TIOCGWINSZ), &ws) == 0, ws.ws_col > 0 {
             return Int(ws.ws_col)
         }
         return 80
@@ -45,8 +44,8 @@ public class TerminalPrompt {
         let ret = poll(&fds, 1, Int32(ms))
         if ret <= 0 { return nil }
         var byte: UInt8 = 0
-        let n = read(STDIN_FILENO, &byte, 1)
-        return n == 1 ? byte : nil
+        let bytesRead = read(STDIN_FILENO, &byte, 1)
+        return bytesRead == 1 ? byte : nil
     }
 
     private static func confirmExit(
@@ -71,7 +70,7 @@ public class TerminalPrompt {
         readLineFallback: () -> String? = { Swift.readLine() }
     ) -> Int? {
         guard !options.isEmpty else { return nil }
-        
+
         let isTTY = isatty(STDIN_FILENO) != 0
         if !isTTY {
             return fallbackChoice(title: title, options: options, readLine: readLineFallback)
@@ -117,7 +116,7 @@ public class TerminalPrompt {
             }
 
             var linesCount = 0
-            
+
             // Question header
             let header = "│  \(ANSIColor.cyanText("?"))  \(ANSIColor.boldText(title)) \(ANSIColor.dimText("(↑/↓ to navigate, ESC/Ctrl+C to exit)"))"
             print(header)
@@ -127,7 +126,7 @@ public class TerminalPrompt {
                 let isSelected = idx == selectedIndex
                 let prefix = isSelected ? "│    \(ANSIColor.cyanText("❯")) " : "│      "
                 let lineText: String
-                
+
                 if isSelected {
                     let titleText = ANSIColor.boldText(ANSIColor.cyanText(option.title))
                     if let subtitle = option.subtitle, !subtitle.isEmpty {
@@ -143,7 +142,7 @@ public class TerminalPrompt {
                         lineText = "\(prefix)\(titleText)"
                     }
                 }
-                
+
                 print(lineText)
                 linesCount += physicalLineCount(for: lineText, columns: cols)
             }
@@ -156,8 +155,8 @@ public class TerminalPrompt {
 
         func getByte() -> UInt8? {
             var byte: UInt8 = 0
-            let n = read(STDIN_FILENO, &byte, 1)
-            return n == 1 ? byte : nil
+            let bytesRead = read(STDIN_FILENO, &byte, 1)
+            return bytesRead == 1 ? byte : nil
         }
 
         while true {
@@ -178,17 +177,17 @@ public class TerminalPrompt {
                     return nil
                 }
             } else if byte == 0x1B { // Escape sequence (Arrow keys or ESC)
-                if let b2 = getByteWithTimeout(ms: 30), (b2 == 0x5B || b2 == 0x4F) {
+                if let b2 = getByteWithTimeout(ms: 30), b2 == 0x5B || b2 == 0x4F {
                     if let b3 = getByteWithTimeout(ms: 30) {
                         switch b3 {
-                        case 0x41: // Up Arrow ('A')
-                            selectedIndex = (selectedIndex - 1 + options.count) % options.count
-                            renderMenu()
-                        case 0x42: // Down Arrow ('B')
-                            selectedIndex = (selectedIndex + 1) % options.count
-                            renderMenu()
-                        default:
-                            break
+                            case 0x41: // Up Arrow ('A')
+                                selectedIndex = (selectedIndex - 1 + options.count) % options.count
+                                renderMenu()
+                            case 0x42: // Down Arrow ('B')
+                                selectedIndex = (selectedIndex + 1) % options.count
+                                renderMenu()
+                            default:
+                                break
                         }
                     }
                 } else {
@@ -228,18 +227,18 @@ public class TerminalPrompt {
     public static func selectMultiChoice(
         title: String,
         options: [MultiChoiceOption],
-        readLineFallback: () -> String? = { Swift.readLine() }
+        readLineFallback _: () -> String? = { Swift.readLine() }
     ) -> [String] {
         guard !options.isEmpty else { return [] }
 
         let isTTY = isatty(STDIN_FILENO) != 0
         if !isTTY {
-            return options.filter { $0.isSelected }.map { $0.id }
+            return options.filter(\.isSelected).map(\.id)
         }
 
         var oldTerm = termios()
         if tcgetattr(STDIN_FILENO, &oldTerm) != 0 {
-            return options.filter { $0.isSelected }.map { $0.id }
+            return options.filter(\.isSelected).map(\.id)
         }
 
         var rawTerm = oldTerm
@@ -251,7 +250,7 @@ public class TerminalPrompt {
         }
 
         if tcsetattr(STDIN_FILENO, TCSANOW, &rawTerm) != 0 {
-            return options.filter { $0.isSelected }.map { $0.id }
+            return options.filter(\.isSelected).map(\.id)
         }
 
         print("\u{001B}[?25l", terminator: "")
@@ -276,7 +275,8 @@ public class TerminalPrompt {
 
             var linesCount = 0
 
-            let header = "│  \(ANSIColor.cyanText("?"))  \(ANSIColor.boldText(title)) \(ANSIColor.dimText("(↑/↓ to move, Space to toggle, 'a' to all, Enter to submit)"))"
+            let header = "│  \(ANSIColor.cyanText("?"))  \(ANSIColor.boldText(title)) "
+                + "\(ANSIColor.dimText("(↑/↓ to move, Space to toggle, 'a' to all, Enter to submit)"))"
             print(header)
             linesCount += physicalLineCount(for: header, columns: cols)
 
@@ -305,8 +305,8 @@ public class TerminalPrompt {
 
         func getByte() -> UInt8? {
             var byte: UInt8 = 0
-            let n = read(STDIN_FILENO, &byte, 1)
-            return n == 1 ? byte : nil
+            let bytesRead = read(STDIN_FILENO, &byte, 1)
+            return bytesRead == 1 ? byte : nil
         }
 
         while true {
@@ -316,17 +316,17 @@ public class TerminalPrompt {
                 if totalRenderedLines > 0 {
                     print("\r\u{001B}[\(totalRenderedLines)A\u{001B}[J", terminator: "")
                 }
-                let selectedTitles = stateOptions.filter { $0.isSelected }.map { $0.title }
+                let selectedTitles = stateOptions.filter(\.isSelected).map(\.title)
                 let summaryText = selectedTitles.isEmpty ? ANSIColor.dimText("None") : ANSIColor.cyanText(selectedTitles.joined(separator: ", "))
                 print("│  \(ANSIColor.greenText("✔"))  \(title) › \(summaryText)")
                 fflush(stdout)
-                return stateOptions.filter { $0.isSelected }.map { $0.id }
+                return stateOptions.filter(\.isSelected).map(\.id)
             } else if byte == 0x20 { // Space (toggle item)
                 stateOptions[highlightedIndex].isSelected.toggle()
                 renderMenu()
             } else if byte == 0x61 || byte == 0x41 { // 'a' or 'A' (toggle all)
-                let allSelected = stateOptions.allSatisfy { $0.isSelected }
-                for i in 0..<stateOptions.count {
+                let allSelected = stateOptions.allSatisfy(\.isSelected)
+                for i in 0 ..< stateOptions.count {
                     stateOptions[i].isSelected = !allSelected
                 }
                 renderMenu()
@@ -337,17 +337,17 @@ public class TerminalPrompt {
                     return []
                 }
             } else if byte == 0x1B { // Escape sequence (Arrow keys or ESC)
-                if let b2 = getByteWithTimeout(ms: 30), (b2 == 0x5B || b2 == 0x4F) {
+                if let b2 = getByteWithTimeout(ms: 30), b2 == 0x5B || b2 == 0x4F {
                     if let b3 = getByteWithTimeout(ms: 30) {
                         switch b3 {
-                        case 0x41: // Up Arrow ('A')
-                            highlightedIndex = (highlightedIndex - 1 + stateOptions.count) % stateOptions.count
-                            renderMenu()
-                        case 0x42: // Down Arrow ('B')
-                            highlightedIndex = (highlightedIndex + 1) % stateOptions.count
-                            renderMenu()
-                        default:
-                            break
+                            case 0x41: // Up Arrow ('A')
+                                highlightedIndex = (highlightedIndex - 1 + stateOptions.count) % stateOptions.count
+                                renderMenu()
+                            case 0x42: // Down Arrow ('B')
+                                highlightedIndex = (highlightedIndex + 1) % stateOptions.count
+                                renderMenu()
+                            default:
+                                break
                         }
                     }
                 } else {
@@ -367,7 +367,7 @@ public class TerminalPrompt {
             }
         }
 
-        return stateOptions.filter { $0.isSelected }.map { $0.id }
+        return stateOptions.filter(\.isSelected).map(\.id)
     }
 
     public static func confirm(
@@ -438,8 +438,9 @@ public class TerminalPrompt {
 
             let yesOption = isYesSelected ? ANSIColor.boldText(ANSIColor.cyanText("● Yes")) : ANSIColor.dimText("○ Yes")
             let noOption = !isYesSelected ? ANSIColor.boldText(ANSIColor.cyanText("● No")) : ANSIColor.dimText("○ No")
-            
-            let promptLine = "│  \(ANSIColor.cyanText("?"))  \(ANSIColor.boldText(title)) › \(yesOption)  \(noOption)  \(ANSIColor.dimText("(←/→ to switch, Enter to submit)"))"
+
+            let promptLine = "│  \(ANSIColor.cyanText("?"))  \(ANSIColor.boldText(title)) › \(yesOption)  \(noOption)  "
+                + "\(ANSIColor.dimText("(←/→ to switch, Enter to submit)"))"
             print(promptLine)
             fflush(stdout)
             totalRenderedLines = physicalLineCount(for: promptLine, columns: cols)
@@ -449,8 +450,8 @@ public class TerminalPrompt {
 
         func getByte() -> UInt8? {
             var byte: UInt8 = 0
-            let n = read(STDIN_FILENO, &byte, 1)
-            return n == 1 ? byte : nil
+            let bytesRead = read(STDIN_FILENO, &byte, 1)
+            return bytesRead == 1 ? byte : nil
         }
 
         while true {
@@ -471,7 +472,7 @@ public class TerminalPrompt {
                 isYesSelected = false
                 renderPrompt()
             } else if byte == 0x1B { // Escape sequence (Arrow keys or ESC)
-                if let b2 = getByteWithTimeout(ms: 30), (b2 == 0x5B || b2 == 0x4F) {
+                if let b2 = getByteWithTimeout(ms: 30), b2 == 0x5B || b2 == 0x4F {
                     if let b3 = getByteWithTimeout(ms: 30) {
                         if b3 == 0x44 || b3 == 0x43 || b3 == 0x41 || b3 == 0x42 {
                             isYesSelected.toggle()
@@ -505,11 +506,10 @@ public class TerminalPrompt {
         defaultValue: String? = nil,
         readLineFallback: () -> String? = { InteractiveWizard.readLine() }
     ) -> String {
-        let defaultHint: String
-        if let val = defaultValue, !val.isEmpty {
-            defaultHint = " \(ANSIColor.dimText("(default: \(val))"))"
+        let defaultHint = if let val = defaultValue, !val.isEmpty {
+            " \(ANSIColor.dimText("(default: \(val))"))"
         } else {
-            defaultHint = ""
+            ""
         }
         print("│  \(ANSIColor.cyanText("?"))  \(ANSIColor.boldText(title))\(defaultHint): ", terminator: "")
         fflush(stdout)
@@ -549,7 +549,7 @@ public class TerminalPrompt {
                 print("    \(index + 1)) \(option.title)")
             }
         }
-        
+
         while true {
             print("Choice [1-\(options.count)]: ", terminator: "")
             fflush(stdout)
@@ -557,7 +557,7 @@ public class TerminalPrompt {
                 return 0
             }
             let input = line.trimmingCharacters(in: .whitespacesAndNewlines)
-            if let choice = Int(input), choice >= 1 && choice <= options.count {
+            if let choice = Int(input), choice >= 1, choice <= options.count {
                 return choice - 1
             }
             print("⚠️ Invalid choice. Please enter a number between 1 and \(options.count).")

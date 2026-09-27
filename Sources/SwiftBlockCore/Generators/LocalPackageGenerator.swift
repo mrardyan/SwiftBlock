@@ -18,14 +18,14 @@ public class LocalPackageGenerator {
             var configureSteps: [String] = []
             for type in config.coreBlocks {
                 switch type {
-                case .storage: configureSteps.append("        let _ = AppStorage()")
-                case .network: configureSteps.append("        let _ = NetworkClient()")
-                case .logger: configureSteps.append("        let logger = AppLogger()\n        logger.info(\"CoreModule initialized.\")")
-                case .config: configureSteps.append("        let _ = AppConfig()")
-                case .auth: configureSteps.append("        let _ = UserAuth()")
-                case .analytics: configureSteps.append("        let _ = AppAnalytics()")
-                case .featureflag: configureSteps.append("        let _ = FeatureFlags()")
-                default: break
+                    case .storage: configureSteps.append("        let _ = AppStorage()")
+                    case .network: configureSteps.append("        let _ = NetworkClient()")
+                    case .logger: configureSteps.append("        let logger = AppLogger()\n        logger.info(\"CoreModule initialized.\")")
+                    case .config: configureSteps.append("        let _ = AppConfig()")
+                    case .auth: configureSteps.append("        let _ = UserAuth()")
+                    case .analytics: configureSteps.append("        let _ = AppAnalytics()")
+                    case .featureflag: configureSteps.append("        let _ = FeatureFlags()")
+                    default: break
                 }
             }
 
@@ -54,24 +54,24 @@ public class LocalPackageGenerator {
 
         let packageManifestPath = "\(corePackageDir)/Package.swift"
         let manifestContent = """
-// swift-tools-version: \(versions.swiftToolsVersion)
-import PackageDescription
+        // swift-tools-version: \(versions.swiftToolsVersion)
+        import PackageDescription
 
-let package = Package(
-    name: "Core",
-    platforms: [.iOS(.v\(versions.iOSDeploymentTarget.replacingOccurrences(of: ".0", with: ""))), .macOS(.v13)],
-    products: [
-        .library(name: "Core", targets: ["Core"]),
-    ],
-    targets: [
-        .target(
+        let package = Package(
             name: "Core",
-            dependencies: [],
-            path: "Sources/Core"
-        ),
-    ]
-)
-"""
+            platforms: [.iOS(.v\(versions.iOSDeploymentTarget.replacingOccurrences(of: ".0", with: ""))), .macOS(.v13)],
+            products: [
+                .library(name: "Core", targets: ["Core"]),
+            ],
+            targets: [
+                .target(
+                    name: "Core",
+                    dependencies: [],
+                    path: "Sources/Core"
+                ),
+            ]
+        )
+        """
         let trimmedManifest = manifestContent.trimmingCharacters(in: .newlines) + "\n"
         try trimmedManifest.write(toFile: packageManifestPath, atomically: true, encoding: .utf8)
     }
@@ -102,24 +102,24 @@ let package = Package(
 
         let packageManifestPath = "\(featurePackageDir)/Package.swift"
         let manifestContent = """
-// swift-tools-version: \(versions.swiftToolsVersion)
-import PackageDescription
+        // swift-tools-version: \(versions.swiftToolsVersion)
+        import PackageDescription
 
-let package = Package(
-    name: "\(capitalizedName)Feature",
-    platforms: [.iOS(.v\(versions.iOSDeploymentTarget.replacingOccurrences(of: ".0", with: ""))), .macOS(.v13)],
-    products: [
-        .library(name: "\(capitalizedName)Feature", targets: ["\(capitalizedName)Feature"]),
-    ],
-    targets: [
-        .target(
+        let package = Package(
             name: "\(capitalizedName)Feature",
-            dependencies: [],
-            path: "Sources/\(capitalizedName)Feature"
-        ),
-    ]
-)
-"""
+            platforms: [.iOS(.v\(versions.iOSDeploymentTarget.replacingOccurrences(of: ".0", with: ""))), .macOS(.v13)],
+            products: [
+                .library(name: "\(capitalizedName)Feature", targets: ["\(capitalizedName)Feature"]),
+            ],
+            targets: [
+                .target(
+                    name: "\(capitalizedName)Feature",
+                    dependencies: [],
+                    path: "Sources/\(capitalizedName)Feature"
+                ),
+            ]
+        )
+        """
         let trimmedManifest = manifestContent.trimmingCharacters(in: .newlines) + "\n"
         try trimmedManifest.write(toFile: packageManifestPath, atomically: true, encoding: .utf8)
     }

@@ -1,28 +1,27 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct BoxManagerTests {
-
-    @Test func gitURLParsing() {
+final class BoxManagerTests: XCTestCase {
+    func testGitURLParsing() {
         let parsedSimple = BoxManager.parseGitURL("https://github.com/company/ios-bricks.git")
-        #expect(parsedSimple.repoURL == "https://github.com/company/ios-bricks.git")
-        #expect(parsedSimple.fragment == nil)
+        XCTAssertEqual(parsedSimple.repoURL, "https://github.com/company/ios-bricks.git")
+        XCTAssertEqual(parsedSimple.fragment, nil)
 
         let parsedWithFragment = BoxManager.parseGitURL("https://github.com/company/ios-bricks.git#bricks/network")
-        #expect(parsedWithFragment.repoURL == "https://github.com/company/ios-bricks.git")
-        #expect(parsedWithFragment.fragment == "bricks/network")
+        XCTAssertEqual(parsedWithFragment.repoURL, "https://github.com/company/ios-bricks.git")
+        XCTAssertEqual(parsedWithFragment.fragment, "bricks/network")
     }
 
-    @Test func isGitURL() {
-        #expect(BoxManager.isGitURL("https://github.com/company/ios-bricks.git"))
-        #expect(BoxManager.isGitURL("http://gitlab.com/company/repo.git#bricks/storage"))
-        #expect(BoxManager.isGitURL("git@github.com:company/repo.git"))
-        #expect(!BoxManager.isGitURL("network"))
-        #expect(!BoxManager.isGitURL("core/network"))
+    func testIsGitURL() {
+        XCTAssertTrue(BoxManager.isGitURL("https://github.com/company/ios-bricks.git"))
+        XCTAssertTrue(BoxManager.isGitURL("http://gitlab.com/company/repo.git#bricks/storage"))
+        XCTAssertTrue(BoxManager.isGitURL("git@github.com:company/repo.git"))
+        XCTAssertFalse(BoxManager.isGitURL("network"))
+        XCTAssertFalse(BoxManager.isGitURL("core/network"))
     }
 
-    @Test func boxConfigPersistenceAndStoreDirectories() throws {
+    func testBoxConfigPersistenceAndStoreDirectories() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("BoxStore_\(UUID().uuidString)", isDirectory: true).path
         defer {
@@ -30,13 +29,13 @@ struct BoxManagerTests {
         }
 
         let manager = BoxManager(storeRootPath: tempDir)
-        #expect(manager.boxesDirectory == "\(tempDir)/store/v1/boxes")
-        #expect(manager.gitCacheDirectory == "\(tempDir)/store/v1/git")
+        XCTAssertEqual(manager.boxesDirectory, "\(tempDir)/store/v1/boxes")
+        XCTAssertEqual(manager.gitCacheDirectory, "\(tempDir)/store/v1/git")
 
-        #expect(manager.listBoxes().isEmpty)
+        XCTAssertTrue(manager.listBoxes().isEmpty)
     }
 
-    @Test func monorepoDiscovery() throws {
+    func testMonorepoDiscovery() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("Monorepo_\(UUID().uuidString)", isDirectory: true).path
         defer {
@@ -65,12 +64,12 @@ struct BoxManagerTests {
         let manager = BoxManager(storeRootPath: tempDir)
         let discovered = manager.discoverMonorepoBricks(at: tempDir)
 
-        #expect(discovered.count == 2)
-        #expect(discovered.map { $0.manifest.name }.contains("network"))
-        #expect(discovered.map { $0.manifest.name }.contains("storage"))
+        XCTAssertEqual(discovered.count, 2)
+        XCTAssertTrue(discovered.map(\.manifest.name).contains("network"))
+        XCTAssertTrue(discovered.map(\.manifest.name).contains("storage"))
     }
 
-    @Test func boxNameSanitizationAndTraversalPrevention() throws {
+    func testBoxNameSanitizationAndTraversalPrevention() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("BoxStoreSanitization_\(UUID().uuidString)", isDirectory: true).path
         defer {
@@ -78,19 +77,15 @@ struct BoxManagerTests {
         }
 
         let manager = BoxManager(storeRootPath: tempDir)
-        
+
         // Attempt removing with path traversal characters
-        #expect(throws: Never.self) {
-            try manager.removeBox(name: "../../evil_box")
-        }
+        XCTAssertNoThrow(try manager.removeBox(name: "../../evil_box"))
 
         // Attempt adding with empty name
-        #expect(throws: BoxManagerError.self) {
-            try manager.addBox(name: "   ", gitURL: "https://invalid-repo-url.git")
-        }
+        XCTAssertThrowsError(try manager.addBox(name: "   ", gitURL: "https://invalid-repo-url.git"))
     }
 
-    @Test func invalidGitURLOrCloneFailure() throws {
+    func testInvalidGitURLOrCloneFailure() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("BoxStoreCloneFail_\(UUID().uuidString)", isDirectory: true).path
         defer {
@@ -98,9 +93,7 @@ struct BoxManagerTests {
         }
 
         let manager = BoxManager(storeRootPath: tempDir)
-        
-        #expect(throws: BoxManagerError.self) {
-            try manager.addBox(name: "invalidbox", gitURL: "https://invalid-non-existent-domain-12345.com/repo.git")
-        }
+
+        XCTAssertThrowsError(try manager.addBox(name: "invalidbox", gitURL: "https://invalid-non-existent-domain-12345.com/repo.git"))
     }
 }

@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct ProjectManifestGeneratorTests {
-
-    @Test func tuistManifestGeneratorOutput() throws {
+final class ProjectManifestGeneratorTests: XCTestCase {
+    func testTuistManifestGeneratorOutput() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -22,14 +21,14 @@ struct ProjectManifestGeneratorTests {
         try generator.generateManifest(config: config, projectPath: tempDir.path)
 
         let projectFile = tempDir.appendingPathComponent("Project.swift")
-        #expect(FileManager.default.fileExists(atPath: projectFile.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: projectFile.path))
 
         let content = try String(contentsOf: projectFile, encoding: .utf8)
-        #expect(content.contains("name: \"TestTuistApp\""))
-        #expect(content.contains("bundleId: \"com.test.TestTuistApp\""))
+        XCTAssertTrue(content.contains("name: \"TestTuistApp\""))
+        XCTAssertTrue(content.contains("bundleId: \"com.test.TestTuistApp\""))
     }
 
-    @Test func xcodeGenManifestGeneratorOutput() throws {
+    func testXcodeGenManifestGeneratorOutput() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -47,14 +46,14 @@ struct ProjectManifestGeneratorTests {
         try generator.generateManifest(config: config, projectPath: tempDir.path)
 
         let projectFile = tempDir.appendingPathComponent("project.yml")
-        #expect(FileManager.default.fileExists(atPath: projectFile.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: projectFile.path))
 
         let content = try String(contentsOf: projectFile, encoding: .utf8)
-        #expect(content.contains("name: TestXcodeGenApp"))
-        #expect(content.contains("bundleIdPrefix: com.test"))
+        XCTAssertTrue(content.contains("name: TestXcodeGenApp"))
+        XCTAssertTrue(content.contains("bundleIdPrefix: com.test"))
     }
 
-    @Test func tuistManifestGeneratorWithConfigBlock() throws {
+    func testTuistManifestGeneratorWithConfigBlock() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -74,23 +73,24 @@ struct ProjectManifestGeneratorTests {
 
         let projectFile = tempDir.appendingPathComponent("Project.swift")
         let content = try String(contentsOf: projectFile, encoding: .utf8)
-        #expect(content.contains("Development.xcconfig"))
-        #expect(content.contains("Staging.xcconfig"))
-        #expect(content.contains("Production.xcconfig"))
-        #expect(content.contains("TestTuistConfigApp-Dev"))
-        #expect(content.contains("TestTuistConfigApp-Stg"))
-        #expect(content.contains("TestTuistConfigApp"))
+        XCTAssertTrue(content.contains("Development.xcconfig"))
+        XCTAssertTrue(content.contains("Staging.xcconfig"))
+        XCTAssertTrue(content.contains("Production.xcconfig"))
+        XCTAssertTrue(content.contains("TestTuistConfigApp-Dev"))
+        XCTAssertTrue(content.contains("TestTuistConfigApp-Stg"))
+        XCTAssertTrue(content.contains("TestTuistConfigApp"))
 
         // Verify target parameter ordering: dependencies must precede target settings
         if let depRange = content.range(of: "dependencies: ["),
-           let lastSetRange = content.range(of: "settings:", options: .backwards) {
-            #expect(depRange.lowerBound < lastSetRange.lowerBound)
+           let lastSetRange = content.range(of: "settings:", options: .backwards)
+        {
+            XCTAssertLessThan(depRange.lowerBound, lastSetRange.lowerBound)
         } else {
-            Issue.record("Manifest must contain both 'dependencies:' and 'settings:' parameters.")
+            XCTFail("Manifest must contain both 'dependencies:' and 'settings:' parameters.")
         }
     }
 
-    @Test func xcodeGenManifestGeneratorWithConfigBlock() throws {
+    func testXcodeGenManifestGeneratorWithConfigBlock() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -110,17 +110,17 @@ struct ProjectManifestGeneratorTests {
 
         let projectFile = tempDir.appendingPathComponent("project.yml")
         let content = try String(contentsOf: projectFile, encoding: .utf8)
-        #expect(content.contains("Configs/Development.xcconfig"))
-        #expect(content.contains("TestXcodeGenConfigApp-Dev"))
-        #expect(content.contains("TestXcodeGenConfigApp-Stg"))
-        #expect(content.contains("TestXcodeGenConfigApp:"))
+        XCTAssertTrue(content.contains("Configs/Development.xcconfig"))
+        XCTAssertTrue(content.contains("TestXcodeGenConfigApp-Dev"))
+        XCTAssertTrue(content.contains("TestXcodeGenConfigApp-Stg"))
+        XCTAssertTrue(content.contains("TestXcodeGenConfigApp:"))
     }
 
-    @Test func generatorFactorySelection() {
+    func testGeneratorFactorySelection() {
         let tuistGenerator = ProjectManifestGeneratorFactory.createGenerator(for: .tuist)
-        #expect(tuistGenerator is TuistManifestGenerator)
+        XCTAssertTrue(tuistGenerator is TuistManifestGenerator)
 
         let xcodeGenGenerator = ProjectManifestGeneratorFactory.createGenerator(for: .xcodegen)
-        #expect(xcodeGenGenerator is XcodeGenManifestGenerator)
+        XCTAssertTrue(xcodeGenGenerator is XcodeGenManifestGenerator)
     }
 }

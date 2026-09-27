@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct KitEngineTests {
-
-    @Test func executeDefaultBuiltInKit() throws {
+final class KitEngineTests: XCTestCase {
+    func testExecuteDefaultBuiltInKit() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -27,12 +26,12 @@ struct KitEngineTests {
             isDryRun: true
         )
 
-        #expect(result.kitName == "feature")
-        #expect(result.moduleName == "Profile")
-        #expect(result.generatedBricks == [.scene, .usecase, .repository, .mapper])
+        XCTAssertEqual(result.kitName, "feature")
+        XCTAssertEqual(result.moduleName, "Profile")
+        XCTAssertEqual(result.generatedBricks, [.scene, .usecase, .repository, .mapper])
     }
 
-    @Test func saveAndLoadCustomKit() throws {
+    func testSaveAndLoadCustomKit() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -48,71 +47,69 @@ struct KitEngineTests {
         try config.save(to: tempDir.path)
 
         let loadedConfig = try SwiftBlockConfig.load(from: tempDir.path)
-        #expect(loadedConfig.kits["custom_screen"] == ["scene", "service"])
-        #expect(loadedConfig.kits["feature"] == ["scene", "usecase", "repository", "mapper"])
+        XCTAssertEqual(loadedConfig.kits["custom_screen"], ["scene", "service"])
+        XCTAssertEqual(loadedConfig.kits["feature"], ["scene", "usecase", "repository", "mapper"])
     }
 
-    @Test func kitNotFoundThrows() {
+    func testKitNotFoundThrows() {
         let config = SwiftBlockConfig(projectName: "App")
         let engine = KitEngine()
 
-        #expect(throws: KitEngineError.kitNotFound("nonexistent")) {
-            try engine.executeKit(name: "nonexistent", moduleName: "Home", config: config, isDryRun: true)
-        }
+        XCTAssertThrowsError(try engine.executeKit(name: "nonexistent", moduleName: "Home", config: config, isDryRun: true))
     }
 
-    @Test func testKitBrickSpecParsing() {
+    func testKitBrickSpecParsing() {
         let plain = KitBrickSpec.parse("scene")
-        #expect(plain.name == "scene")
-        #expect(plain.flavors.isEmpty)
-        #expect(plain.optionalDeps.isEmpty)
+        XCTAssertEqual(plain.name, "scene")
+        XCTAssertTrue(plain.flavors.isEmpty)
+        XCTAssertTrue(plain.optionalDeps.isEmpty)
 
         let withFlavor = KitBrickSpec.parse("scene(stateStyle=combine)")
-        #expect(withFlavor.name == "scene")
-        #expect(withFlavor.flavors["stateStyle"] == "combine")
+        XCTAssertEqual(withFlavor.name, "scene")
+        XCTAssertEqual(withFlavor.flavors["stateStyle"], "combine")
 
         let withFlavorAndDeps = KitBrickSpec.parse("repository(strategy=offline-first)[storage,logger]")
-        #expect(withFlavorAndDeps.name == "repository")
-        #expect(withFlavorAndDeps.flavors["strategy"] == "offline-first")
-        #expect(withFlavorAndDeps.optionalDeps == ["storage", "logger"])
+        XCTAssertEqual(withFlavorAndDeps.name, "repository")
+        XCTAssertEqual(withFlavorAndDeps.flavors["strategy"], "offline-first")
+        XCTAssertEqual(withFlavorAndDeps.optionalDeps, ["storage", "logger"])
     }
 
-    @Test func testKitBrickSpecParsingEdgeCases() {
+    func testKitBrickSpecParsingEdgeCases() {
         // Multiple flavors
         let multiFlavor = KitBrickSpec.parse("scene(stateStyle=combine, navigation=stack)")
-        #expect(multiFlavor.name == "scene")
-        #expect(multiFlavor.flavors["stateStyle"] == "combine")
-        #expect(multiFlavor.flavors["navigation"] == "stack")
+        XCTAssertEqual(multiFlavor.name, "scene")
+        XCTAssertEqual(multiFlavor.flavors["stateStyle"], "combine")
+        XCTAssertEqual(multiFlavor.flavors["navigation"], "stack")
 
         // Whitespace tolerant
         let spaced = KitBrickSpec.parse("  repository ( strategy = offline-first ) [ storage , logger ]  ")
-        #expect(spaced.name == "repository")
-        #expect(spaced.flavors["strategy"] == "offline-first")
-        #expect(spaced.optionalDeps == ["storage", "logger"])
+        XCTAssertEqual(spaced.name, "repository")
+        XCTAssertEqual(spaced.flavors["strategy"], "offline-first")
+        XCTAssertEqual(spaced.optionalDeps, ["storage", "logger"])
 
         // Optional deps without flavors
         let depsOnly = KitBrickSpec.parse("usecase[exponentialbackoff,logger]")
-        #expect(depsOnly.name == "usecase")
-        #expect(depsOnly.optionalDeps == ["exponentialbackoff", "logger"])
-        #expect(depsOnly.flavors.isEmpty)
+        XCTAssertEqual(depsOnly.name, "usecase")
+        XCTAssertEqual(depsOnly.optionalDeps, ["exponentialbackoff", "logger"])
+        XCTAssertTrue(depsOnly.flavors.isEmpty)
 
         // Brackets but no flavors, and flavors but no brackets
         let emptyBrackets = KitBrickSpec.parse("scene[]")
-        #expect(emptyBrackets.name == "scene")
-        #expect(emptyBrackets.optionalDeps.isEmpty)
+        XCTAssertEqual(emptyBrackets.name, "scene")
+        XCTAssertTrue(emptyBrackets.optionalDeps.isEmpty)
 
         // Malformed flavor (no '=') is ignored rather than crashing
         let malformedFlavor = KitBrickSpec.parse("scene(badflavor)")
-        #expect(malformedFlavor.name == "scene")
-        #expect(malformedFlavor.flavors.isEmpty)
+        XCTAssertEqual(malformedFlavor.name, "scene")
+        XCTAssertTrue(malformedFlavor.flavors.isEmpty)
 
         // Unclosed bracket is ignored gracefully
         let unclosed = KitBrickSpec.parse("scene[storage")
-        #expect(unclosed.name == "scene")
-        #expect(unclosed.optionalDeps.isEmpty)
+        XCTAssertEqual(unclosed.name, "scene")
+        XCTAssertTrue(unclosed.optionalDeps.isEmpty)
     }
 
-    @Test func testExecuteKitWithFlavorPresets() throws {
+    func testExecuteKitWithFlavorPresets() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -123,7 +120,7 @@ struct KitEngineTests {
         var config = SwiftBlockConfig(projectName: "FlavorKitApp", bundlePrefix: "com.test")
         config.kits["offline_feature"] = [
             "scene(stateStyle=combine)",
-            "repository(strategy=offline-first)[storage]"
+            "repository(strategy=offline-first)[storage]",
         ]
         try config.save(to: tempDir.path)
 
@@ -136,8 +133,8 @@ struct KitEngineTests {
             isDryRun: true
         )
 
-        #expect(result.kitName == "offline_feature")
-        #expect(result.moduleName == "Order")
-        #expect(result.generatedBricks == [.scene, .repository])
+        XCTAssertEqual(result.kitName, "offline_feature")
+        XCTAssertEqual(result.moduleName, "Order")
+        XCTAssertEqual(result.generatedBricks, [.scene, .repository])
     }
 }

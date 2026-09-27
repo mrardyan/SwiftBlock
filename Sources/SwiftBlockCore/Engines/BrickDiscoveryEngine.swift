@@ -25,36 +25,36 @@ public struct BrickDiscoveryEngine {
     /// Resolves brick name or path to the full file directory path containing brick.yml
     public func resolveBrickPath(named nameOrPath: String, in baseDir: String) -> String? {
         func isValidBrick(_ path: String) -> Bool {
-            return fileManager.fileExists(atPath: "\(path)/brick.yml") ||
-                   fileManager.fileExists(atPath: "\(path)/brick.yaml") ||
-                   fileManager.fileExists(atPath: "\(path)/block.json")
+            fileManager.fileExists(atPath: "\(path)/brick.yml") ||
+                fileManager.fileExists(atPath: "\(path)/brick.yaml") ||
+                fileManager.fileExists(atPath: "\(path)/block.json")
         }
 
         // 1. Direct path check
-        if fileManager.fileExists(atPath: nameOrPath) && isValidBrick(nameOrPath) {
+        if fileManager.fileExists(atPath: nameOrPath), isValidBrick(nameOrPath) {
             return nameOrPath
         }
-        
+
         // 2. Check explicitly under baseDir
         let candidatePath = "\(baseDir)/\(nameOrPath)"
-        if fileManager.fileExists(atPath: candidatePath) && isValidBrick(candidatePath) {
+        if fileManager.fileExists(atPath: candidatePath), isValidBrick(candidatePath) {
             return candidatePath
         }
-        
+
         // 3. Check local project overrides (.swiftblock/blocks/)
         let localOverride = "\(baseDir)/.swiftblock/blocks/\(nameOrPath)"
-        if fileManager.fileExists(atPath: localOverride) && isValidBrick(localOverride) {
+        if fileManager.fileExists(atPath: localOverride), isValidBrick(localOverride) {
             return localOverride
         }
 
         let targetName = nameOrPath.contains("/") ? String(nameOrPath.split(separator: "/").last!) :
-                         (nameOrPath.contains(".") ? String(nameOrPath.split(separator: ".").last!) : nameOrPath)
+            (nameOrPath.contains(".") ? String(nameOrPath.split(separator: ".").last!) : nameOrPath)
         let nameLower = targetName.lowercased()
 
         // 4. Check registered Box store (~/.swiftblock/store/v1/boxes/<nameOrPath>)
         let boxManager = BoxManager()
         let boxPath = "\(boxManager.boxesDirectory)/\(nameOrPath)"
-        if fileManager.fileExists(atPath: boxPath) && isValidBrick(boxPath) {
+        if fileManager.fileExists(atPath: boxPath), isValidBrick(boxPath) {
             return boxPath
         }
 
@@ -68,42 +68,38 @@ public struct BrickDiscoveryEngine {
             "Config",
             "Core",
             "Feature",
-            "Utils"
+            "Utils",
         ]
-        
+
         var relativePathClean = nameOrPath
         let prefixesToStrip = ["config/", "core/", "feature/", "utils/", "utility/", "infrastructure/", "architecture/", "singletons/", "generatives/"]
-        for p in prefixesToStrip {
-            if relativePathClean.lowercased().hasPrefix(p) {
-                relativePathClean = String(relativePathClean.dropFirst(p.count))
-            }
+        for prefix in prefixesToStrip where relativePathClean.lowercased().hasPrefix(prefix) {
+            relativePathClean = String(relativePathClean.dropFirst(prefix.count))
         }
 
         for subdir in searchSubdirs {
             let direct = "\(baseDir)/\(subdir)/\(nameOrPath)"
-            if fileManager.fileExists(atPath: direct) && isValidBrick(direct) {
+            if fileManager.fileExists(atPath: direct), isValidBrick(direct) {
                 return direct
             }
 
             let directClean = "\(baseDir)/\(subdir)/\(relativePathClean)"
-            if fileManager.fileExists(atPath: directClean) && isValidBrick(directClean) {
+            if fileManager.fileExists(atPath: directClean), isValidBrick(directClean) {
                 return directClean
             }
 
             // Check case-insensitive folder names
             let parentDir = "\(baseDir)/\(subdir)"
             if let items = try? fileManager.contentsOfDirectory(atPath: parentDir) {
-                for item in items {
-                    if item.lowercased() == nameLower {
-                        let fullPath = "\(parentDir)/\(item)"
-                        if isValidBrick(fullPath) {
-                            return fullPath
-                        }
+                for item in items where item.lowercased() == nameLower {
+                    let fullPath = "\(parentDir)/\(item)"
+                    if isValidBrick(fullPath) {
+                        return fullPath
                     }
                 }
             }
         }
-        
+
         // 6. Recursive scan for matching brick directory across standard search roots
         var searchRoots = [
             baseDir,
@@ -111,7 +107,7 @@ public struct BrickDiscoveryEngine {
             "\(FileManager.default.currentDirectoryPath)/Bricks",
             boxManager.boxesDirectory,
             "/usr/local/share/swiftblock/Bricks",
-            "/usr/local/share/swiftblock/Blocks"
+            "/usr/local/share/swiftblock/Blocks",
         ]
         if let envRoot = ProcessInfo.processInfo.environment["SWIFTBLOCK_ROOT"] {
             searchRoots.insert("\(envRoot)/Bricks", at: 0)
@@ -122,16 +118,17 @@ public struct BrickDiscoveryEngine {
                 return resolved
             }
         }
-        
+
         return nil
     }
-    
+
     private func scanDirectory(_ dir: String, targetName: String) -> String? {
         guard fileManager.fileExists(atPath: dir),
-              let items = try? fileManager.contentsOfDirectory(atPath: dir) else {
+              let items = try? fileManager.contentsOfDirectory(atPath: dir)
+        else {
             return nil
         }
-        
+
         for item in items {
             let fullPath = "\(dir)/\(item)"
             var isDir: ObjCBool = false
@@ -152,40 +149,46 @@ public struct BrickDiscoveryEngine {
     }
 
     public func discoverBricks(in baseTemplatePath: String, category: Brick.Category) -> [BrickSpec] {
-        let searchDirs: [String]
-        switch category.rawValue {
-        case "config":
-            searchDirs = ["Bricks/Config", "Config"]
-        case "feature":
-            searchDirs = ["Bricks/Feature", "Feature", "Blocks/Modules"]
-        case "utils", "utility":
-            searchDirs = ["Bricks/Utils", "Utils", "Utility"]
-        default:
-            searchDirs = ["Bricks/Core", "Core", "Blocks/Core"]
+        let searchDirs: [String] = switch category.rawValue {
+            case "config":
+                ["Bricks/Config", "Config"]
+            case "feature":
+                ["Bricks/Feature", "Feature", "Blocks/Modules"]
+            case "utils", "utility":
+                ["Bricks/Utils", "Utils", "Utility"]
+            default:
+                ["Bricks/Core", "Core", "Blocks/Core"]
         }
-        
+
         var specs: [BrickSpec] = []
         for dir in searchDirs {
             let categoryDir = "\(baseTemplatePath)/\(dir)"
             guard fileManager.fileExists(atPath: categoryDir),
-                  let folderNames = try? fileManager.contentsOfDirectory(atPath: categoryDir) else {
+                  let folderNames = try? fileManager.contentsOfDirectory(atPath: categoryDir)
+            else {
                 continue
             }
-            
+
             for folderName in folderNames.sorted() {
                 let fullPath = "\(categoryDir)/\(folderName)"
                 var isDir: ObjCBool = false
                 guard fileManager.fileExists(atPath: fullPath, isDirectory: &isDir), isDir.boolValue else {
                     continue
                 }
-                
+
                 let manifest = BrickManifest.load(fromPath: fullPath)
                 let commandName = manifest?.name ?? folderName.lowercased()
                 let title = manifest?.name.capitalized ?? folderName
                 let description = manifest?.description ?? "\(folderName) Brick"
-                let defaultOutputPath = manifest?.defaultPath ?? (category == .feature ? "App/Sources/Features/{module}/\(folderName)" : "App/Sources/Core/\(folderName)")
+                let defaultOutputPath: String = if let manifestDefault = manifest?.defaultPath {
+                    manifestDefault
+                } else if category == .feature {
+                    "App/Sources/Features/{module}/\(folderName)"
+                } else {
+                    "App/Sources/Core/\(folderName)"
+                }
                 let moduleType = Brick(rawValue: commandName)
-                
+
                 let spec = BrickSpec(
                     type: moduleType,
                     commandName: commandName,
@@ -199,11 +202,14 @@ public struct BrickDiscoveryEngine {
             }
         }
 
-        return specs.isEmpty ? fallbackSpecs(for: category) : specs
+        if specs.isEmpty {
+            return fallbackSpecs(for: category)
+        }
+        return specs
     }
 
     public func discoverBlocks(in baseTemplatePath: String, category: Brick.Category) -> [BrickSpec] {
-        return discoverBricks(in: baseTemplatePath, category: category)
+        discoverBricks(in: baseTemplatePath, category: category)
     }
 
     public static func evaluateTokens(

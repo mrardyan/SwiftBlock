@@ -1,5 +1,5 @@
-import XCTest
 @testable import SwiftBlockCore
+import XCTest
 
 final class DependencyResolverEngineTests: XCTestCase {
     var tempDirectory: String!
@@ -37,20 +37,20 @@ final class DependencyResolverEngineTests: XCTestCase {
             yml += "dependencies:\n"
             if !mandatory.isEmpty {
                 yml += "  mandatory:\n"
-                for m in mandatory {
-                    yml += "    - name: \(m)\n"
+                for dep in mandatory {
+                    yml += "    - name: \(dep)\n"
                 }
             }
             if !optional.isEmpty {
                 yml += "  optional:\n"
-                for o in optional {
-                    yml += "    - name: \(o)\n"
+                for dep in optional {
+                    yml += "    - name: \(dep)\n"
                 }
             }
             if !conflicts.isEmpty {
                 yml += "  conflicts:\n"
-                for c in conflicts {
-                    yml += "    - \(c)\n"
+                for conf in conflicts {
+                    yml += "    - \(conf)\n"
                 }
             }
         }
@@ -89,7 +89,7 @@ final class DependencyResolverEngineTests: XCTestCase {
 
         let engine = DependencyResolverEngine()
         XCTAssertThrowsError(try engine.resolve(targetBrickName: "nodeA", baseTemplatePath: tempDirectory, projectRootPath: tempDirectory)) { error in
-            guard case DependencyResolutionError.circularDependency(let chain) = error else {
+            guard case let DependencyResolutionError.circularDependency(chain) = error else {
                 return XCTFail("Expected circularDependency error but got \(error)")
             }
             XCTAssertTrue(chain.contains("nodea"))
@@ -106,7 +106,7 @@ final class DependencyResolverEngineTests: XCTestCase {
 
         // Without selecting optional
         let planWithout = try engine.resolve(targetBrickName: "mainBrick", baseTemplatePath: tempDirectory, projectRootPath: tempDirectory)
-        XCTAssertEqual(planWithout.executionOrder.map { $0.name }, ["base", "mainBrick"])
+        XCTAssertEqual(planWithout.executionOrder.map(\.name), ["base", "mainBrick"])
 
         // With selecting optional
         let planWith = try engine.resolve(
@@ -115,7 +115,7 @@ final class DependencyResolverEngineTests: XCTestCase {
             projectRootPath: tempDirectory,
             selectedOptionalDeps: ["helperPlugin"]
         )
-        XCTAssertEqual(planWith.executionOrder.map { $0.name }, ["base", "helperPlugin", "mainBrick"])
+        XCTAssertEqual(planWith.executionOrder.map(\.name), ["base", "helperPlugin", "mainBrick"])
     }
 
     func testConflictThrowsError() {
@@ -132,7 +132,13 @@ final class DependencyResolverEngineTests: XCTestCase {
 
     func testConflictAgainstAlreadyInstalledBrickThrowsError() {
         // brickX conflicts with brickZ; brickZ is already installed (skipped)
-        createMockBrick(name: "brickX", conflicts: ["brickZ"], defaultPath: "App/Sources/Core/Protocols", instantiation: "singleton", templateFiles: ["__MODULE_NAME__.swift"])
+        createMockBrick(
+            name: "brickX",
+            conflicts: ["brickZ"],
+            defaultPath: "App/Sources/Core/Protocols",
+            instantiation: "singleton",
+            templateFiles: ["__MODULE_NAME__.swift"]
+        )
         createMockBrick(name: "brickZ", defaultPath: "App/Sources/Core/Protocols", instantiation: "singleton", templateFiles: ["__MODULE_NAME__.swift"])
         createInstalledFile(relativePath: "App/Sources/Core/Protocols/BrickZ.swift")
 
@@ -158,7 +164,10 @@ final class DependencyResolverEngineTests: XCTestCase {
 
         let executed = plan.executionOrder.map { $0.name.lowercased() }
         let skipped = plan.skippedAlreadyInstalled.map { $0.lowercased() }
-        XCTAssertTrue(executed.contains("betaprotocol"), "BetaProtocol shares the directory but its file is absent — must be snapped, got executed=\(executed) skipped=\(skipped)")
+        XCTAssertTrue(
+            executed.contains("betaprotocol"),
+            "BetaProtocol shares the directory but its file is absent — must be snapped, got executed=\(executed) skipped=\(skipped)"
+        )
         XCTAssertTrue(skipped.contains("alphaprotocol"), "AlphaProtocol's file exists — should be skipped, got skipped=\(skipped)")
     }
 
@@ -170,7 +179,7 @@ final class DependencyResolverEngineTests: XCTestCase {
         let engine = DependencyResolverEngine()
         let plan = try engine.resolve(targetBrickName: "renderTarget", baseTemplatePath: tempDirectory, projectRootPath: tempDirectory)
 
-        XCTAssertEqual(plan.executionOrder.map { $0.name }, ["renderTarget"])
+        XCTAssertEqual(plan.executionOrder.map(\.name), ["renderTarget"])
         XCTAssertTrue(plan.skippedAlreadyInstalled.isEmpty)
     }
 

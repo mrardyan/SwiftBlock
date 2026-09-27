@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct EnvironmentConfigGeneratorTests {
-
-    @Test func generateConfigsWhenConfigBlockEnabled() throws {
+final class EnvironmentConfigGeneratorTests: XCTestCase {
+    func testGenerateConfigsWhenConfigBlockEnabled() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -25,28 +24,28 @@ struct EnvironmentConfigGeneratorTests {
         let stagingConfig = tempDir.appendingPathComponent("Configs/Staging.xcconfig")
         let prodConfig = tempDir.appendingPathComponent("Configs/Production.xcconfig")
 
-        #expect(FileManager.default.fileExists(atPath: devConfig.path))
-        #expect(FileManager.default.fileExists(atPath: stagingConfig.path))
-        #expect(FileManager.default.fileExists(atPath: prodConfig.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: devConfig.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: stagingConfig.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: prodConfig.path))
 
         let devContent = try String(contentsOf: devConfig, encoding: .utf8)
-        #expect(devContent.contains("APP_ENVIRONMENT = development"))
-        #expect(devContent.contains("BUNDLE_ID_SUFFIX = .dev"))
+        XCTAssertTrue(devContent.contains("APP_ENVIRONMENT = development"))
+        XCTAssertTrue(devContent.contains("BUNDLE_ID_SUFFIX = .dev"))
 
         let stagingContent = try String(contentsOf: stagingConfig, encoding: .utf8)
-        #expect(stagingContent.contains("APP_ENVIRONMENT = staging"))
-        #expect(stagingContent.contains("BUNDLE_ID_SUFFIX = .staging"))
+        XCTAssertTrue(stagingContent.contains("APP_ENVIRONMENT = staging"))
+        XCTAssertTrue(stagingContent.contains("BUNDLE_ID_SUFFIX = .staging"))
 
         let prodContent = try String(contentsOf: prodConfig, encoding: .utf8)
-        #expect(prodContent.contains("APP_ENVIRONMENT = production"))
-        #expect(prodContent.contains("BUNDLE_ID_SUFFIX ="))
+        XCTAssertTrue(prodContent.contains("APP_ENVIRONMENT = production"))
+        XCTAssertTrue(prodContent.contains("BUNDLE_ID_SUFFIX ="))
 
         // Single trailing newline verification
-        #expect(devContent.hasSuffix("\n"))
-        #expect(!devContent.hasSuffix("\n\n"))
+        XCTAssertTrue(devContent.hasSuffix("\n"))
+        XCTAssertFalse(devContent.hasSuffix("\n\n"))
     }
 
-    @Test func skipConfigsWhenConfigBlockDisabled() throws {
+    func testSkipConfigsWhenConfigBlockDisabled() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -64,6 +63,6 @@ struct EnvironmentConfigGeneratorTests {
         try generator.generateConfigs(in: tempDir.path, config: config)
 
         let configsDir = tempDir.appendingPathComponent("Configs")
-        #expect(!FileManager.default.fileExists(atPath: configsDir.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: configsDir.path))
     }
 }

@@ -35,12 +35,12 @@ public enum BoxPublisherError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .validationFailed(let errors):
-            return "Box validation failed:\n" + errors.map { "  - \($0)" }.joined(separator: "\n")
-        case .notGitRepository(let path):
-            return "Directory at '\(path)' is not a valid Git repository."
-        case .publishFailed(let message):
-            return "Failed to publish box: \(message)"
+            case let .validationFailed(errors):
+                "Box validation failed:\n" + errors.map { "  - \($0)" }.joined(separator: "\n")
+            case let .notGitRepository(path):
+                "Directory at '\(path)' is not a valid Git repository."
+            case let .publishFailed(message):
+                "Failed to publish box: \(message)"
         }
     }
 }
@@ -69,15 +69,20 @@ public class BoxPublisher {
         let jsonPath = "\(absolutePath)/block.json"
 
         let hasManifestFile = fileManager.fileExists(atPath: ymlPath) ||
-                              fileManager.fileExists(atPath: yamlPath) ||
-                              fileManager.fileExists(atPath: jsonPath)
+            fileManager.fileExists(atPath: yamlPath) ||
+            fileManager.fileExists(atPath: jsonPath)
 
         guard hasManifestFile else {
-            return BoxValidationReport(isValid: false, errors: ["No valid brick.yml, brick.yaml, or block.json found in '\(absolutePath)'."], warnings: [], manifest: nil)
+            return BoxValidationReport(
+                isValid: false,
+                errors: ["No valid brick.yml, brick.yaml, or block.json found in '\(absolutePath)'."],
+                warnings: [],
+                manifest: nil
+            )
         }
 
         let manifest = BrickManifest.load(fromPath: absolutePath)
-        guard let manifest = manifest else {
+        guard let manifest else {
             return BoxValidationReport(isValid: false, errors: ["Failed to parse brick manifest in '\(absolutePath)'."], warnings: [], manifest: nil)
         }
 
@@ -189,11 +194,10 @@ public class BoxPublisher {
             throw BoxPublisherError.notGitRepository(absolutePath)
         }
 
-        let versionTag: String
-        if let customTag = tag, !customTag.isEmpty {
-            versionTag = customTag.hasPrefix("v") ? customTag : "v\(customTag)"
+        let versionTag: String = if let customTag = tag, !customTag.isEmpty {
+            customTag.hasPrefix("v") ? customTag : "v\(customTag)"
         } else {
-            versionTag = "v1.0.0"
+            "v1.0.0"
         }
 
         if isDryRun {
@@ -208,10 +212,18 @@ public class BoxPublisher {
         _ = runProcess(executable: gitBinary, arguments: ["add", "."], currentDirectoryPath: absolutePath)
 
         // 2. Commit changes (if any)
-        _ = runProcess(executable: gitBinary, arguments: ["commit", "-m", "publish: release \(versionTag) for \(manifest.name)"], currentDirectoryPath: absolutePath)
+        _ = runProcess(
+            executable: gitBinary,
+            arguments: ["commit", "-m", "publish: release \(versionTag) for \(manifest.name)"],
+            currentDirectoryPath: absolutePath
+        )
 
         // 3. Create tag
-        let tagExitCode = runProcess(executable: gitBinary, arguments: ["tag", "-a", versionTag, "-m", "Release \(versionTag)"], currentDirectoryPath: absolutePath)
+        let tagExitCode = runProcess(
+            executable: gitBinary,
+            arguments: ["tag", "-a", versionTag, "-m", "Release \(versionTag)"],
+            currentDirectoryPath: absolutePath
+        )
         if tagExitCode != 0 {
             // If tag already exists, force update
             _ = runProcess(executable: gitBinary, arguments: ["tag", "-f", versionTag], currentDirectoryPath: absolutePath)
@@ -233,7 +245,7 @@ public class BoxPublisher {
         return "git"
     }
 
-private func runProcess(executable: String, arguments: [String], currentDirectoryPath: String) -> Int32 {
+    private func runProcess(executable: String, arguments: [String], currentDirectoryPath: String) -> Int32 {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executable)
         process.arguments = arguments

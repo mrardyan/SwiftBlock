@@ -46,7 +46,7 @@ public class DoctorEngine {
             process.waitUntilExit()
             let path = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .newlines) ?? ""
 
-            if process.terminationStatus == 0 && !path.isEmpty {
+            if process.terminationStatus == 0, !path.isEmpty {
                 let version = getToolVersion(toolName)
                 return ToolCheckResult(name: toolName, isInstalled: true, version: version)
             }
@@ -72,7 +72,7 @@ public class DoctorEngine {
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             process.waitUntilExit()
             let versionStr = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-            if let versionStr = versionStr, !versionStr.isEmpty, versionStr.count < 30 {
+            if let versionStr, !versionStr.isEmpty, versionStr.count < 30 {
                 return versionStr
             }
         } catch {}
@@ -85,7 +85,8 @@ public class DoctorEngine {
         let sourcesPath = "\(projectRootPath)/App/Sources"
 
         guard fileManager.fileExists(atPath: sourcesPath),
-              let enumerator = fileManager.enumerator(atPath: sourcesPath) else {
+              let enumerator = fileManager.enumerator(atPath: sourcesPath)
+        else {
             return issues
         }
 
@@ -94,7 +95,7 @@ public class DoctorEngine {
                 let fullPath = "\(sourcesPath)/\(file)"
                 if let content = try? String(contentsOfFile: fullPath, encoding: .utf8) {
                     // Check for invalid or empty file placeholders
-                    if content.contains("TODO: Implementation required") && !content.contains("import") {
+                    if content.contains("TODO: Implementation required"), !content.contains("import") {
                         issues.append(DependencyIssue(filePath: file, message: "Contains unfulfilled placeholder code."))
                     }
                 }
@@ -115,7 +116,7 @@ public class DoctorEngine {
         var configMsg = "No .swiftblock/config.yml found in current working directory."
 
         if isProject {
-            if let _ = try? SwiftBlockConfig.load(from: projectRootPath) {
+            if (try? SwiftBlockConfig.load(from: projectRootPath)) != nil {
                 configValid = true
                 configMsg = "Project configuration (.swiftblock/config.yml) is valid."
             } else {
@@ -123,7 +124,7 @@ public class DoctorEngine {
             }
         }
 
-        var manifestFound: String? = nil
+        var manifestFound: String?
         if fileManager.fileExists(atPath: "\(projectRootPath)/Project.swift") {
             manifestFound = "Tuist (Project.swift)"
         } else if fileManager.fileExists(atPath: "\(projectRootPath)/project.yml") {
@@ -134,13 +135,12 @@ public class DoctorEngine {
 
         let peripheryTool = toolResults.first(where: { $0.name == "periphery" })
         let peripheryYml = fileManager.fileExists(atPath: "\(projectRootPath)/.periphery.yml")
-        let peripheryStatus: String
-        if peripheryTool?.isInstalled == true && peripheryYml {
-            peripheryStatus = "Installed & Configured (.periphery.yml present)"
+        let peripheryStatus = if peripheryTool?.isInstalled == true, peripheryYml {
+            "Installed & Configured (.periphery.yml present)"
         } else if peripheryTool?.isInstalled == true {
-            peripheryStatus = "Installed (No .periphery.yml configuration file)"
+            "Installed (No .periphery.yml configuration file)"
         } else {
-            peripheryStatus = "Not installed"
+            "Not installed"
         }
 
         return DiagnosticsReport(
@@ -200,7 +200,7 @@ public class DoctorEngine {
         }
         if criticalToolMissing {
             print("└  \(ANSIColor.yellowText("⚠️ SwiftBlock environment requires critical tooling (git/make) to be installed."))")
-        } else if report.isProjectFolder && !report.configValid {
+        } else if report.isProjectFolder, !report.configValid {
             print("└  \(ANSIColor.yellowText("⚠️ SwiftBlock project configuration is malformed."))")
         } else {
             print("└  \(ANSIColor.greenText("✔ SwiftBlock environment is operational and healthy."))")

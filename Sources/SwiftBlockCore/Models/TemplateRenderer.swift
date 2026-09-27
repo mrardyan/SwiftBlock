@@ -1,6 +1,6 @@
 import Foundation
 
-public struct TemplateRenderer {
+public enum TemplateRenderer {
     public static func render(
         template: String,
         variables: [String: String],
@@ -31,7 +31,7 @@ public struct TemplateRenderer {
         }
 
         // 3. Replace paths tokens if config is provided
-        if let config = config {
+        if let config {
             for (key, val) in config.paths.allCustomPaths {
                 result = result.replacingOccurrences(of: "{{paths.\(key)}}", with: val)
             }
@@ -61,12 +61,12 @@ public struct TemplateRenderer {
 
                 let conditionStr = String(result[condRange]).trimmingCharacters(in: .whitespaces)
                 let trueBranch = String(result[trueRange])
-                let falseBranch: String
-                if match.numberOfRanges > 3 && match.range(at: 3).location != NSNotFound,
-                   let falseR = Range(match.range(at: 3), in: result) {
-                    falseBranch = String(result[falseR])
+                let falseBranch = if match.numberOfRanges > 3, match.range(at: 3).location != NSNotFound,
+                                     let falseR = Range(match.range(at: 3), in: result)
+                {
+                    String(result[falseR])
                 } else {
-                    falseBranch = ""
+                    ""
                 }
 
                 let isConditionTrue = evaluateCondition(conditionStr, variables: variables)
@@ -105,14 +105,16 @@ public struct TemplateRenderer {
 
     private static func evaluateCondition(_ condition: String, variables: [String: String]) -> Bool {
         if condition.contains("==") {
-            let parts = condition.components(separatedBy: "==").map { $0.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "'\"")) }
+            let parts = condition.components(separatedBy: "==")
+                .map { $0.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "'\"")) }
             if parts.count == 2 {
                 let lhs = variables[parts[0]] ?? variables[parts[0].lowercased()] ?? parts[0]
                 let rhs = variables[parts[1]] ?? variables[parts[1].lowercased()] ?? parts[1]
                 return lhs.lowercased() == rhs.lowercased()
             }
         } else if condition.contains("!=") {
-            let parts = condition.components(separatedBy: "!=").map { $0.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "'\"")) }
+            let parts = condition.components(separatedBy: "!=")
+                .map { $0.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "'\"")) }
             if parts.count == 2 {
                 let lhs = variables[parts[0]] ?? variables[parts[0].lowercased()] ?? parts[0]
                 let rhs = variables[parts[1]] ?? variables[parts[1].lowercased()] ?? parts[1]
@@ -153,7 +155,7 @@ public struct TemplateRenderer {
             path = path.replacingOccurrences(of: "{{\(key)}}", with: val)
         }
 
-        if let config = config {
+        if let config {
             for (key, val) in config.paths.allCustomPaths {
                 path = path.replacingOccurrences(of: "{{paths.\(key)}}", with: val)
             }

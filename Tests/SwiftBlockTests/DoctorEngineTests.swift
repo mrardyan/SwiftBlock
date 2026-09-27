@@ -1,28 +1,28 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct DoctorEngineTests {
-    @Test func toolCheck() {
+final class DoctorEngineTests: XCTestCase {
+    func testToolCheck() {
         let engine = DoctorEngine()
         let result = engine.checkTool("git")
-        #expect(result.name == "git")
-        #expect(result.isInstalled == true)
+        XCTAssertEqual(result.name, "git")
+        XCTAssertEqual(result.isInstalled, true)
     }
 
-    @Test func globalContextDiagnosis() {
+    func testGlobalContextDiagnosis() {
         let engine = DoctorEngine()
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         try? FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: tempDir) }
 
         let report = engine.diagnose(projectRootPath: tempDir)
-        #expect(report.isProjectFolder == false)
-        #expect(report.manifestFound == nil)
-        #expect(report.toolChecks.count >= 5)
+        XCTAssertEqual(report.isProjectFolder, false)
+        XCTAssertEqual(report.manifestFound, nil)
+        XCTAssertGreaterThanOrEqual(report.toolChecks.count, 5)
     }
 
-    @Test func projectFolderDiagnosis() throws {
+    func testProjectFolderDiagnosis() throws {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         try FileManager.default.createDirectory(atPath: "\(tempDir)/.swiftblock", withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: tempDir) }
@@ -38,12 +38,12 @@ struct DoctorEngineTests {
         let engine = DoctorEngine()
         let report = engine.diagnose(projectRootPath: tempDir)
 
-        #expect(report.isProjectFolder == true)
-        #expect(report.configValid == true)
-        #expect(report.manifestFound == "Tuist (Project.swift)")
+        XCTAssertEqual(report.isProjectFolder, true)
+        XCTAssertEqual(report.configValid, true)
+        XCTAssertEqual(report.manifestFound, "Tuist (Project.swift)")
     }
 
-    @Test func dependencyGraphAnalyzer() throws {
+    func testDependencyGraphAnalyzer() throws {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         let sourcesDir = "\(tempDir)/App/Sources/Core"
         try FileManager.default.createDirectory(atPath: sourcesDir, withIntermediateDirectories: true)
@@ -54,7 +54,7 @@ struct DoctorEngineTests {
 
         let engine = DoctorEngine()
         let issues = engine.analyzeDependencyGraph(projectRootPath: tempDir)
-        #expect(issues.count == 1)
-        #expect(issues[0].filePath.contains("Unused.swift"))
+        XCTAssertEqual(issues.count, 1)
+        XCTAssertTrue(issues[0].filePath.contains("Unused.swift"))
     }
 }

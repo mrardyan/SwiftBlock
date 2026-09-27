@@ -6,7 +6,7 @@ SHAREDIR ?= $(PREFIX)/share/swiftblock
 CLI_NAME = swiftblock
 BUILD_PATH = .build/release/$(CLI_NAME)
 
-.PHONY: all build install uninstall test test-templates test-e2e clean
+.PHONY: all build install uninstall test test-templates test-e2e lint format install-hooks clean
 
 all: build
 
@@ -55,6 +55,21 @@ test-templates:
 
 test-e2e:
 	./Scripts/test_e2e.sh
+
+lint:
+	swiftlint lint
+	swiftlint lint --fix
+
+format:
+	swiftformat .
+	swiftlint lint --fix
+
+install-hooks:
+	@mkdir -p .githooks
+	@cp Scripts/pre-commit.sh .githooks/pre-commit
+	@chmod +x .githooks/pre-commit
+	@git config core.hooksPath .githooks
+	@echo "✔ Pre-commit hook installed (lint + format)."
 
 clean:
 	swift package clean

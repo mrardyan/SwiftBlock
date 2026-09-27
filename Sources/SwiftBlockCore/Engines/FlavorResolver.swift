@@ -14,7 +14,7 @@ public struct FlavorResolutionResult: Equatable {
 /// merging the selected option's template variables and flavor-scoped optional
 /// dependencies. Undeclared selection keys fall back to plain template variables
 /// for backward compatibility.
-public struct FlavorResolver {
+public enum FlavorResolver {
     public static func resolve(
         manifest: BrickManifest,
         selections: [String: String],
@@ -85,7 +85,7 @@ public struct FlavorResolver {
         if flavor.options.contains(where: { $0.id.lowercased() == selectedValue.lowercased() }) {
             return nil
         }
-        let available = flavor.options.map { $0.id }.joined(separator: ", ")
+        let available = flavor.options.map(\.id).joined(separator: ", ")
         return "Unknown option '\(selectedValue)' for flavor '\(flavorKey)'. Available: \(available) — ignoring."
     }
 

@@ -23,15 +23,17 @@ public struct ProjectGeneratorOptions {
         self.projectName = projectName
         self.bundlePrefix = bundlePrefix
         self.baseplateName = baseplateName
-        
+
         let folderName = baseplateName.lowercased().contains("vapor") ? "Vapor" : "SwiftUI"
         let defaultShare = "/usr/local/share/swiftblock/Baseplates/\(folderName)"
         let localDir = "\(FileManager.default.currentDirectoryPath)/Baseplates/\(folderName)"
         let fallbackOld = "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI"
-        
+
         if let custom = templatePath, !custom.isEmpty {
             self.templatePath = custom
-        } else if let envPath = ProcessInfo.processInfo.environment["SWIFTBLOCK_TEMPLATE_PATH"], !envPath.isEmpty, FileManager.default.fileExists(atPath: envPath) {
+        } else if let envPath = ProcessInfo.processInfo.environment["SWIFTBLOCK_TEMPLATE_PATH"], !envPath.isEmpty,
+                  FileManager.default.fileExists(atPath: envPath)
+        {
             self.templatePath = envPath
         } else if FileManager.default.fileExists(atPath: localDir) {
             self.templatePath = localDir
@@ -40,7 +42,7 @@ public struct ProjectGeneratorOptions {
         } else {
             self.templatePath = fallbackOld
         }
-        
+
         self.outputPath = outputPath ?? "\(FileManager.default.currentDirectoryPath)/\(projectName)"
         self.isDryRun = isDryRun
         self.isVerbose = isVerbose
@@ -55,12 +57,12 @@ public enum ProjectGeneratorError: Error, LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .templateNotFound(let path):
-            return "Template not found at \(path)"
-        case .destinationAlreadyExists(let path):
-            return "Directory already exists at \(path). Please specify a different project name or remove the existing folder."
-        case .generationFailed(let message):
-            return "Failed to generate project: \(message)"
+            case let .templateNotFound(path):
+                "Template not found at \(path)"
+            case let .destinationAlreadyExists(path):
+                "Directory already exists at \(path). Please specify a different project name or remove the existing folder."
+            case let .generationFailed(message):
+                "Failed to generate project: \(message)"
         }
     }
 }
@@ -117,7 +119,9 @@ public class ProjectGenerator {
                 let moduleGen = BrickGenerator(fileManager: fileManager)
                 let bricksPath: String?
                 let parentRepo = ((options.templatePath as NSString).deletingLastPathComponent as NSString).deletingLastPathComponent
-                if fileManager.fileExists(atPath: "\(options.templatePath)/Bricks") || fileManager.fileExists(atPath: "\(options.templatePath)/Core") || fileManager.fileExists(atPath: "\(options.templatePath)/Config") {
+                if fileManager.fileExists(atPath: "\(options.templatePath)/Bricks") || fileManager
+                    .fileExists(atPath: "\(options.templatePath)/Core") || fileManager.fileExists(atPath: "\(options.templatePath)/Config")
+                {
                     bricksPath = options.templatePath
                 } else if fileManager.fileExists(atPath: "\(parentRepo)/Bricks") {
                     bricksPath = parentRepo
@@ -126,16 +130,15 @@ public class ProjectGenerator {
                 }
 
                 for type in config.coreBlocks {
-                    let defaultName: String
-                    switch type {
-                    case .storage: defaultName = "AppStorage"
-                    case .network: defaultName = "NetworkClient"
-                    case .logger: defaultName = "AppLogger"
-                    case .config: defaultName = "AppConfig"
-                    case .auth, .vaporauth: defaultName = "UserAuth"
-                    case .analytics: defaultName = "AppAnalytics"
-                    case .featureflag: defaultName = "FeatureFlags"
-                    default: defaultName = type.rawValue.capitalized
+                    let defaultName: String = switch type {
+                        case .storage: "AppStorage"
+                        case .network: "NetworkClient"
+                        case .logger: "AppLogger"
+                        case .config: "AppConfig"
+                        case .auth, .vaporauth: "UserAuth"
+                        case .analytics: "AppAnalytics"
+                        case .featureflag: "FeatureFlags"
+                        default: type.rawValue.capitalized
                     }
                     let moduleOptions = BrickGeneratorOptions(
                         type: type,
@@ -187,7 +190,7 @@ public class ProjectGenerator {
             try ideGen.setupAll(projectPath: options.outputPath, config: config)
         } catch {
             // Clean up partially copied project folder ONLY if created during generation
-            if didCreateDestination && fileManager.fileExists(atPath: options.outputPath) {
+            if didCreateDestination, fileManager.fileExists(atPath: options.outputPath) {
                 try? fileManager.removeItem(atPath: options.outputPath)
             }
             throw error
@@ -198,7 +201,17 @@ public class ProjectGenerator {
         let enumerator = fileManager.enumerator(atPath: folderPath)
 
         let allowedExtensions = ["swift", "xcodeproj", "pbxproj", "plist", "md", "yaml", "yml", "txt", "sh", "json", "toml"]
-        let allowedExactFilenames = [".swiftformat", ".gitignore", ".editorconfig", "Makefile", ".swiftblock", "Package.swift", "Dockerfile", "docker-compose.yml", ".mise.toml"]
+        let allowedExactFilenames = [
+            ".swiftformat",
+            ".gitignore",
+            ".editorconfig",
+            "Makefile",
+            ".swiftblock",
+            "Package.swift",
+            "Dockerfile",
+            "docker-compose.yml",
+            ".mise.toml",
+        ]
 
         while let file = enumerator?.nextObject() as? String {
             let filePath = "\(folderPath)/\(file)"

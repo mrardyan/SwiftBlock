@@ -1,0 +1,30 @@
+# SwiftFormat configuration for SwiftBlock
+# Run: swiftformat .  |  swiftformat --lint Sources Tests
+
+--swiftversion 5.10
+
+# Indentation
+--indent 4
+--indentcase true
+
+# Spacing & line wrapping
+--linebreaks lf
+--maxwidth 160
+--wraparguments before-first
+--wrapcollections before-first
+--wrapparameters before-first
+--stripunusedargs always
+
+# Commas & semicolons
+--commas always
+--semicolons never
+
+# Imports
+--importgrouping alpha
+
+# Misc style
+--redundanttype inferred
+--extensionacl on-extension
+--ifdef indent
+
+--exclude Baseplates,Bricks,.build

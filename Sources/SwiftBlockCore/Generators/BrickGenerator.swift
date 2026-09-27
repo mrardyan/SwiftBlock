@@ -27,13 +27,13 @@ public struct BrickGeneratorOptions {
             let localBricks = "\(FileManager.default.currentDirectoryPath)/Bricks"
             let shareBricks = "/usr/local/share/swiftblock/Bricks"
 
-            if !envBricks.isEmpty && FileManager.default.fileExists(atPath: envBricks) {
+            if !envBricks.isEmpty, FileManager.default.fileExists(atPath: envBricks) {
                 self.modulesTemplatePath = envBricks
             } else if FileManager.default.fileExists(atPath: localBricks) {
                 self.modulesTemplatePath = localBricks
             } else if FileManager.default.fileExists(atPath: shareBricks) {
                 self.modulesTemplatePath = shareBricks
-            } else if let envRoot = envRoot, FileManager.default.fileExists(atPath: envRoot) {
+            } else if let envRoot, FileManager.default.fileExists(atPath: envRoot) {
                 self.modulesTemplatePath = envRoot
             } else {
                 let subFolder = "Bricks/\(type.category.rawValue.capitalized)"
@@ -56,14 +56,14 @@ public enum BrickGeneratorError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .templateNotFound(let path):
-            return "Brick template not found at \(path)"
-        case .brickAlreadyExists(let path), .moduleAlreadyExists(let path):
-            return "Brick already exists at \(path)"
-        case .baseplateMismatch(let brickName, let baseplates, let projectType):
-            return "Brick '\(brickName)' only supports baseplate(s) [\(baseplates.joined(separator: ", "))] and cannot be snapped into a \(projectType) project."
-        case .generationFailed(let message):
-            return "Failed to generate brick: \(message)"
+            case let .templateNotFound(path):
+                "Brick template not found at \(path)"
+            case let .brickAlreadyExists(path), let .moduleAlreadyExists(path):
+                "Brick already exists at \(path)"
+            case let .baseplateMismatch(brickName, baseplates, projectType):
+                "Brick '\(brickName)' only supports baseplate(s) [\(baseplates.joined(separator: ", "))] and cannot be snapped into a \(projectType) project."
+            case let .generationFailed(message):
+                "Failed to generate brick: \(message)"
         }
     }
 }
@@ -88,9 +88,14 @@ public class BrickGenerator {
         let resolvedTemplate = discoveryEngine.resolveBrickPath(named: options.type.rawValue, in: options.modulesTemplatePath)
 
         var templateTypeFolderPath: String
-        if fileManager.fileExists(atPath: "\(options.modulesTemplatePath)/brick.yml") || fileManager.fileExists(atPath: "\(options.modulesTemplatePath)/block.json") {
+        if fileManager.fileExists(atPath: "\(options.modulesTemplatePath)/brick.yml") || fileManager
+            .fileExists(atPath: "\(options.modulesTemplatePath)/block.json")
+        {
             templateTypeFolderPath = options.modulesTemplatePath
-        } else if let resolved = resolvedTemplate, (resolved.hasPrefix(options.modulesTemplatePath) || options.modulesTemplatePath.contains("Bricks") || options.modulesTemplatePath.contains("Blocks")) {
+        } else if let resolved = resolvedTemplate,
+                  resolved.hasPrefix(options.modulesTemplatePath) || options.modulesTemplatePath.contains("Bricks") || options.modulesTemplatePath
+                  .contains("Blocks")
+        {
             templateTypeFolderPath = resolved
         } else {
             templateTypeFolderPath = "\(options.modulesTemplatePath)/\(options.type.rawValue.capitalized)"
@@ -110,16 +115,15 @@ public class BrickGenerator {
 
         // Effective category: curated registry wins; otherwise derive from the manifest so that
         // unregistered bricks (e.g. via --template-path) get the correct classification.
-        let effectiveCategory: Brick.Category
-        if let curated = BrickRegistry.curatedSpec(for: options.type)?.category {
-            effectiveCategory = curated
-        } else if let manifest = manifest {
-            effectiveCategory = BrickRegistry.category(for: manifest.category, defaultPath: manifest.defaultPath)
+        let effectiveCategory: Brick.Category = if let curated = BrickRegistry.curatedSpec(for: options.type)?.category {
+            curated
+        } else if let manifest {
+            BrickRegistry.category(for: manifest.category, defaultPath: manifest.defaultPath)
         } else {
-            effectiveCategory = options.type.category
+            options.type.category
         }
 
-        if let manifest = manifest, let baseplates = manifest.baseplates, !baseplates.isEmpty {
+        if let manifest, let baseplates = manifest.baseplates, !baseplates.isEmpty {
             let isVapor = config.generatorTool == .spm
             let allowed = baseplates.map { $0.lowercased() }
             let matches = isVapor ? allowed.contains("vapor") : allowed.contains("swiftui")
@@ -141,20 +145,19 @@ public class BrickGenerator {
 
         let isSingleton = (manifest?.instantiation == .singleton) || effectiveCategory.isSingleton
 
-        let destinationFolderPath: String
-        if isSingleton {
-            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
+        let destinationFolderPath = if isSingleton {
+            "\(options.projectRootPath)/\(resolvedPath)"
         } else if resolvedPath.contains(options.name.lowercased()) || resolvedPath.contains(options.name) {
-            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)"
+            "\(options.projectRootPath)/\(resolvedPath)"
         } else {
-            destinationFolderPath = "\(options.projectRootPath)/\(resolvedPath)/\(options.name)"
+            "\(options.projectRootPath)/\(resolvedPath)/\(options.name)"
         }
 
-        if !isSingleton && fileManager.fileExists(atPath: destinationFolderPath) {
+        if !isSingleton, fileManager.fileExists(atPath: destinationFolderPath) {
             throw BrickGeneratorError.moduleAlreadyExists(destinationFolderPath)
         }
 
-        if let manifest = manifest {
+        if let manifest {
             try HooksEngine.executeHooks(
                 manifest.preSnapHooks,
                 variables: options.variables,
@@ -212,7 +215,7 @@ public class BrickGenerator {
                 }
             }
 
-            if let manifest = manifest {
+            if let manifest {
                 try CodeInjector.injectAll(
                     specs: manifest.injections,
                     variables: options.variables,

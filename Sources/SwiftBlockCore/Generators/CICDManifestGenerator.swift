@@ -9,16 +9,16 @@ public class CICDManifestGenerator {
 
     public func generateCICDPipeline(in projectPath: String, config: SwiftBlockConfig) throws {
         switch config.cicd.provider {
-        case .githubActions:
-            try generateGitHubActions(in: projectPath, config: config)
-        case .gitlabCI:
-            try generateGitLabCI(in: projectPath, config: config)
-        case .bitrise:
-            try generateBitrise(in: projectPath, config: config)
-        case .xcodeCloud:
-            try generateXcodeCloud(in: projectPath, config: config)
-        case .none:
-            break
+            case .githubActions:
+                try generateGitHubActions(in: projectPath, config: config)
+            case .gitlabCI:
+                try generateGitLabCI(in: projectPath, config: config)
+            case .bitrise:
+                try generateBitrise(in: projectPath, config: config)
+            case .xcodeCloud:
+                try generateXcodeCloud(in: projectPath, config: config)
+            case .none:
+                break
         }
     }
 
@@ -33,63 +33,63 @@ public class CICDManifestGenerator {
 
         var steps: [String] = [
             """
-      - name: Checkout Code
-        uses: actions/checkout@v4
-""",
+                  - name: Checkout Code
+                    uses: actions/checkout@v4
+            """,
             """
-      - name: Install Tooling via mise
-        uses: jdx/mise-action@v2
-""",
+                  - name: Install Tooling via mise
+                    uses: jdx/mise-action@v2
+            """,
             """
-      - name: Build Project Manifests
-        run: \(generateCmd)
-"""
+                  - name: Build Project Manifests
+                    run: \(generateCmd)
+            """,
         ]
 
         if config.guardrails.swiftlint {
             steps.append("""
-      - name: Run SwiftLint
-        run: swiftlint
-""")
+                  - name: Run SwiftLint
+                    run: swiftlint
+            """)
         }
 
         if config.guardrails.swiftformat {
             steps.append("""
-      - name: Check SwiftFormat
-        run: swiftformat --lint .
-""")
+                  - name: Check SwiftFormat
+                    run: swiftformat --lint .
+            """)
         }
 
         steps.append("""
-      - name: Run Unit Tests
-        run: \(testCmd)
-""")
+              - name: Run Unit Tests
+                run: \(testCmd)
+        """)
 
         if config.guardrails.danger {
             steps.append("""
-      - name: Run Danger
-        if: github.event_name == 'pull_request'
-        run: danger-swift ci
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-""")
+                  - name: Run Danger
+                    if: github.event_name == 'pull_request'
+                    run: danger-swift ci
+                    env:
+                      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            """)
         }
 
         let content = """
-name: CI
+        name: CI
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+        on:
+          push:
+            branches: [ main, develop ]
+          pull_request:
+            branches: [ main, develop ]
 
-jobs:
-  build-and-test:
-    runs-on: macos-14
-    steps:
-\(steps.joined(separator: "\n\n"))
-"""
+        jobs:
+          build-and-test:
+            runs-on: macos-14
+            steps:
+        \(steps.joined(separator: "\n\n"))
+        """
 
         let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
         try trimmedContent.write(toFile: ciPath, atomically: true, encoding: .utf8)
@@ -102,27 +102,27 @@ jobs:
         let testCmd = isSPM ? "swift test" : "xcodebuild test -scheme \(config.projectName) -destination 'platform=iOS Simulator,name=iPhone 15'"
 
         let content = """
-stages:
-  - build
-  - test
+        stages:
+          - build
+          - test
 
-build_job:
-  stage: build
-  tags:
-    - saas-macos-medium-m1
-  script:
-    - mise install
-    - \(generateCmd)
+        build_job:
+          stage: build
+          tags:
+            - saas-macos-medium-m1
+          script:
+            - mise install
+            - \(generateCmd)
 
-test_job:
-  stage: test
-  tags:
-    - saas-macos-medium-m1
-  script:
-    - mise install
-    - \(generateCmd)
-    - \(testCmd)
-"""
+        test_job:
+          stage: test
+          tags:
+            - saas-macos-medium-m1
+          script:
+            - mise install
+            - \(generateCmd)
+            - \(testCmd)
+        """
         let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
         try trimmedContent.write(toFile: ciPath, atomically: true, encoding: .utf8)
     }
@@ -132,40 +132,39 @@ test_job:
         let isSPM = config.generatorTool == .spm
         let generateCmd = isSPM ? "swift build" : (config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate")
 
-        let testStep: String
-        if isSPM {
-            testStep = """
-      - script@1:
-          title: Run Unit Tests
-          inputs:
-            - content: |-
-                swift test
-"""
+        let testStep = if isSPM {
+            """
+                  - script@1:
+                      title: Run Unit Tests
+                      inputs:
+                        - content: |-
+                            swift test
+            """
         } else {
-            testStep = """
-      - xcode-test@5:
-          inputs:
-            - project_path: \(config.projectName).xcodeproj
-            - scheme: \(config.projectName)
-"""
+            """
+                  - xcode-test@5:
+                      inputs:
+                        - project_path: \(config.projectName).xcodeproj
+                        - scheme: \(config.projectName)
+            """
         }
 
         let content = """
-format_version: "11"
-default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
-workflows:
-  primary:
-    steps:
-      - activate-ssh-key@4: {}
-      - git-clone-repository@1: {}
-      - script@1:
-          title: Setup Environment & Generate Project
-          inputs:
-            - content: |-
-                mise install
-                \(generateCmd)
-\(testStep)
-"""
+        format_version: "11"
+        default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+        workflows:
+          primary:
+            steps:
+              - activate-ssh-key@4: {}
+              - git-clone-repository@1: {}
+              - script@1:
+                  title: Setup Environment & Generate Project
+                  inputs:
+                    - content: |-
+                        mise install
+                        \(generateCmd)
+        \(testStep)
+        """
         let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
         try trimmedContent.write(toFile: ciPath, atomically: true, encoding: .utf8)
     }
@@ -179,16 +178,16 @@ workflows:
         let generateCmd = isSPM ? "swift build" : (config.generatorTool == .tuist ? "tuist generate --no-open" : "xcodegen generate")
 
         let content = """
-#!/usr/bin/env bash
-set -e
+        #!/usr/bin/env bash
+        set -e
 
-echo "🚀 Xcode Cloud Post-Clone Setup..."
-if which mise > /dev/null; then
-    mise install
-fi
+        echo "🚀 Xcode Cloud Post-Clone Setup..."
+        if which mise > /dev/null; then
+            mise install
+        fi
 
-\(generateCmd)
-"""
+        \(generateCmd)
+        """
         let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
         try trimmedContent.write(toFile: scriptPath, atomically: true, encoding: .utf8)
         try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: scriptPath)

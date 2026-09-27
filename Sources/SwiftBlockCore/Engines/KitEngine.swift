@@ -31,15 +31,15 @@ public struct KitBrickSpec: Codable, Equatable {
 
         // Extract [optional1, optional2]
         if let optStart = clean.firstIndex(of: "["), let optEnd = clean.firstIndex(of: "]"), optStart < optEnd {
-            let depsStr = clean[clean.index(after: optStart)..<optEnd]
+            let depsStr = clean[clean.index(after: optStart) ..< optEnd]
             optionals = depsStr.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
-            clean.removeSubrange(optStart...optEnd)
+            clean.removeSubrange(optStart ... optEnd)
             clean = clean.trimmingCharacters(in: .whitespaces)
         }
 
         // Extract (flavor1=val1, flavor2=val2)
         if let flavStart = clean.firstIndex(of: "("), let flavEnd = clean.firstIndex(of: ")"), flavStart < flavEnd {
-            let flavStr = clean[clean.index(after: flavStart)..<flavEnd]
+            let flavStr = clean[clean.index(after: flavStart) ..< flavEnd]
             for pair in flavStr.split(separator: ",") {
                 let parts = pair.split(separator: "=", maxSplits: 1).map(String.init)
                 if parts.count == 2 {
@@ -48,7 +48,7 @@ public struct KitBrickSpec: Codable, Equatable {
                     flavors[k] = v
                 }
             }
-            clean.removeSubrange(flavStart...flavEnd)
+            clean.removeSubrange(flavStart ... flavEnd)
             clean = clean.trimmingCharacters(in: .whitespaces)
         }
 
@@ -108,18 +108,17 @@ public class KitEngine {
             let spec = KitBrickSpec.parse(entry)
             let brickName = spec.name
 
-            let type: Brick
-            if let curated = BrickRegistry.spec(forCommand: brickName) {
-                type = curated.type
+            let type: Brick = if let curated = BrickRegistry.spec(forCommand: brickName) {
+                curated.type
             } else {
-                type = Brick(rawValue: brickName.lowercased())
+                Brick(rawValue: brickName.lowercased())
             }
 
             var resolvedVars = spec.variables
 
             if let resolvedPath = discoveryEngine.resolveBrickPath(named: brickName, in: baseDir),
-               let manifest = BrickManifest.load(fromPath: resolvedPath) {
-                
+               let manifest = BrickManifest.load(fromPath: resolvedPath)
+            {
                 var selectedOpts = Set(spec.optionalDeps)
 
                 // Apply flavors
@@ -194,10 +193,10 @@ public enum KitEngineError: Error, LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .kitNotFound(let name):
-            return "Kit '\(name)' is not defined in .swiftblock/config.yml."
-        case .invalidBrickType(let name):
-            return "Brick type '\(name)' specified in kit is invalid."
+            case let .kitNotFound(name):
+                "Kit '\(name)' is not defined in .swiftblock/config.yml."
+            case let .invalidBrickType(name):
+                "Brick type '\(name)' specified in kit is invalid."
         }
     }
 }

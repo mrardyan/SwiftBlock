@@ -1,9 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct CodeInjectorTests {
-    @Test func markerBasedCodeInjection() throws {
+final class CodeInjectorTests: XCTestCase {
+    func testMarkerBasedCodeInjection() throws {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: tempDir) }
@@ -33,12 +33,12 @@ struct CodeInjectorTests {
             projectRootPath: tempDir
         )
 
-        #expect(injected == true)
+        XCTAssertEqual(injected, true)
         let updatedContent = try String(contentsOfFile: targetFile, encoding: .utf8)
-        #expect(updatedContent.contains("let profileService = ProfileService()"))
+        XCTAssertTrue(updatedContent.contains("let profileService = ProfileService()"))
     }
 
-    @Test func duplicatePrevention() throws {
+    func testDuplicatePrevention() throws {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: tempDir) }
@@ -71,10 +71,10 @@ struct CodeInjectorTests {
             projectRootPath: tempDir
         )
 
-        #expect(injected == false)
+        XCTAssertEqual(injected, false)
     }
 
-    @Test func fallbackBraceInjection() throws {
+    func testFallbackBraceInjection() throws {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: tempDir) }
@@ -101,12 +101,12 @@ struct CodeInjectorTests {
             projectRootPath: tempDir
         )
 
-        #expect(injected == true)
+        XCTAssertEqual(injected, true)
         let updatedContent = try String(contentsOfFile: targetFile, encoding: .utf8)
-        #expect(updatedContent.contains("case profile"))
+        XCTAssertTrue(updatedContent.contains("case profile"))
     }
 
-    @Test func manifestInjectionParsing() {
+    func testManifestInjectionParsing() {
         let yamlContent = """
         name: scene
         category: architecture
@@ -118,13 +118,13 @@ struct CodeInjectorTests {
         """
 
         let manifest = BrickManifest.parseYAML(yamlContent, folderName: "scene")
-        #expect(manifest.injections.count == 1)
-        #expect(manifest.injections[0].target == "App/Sources/AppMain.swift")
-        #expect(manifest.injections[0].marker == "// MARK: - Routes")
-        #expect(manifest.injections[0].content == "case .{{moduleName.lowercased()}}")
+        XCTAssertEqual(manifest.injections.count, 1)
+        XCTAssertEqual(manifest.injections[0].target, "App/Sources/AppMain.swift")
+        XCTAssertEqual(manifest.injections[0].marker, "// MARK: - Routes")
+        XCTAssertEqual(manifest.injections[0].content, "case .{{moduleName.lowercased()}}")
     }
 
-    @Test func dryRunInjection() throws {
+    func testDryRunInjection() throws {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: tempDir) }
@@ -148,12 +148,12 @@ struct CodeInjectorTests {
             isDryRun: true
         )
 
-        #expect(injected == true)
+        XCTAssertEqual(injected, true)
         let contentUnchanged = try String(contentsOfFile: targetFile, encoding: .utf8)
-        #expect(contentUnchanged == initialContent)
+        XCTAssertEqual(contentUnchanged, initialContent)
     }
 
-    @Test func pathTraversalRejection() throws {
+    func testPathTraversalRejection() throws {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         let projectDir = "\(tempDir)/Project"
         try FileManager.default.createDirectory(atPath: projectDir, withIntermediateDirectories: true)
@@ -176,12 +176,12 @@ struct CodeInjectorTests {
             projectRootPath: projectDir
         )
 
-        #expect(injected == false)
+        XCTAssertEqual(injected, false)
         let contentUnchanged = try String(contentsOfFile: outsideFile, encoding: .utf8)
-        #expect(contentUnchanged == "sensitive content")
+        XCTAssertEqual(contentUnchanged, "sensitive content")
     }
 
-    @Test func multipleMarkersAndNestedBraces() throws {
+    func testMultipleMarkersAndNestedBraces() throws {
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
         try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(atPath: tempDir) }
@@ -212,9 +212,9 @@ struct CodeInjectorTests {
             projectRootPath: tempDir
         )
 
-        #expect(injected == true)
+        XCTAssertEqual(injected, true)
         let updatedContent = try String(contentsOfFile: targetFile, encoding: .utf8)
         let lines = updatedContent.components(separatedBy: "\n")
-        #expect(lines[2].contains("let injectedFirst = true"))
+        XCTAssertTrue(lines[2].contains("let injectedFirst = true"))
     }
 }

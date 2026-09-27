@@ -1,85 +1,84 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct BrickRegistryTests {
-
-    @Test func allBricksNotEmpty() {
-        #expect(!BrickRegistry.allBricks.isEmpty)
+final class BrickRegistryTests: XCTestCase {
+    func testAllBricksNotEmpty() {
+        XCTAssertFalse(BrickRegistry.allBricks.isEmpty)
         // Curated bricks are always present
-        #expect(BrickRegistry.allBricks.count >= 23)
+        XCTAssertGreaterThanOrEqual(BrickRegistry.allBricks.count, 23)
     }
 
-    @Test func featureAndCoreBlocksCount() {
+    func testFeatureAndCoreBlocksCount() {
         // All curated feature bricks must be present
-        #expect(BrickRegistry.featureBricks.count >= 9)
-        #expect(BrickRegistry.coreBricks.count >= 14)
+        XCTAssertGreaterThanOrEqual(BrickRegistry.featureBricks.count, 9)
+        XCTAssertGreaterThanOrEqual(BrickRegistry.coreBricks.count, 14)
         // Auto-discovered bricks are categorized (e.g. value types land in utils, not feature)
         let moneySpec = BrickRegistry.spec(forCommand: "money")
-        #expect(moneySpec != nil)
-        #expect(moneySpec?.category == .utils)
+        XCTAssertNotEqual(moneySpec, nil)
+        XCTAssertEqual(moneySpec?.category, .utils)
     }
 
-    @Test func specForType() {
+    func testSpecForType() {
         let sceneSpec = BrickRegistry.spec(for: .scene)
-        #expect(sceneSpec != nil)
-        #expect(sceneSpec?.commandName == "scene")
-        #expect(sceneSpec?.category == .feature)
+        XCTAssertNotEqual(sceneSpec, nil)
+        XCTAssertEqual(sceneSpec?.commandName, "scene")
+        XCTAssertEqual(sceneSpec?.category, .feature)
 
         let storageSpec = BrickRegistry.spec(for: .storage)
-        #expect(storageSpec != nil)
-        #expect(storageSpec?.commandName == "storage")
-        #expect(storageSpec?.category == .core)
+        XCTAssertNotEqual(storageSpec, nil)
+        XCTAssertEqual(storageSpec?.commandName, "storage")
+        XCTAssertEqual(storageSpec?.category, .core)
     }
 
-    @Test func specForCommand() {
+    func testSpecForCommand() {
         let mapperSpec = BrickRegistry.spec(forCommand: "mapper")
-        #expect(mapperSpec != nil)
-        #expect(mapperSpec?.type == .mapper)
+        XCTAssertNotEqual(mapperSpec, nil)
+        XCTAssertEqual(mapperSpec?.type, .mapper)
 
         let authSpec = BrickRegistry.spec(forCommand: "AUTH")
-        #expect(authSpec != nil)
-        #expect(authSpec?.type == .auth)
+        XCTAssertNotEqual(authSpec, nil)
+        XCTAssertEqual(authSpec?.type, .auth)
 
         // Category namespacing tests (core/network, feature/scene, core.storage)
         let coreNetworkSpec = BrickRegistry.spec(forCommand: "core/network")
-        #expect(coreNetworkSpec != nil)
-        #expect(coreNetworkSpec?.type == .network)
+        XCTAssertNotEqual(coreNetworkSpec, nil)
+        XCTAssertEqual(coreNetworkSpec?.type, .network)
 
         let featureSceneSpec = BrickRegistry.spec(forCommand: "feature/scene")
-        #expect(featureSceneSpec != nil)
-        #expect(featureSceneSpec?.type == .scene)
+        XCTAssertNotEqual(featureSceneSpec, nil)
+        XCTAssertEqual(featureSceneSpec?.type, .scene)
 
         let coreStorageSpec = BrickRegistry.spec(forCommand: "core.storage")
-        #expect(coreStorageSpec != nil)
-        #expect(coreStorageSpec?.type == .storage)
+        XCTAssertNotEqual(coreStorageSpec, nil)
+        XCTAssertEqual(coreStorageSpec?.type, .storage)
 
         let slashBrick: Brick = "core/network"
-        #expect(slashBrick.rawValue == "network")
+        XCTAssertEqual(slashBrick.rawValue, "network")
 
         let dotBrick: Brick = "feature/scene"
-        #expect(dotBrick.rawValue == "scene")
+        XCTAssertEqual(dotBrick.rawValue, "scene")
 
         let invalidSpec = BrickRegistry.spec(forCommand: "nonexistent")
-        #expect(invalidSpec == nil)
+        XCTAssertEqual(invalidSpec, nil)
     }
 
-    @Test func testBrickCategoryAndNamespaces() {
-        let sceneBrick: Brick = Brick.Feature.scene
-        #expect(sceneBrick.rawValue == "scene")
-        #expect(sceneBrick.category == Brick.Category.feature)
+    func testBrickCategoryAndNamespaces() {
+        let sceneBrick = Brick.Feature.scene
+        XCTAssertEqual(sceneBrick.rawValue, "scene")
+        XCTAssertEqual(sceneBrick.category, Brick.Category.feature)
 
-        let storageBrick: Brick = Brick.Core.storage
-        #expect(storageBrick.rawValue == "storage")
-        #expect(storageBrick.category == Brick.Category.core)
+        let storageBrick = Brick.Core.storage
+        XCTAssertEqual(storageBrick.rawValue, "storage")
+        XCTAssertEqual(storageBrick.category, Brick.Category.core)
 
         let featureCat: Brick.Category = .feature
-        #expect(!featureCat.isSingleton)
+        XCTAssertFalse(featureCat.isSingleton)
 
         let coreCat: Brick.Category = .core
-        #expect(coreCat.isSingleton)
+        XCTAssertTrue(coreCat.isSingleton)
 
         let customBrick: Brick = "custombrick"
-        #expect(customBrick.description == "custombrick")
+        XCTAssertEqual(customBrick.description, "custombrick")
     }
 }

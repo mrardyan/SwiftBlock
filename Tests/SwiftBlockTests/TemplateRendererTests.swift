@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct TemplateRendererTests {
-
-    @Test func renderPlaceholdersAndCustomVariables() {
+final class TemplateRendererTests: XCTestCase {
+    func testRenderPlaceholdersAndCustomVariables() {
         let template = """
         // Header for {{name}} in {{projectName}}
         let timeout = {{timeoutInterval}}
@@ -22,12 +21,12 @@ struct TemplateRendererTests {
             projectName: "MyAwesomeApp"
         )
 
-        #expect(rendered.contains("// Header for Profile in MyAwesomeApp"))
-        #expect(rendered.contains("let timeout = 60"))
-        #expect(rendered.contains("let path = \"Packages/Core/Sources/Core/network\""))
+        XCTAssertTrue(rendered.contains("// Header for Profile in MyAwesomeApp"))
+        XCTAssertTrue(rendered.contains("let timeout = 60"))
+        XCTAssertTrue(rendered.contains("let path = \"Packages/Core/Sources/Core/network\""))
     }
 
-    @Test func renderPathPlaceholders() {
+    func testRenderPathPlaceholders() {
         let pathTemplate = "{{paths.feature}}/{module}/{{name}}View.swift"
         let config = SwiftBlockConfig(projectName: "App")
 
@@ -39,15 +38,15 @@ struct TemplateRendererTests {
             config: config
         )
 
-        #expect(renderedPath == "App/Sources/Features/checkout/CheckoutView.swift")
+        XCTAssertEqual(renderedPath, "App/Sources/Features/checkout/CheckoutView.swift")
     }
 
-    @Test func brickVariableWizardResolution() throws {
+    func testBrickVariableWizardResolution() throws {
         let manifest = BrickManifest(
             name: "network",
             variables: [
                 VariableSpec(name: "timeoutInterval", type: "string", prompt: "Timeout?", defaultValue: "30"),
-                VariableSpec(name: "enableLogging", type: "bool", prompt: "Enable logging?", defaultValue: "true")
+                VariableSpec(name: "enableLogging", type: "bool", prompt: "Enable logging?", defaultValue: "true"),
             ]
         )
 
@@ -64,11 +63,11 @@ struct TemplateRendererTests {
             }
         )
 
-        #expect(result["timeoutInterval"] == "45")
-        #expect(result["enableLogging"] == "true")
+        XCTAssertEqual(result["timeoutInterval"], "45")
+        XCTAssertEqual(result["enableLogging"], "true")
     }
 
-    @Test func renderConditionalIfElseBranches() {
+    func testRenderConditionalIfElseBranches() {
         let template = """
         struct MyView {
         {{#if stateStyle == 'observable'}}
@@ -83,18 +82,18 @@ struct TemplateRendererTests {
             template: template,
             variables: ["stateStyle": "observable"]
         )
-        #expect(observableRendered.contains("@State var vm: MyVM"))
-        #expect(!observableRendered.contains("@StateObject"))
+        XCTAssertTrue(observableRendered.contains("@State var vm: MyVM"))
+        XCTAssertFalse(observableRendered.contains("@StateObject"))
 
         let combineRendered = TemplateRenderer.render(
             template: template,
             variables: ["stateStyle": "combine"]
         )
-        #expect(!combineRendered.contains("@State var vm: MyVM"))
-        #expect(combineRendered.contains("@StateObject var vm: MyVM"))
+        XCTAssertFalse(combineRendered.contains("@State var vm: MyVM"))
+        XCTAssertTrue(combineRendered.contains("@StateObject var vm: MyVM"))
     }
 
-    @Test func renderConditionalUnlessBranches() {
+    func testRenderConditionalUnlessBranches() {
         let template = """
         {{#unless isLegacy}}
         ModernSwiftCode()
@@ -102,13 +101,13 @@ struct TemplateRendererTests {
         """
 
         let truthy = TemplateRenderer.render(template: template, variables: ["isLegacy": "true"])
-        #expect(!truthy.contains("ModernSwiftCode()"))
+        XCTAssertFalse(truthy.contains("ModernSwiftCode()"))
 
         let falsy = TemplateRenderer.render(template: template, variables: ["isLegacy": "false"])
-        #expect(falsy.contains("ModernSwiftCode()"))
+        XCTAssertTrue(falsy.contains("ModernSwiftCode()"))
     }
 
-    @Test func renderConditionalNotEqual() {
+    func testRenderConditionalNotEqual() {
         let template = """
         {{#if stateStyle != 'combine'}}
         ModernState()
@@ -118,15 +117,15 @@ struct TemplateRendererTests {
         """
 
         let modern = TemplateRenderer.render(template: template, variables: ["stateStyle": "observable"])
-        #expect(modern.contains("ModernState()"))
-        #expect(!modern.contains("CombineState()"))
+        XCTAssertTrue(modern.contains("ModernState()"))
+        XCTAssertFalse(modern.contains("CombineState()"))
 
         let combine = TemplateRenderer.render(template: template, variables: ["stateStyle": "combine"])
-        #expect(!combine.contains("ModernState()"))
-        #expect(combine.contains("CombineState()"))
+        XCTAssertFalse(combine.contains("ModernState()"))
+        XCTAssertTrue(combine.contains("CombineState()"))
     }
 
-    @Test func renderConditionalBareVariableTruthyFalsy() {
+    func testRenderConditionalBareVariableTruthyFalsy() {
         let template = """
         {{#if hasLocalCache}}
         let cache = Cache()
@@ -134,23 +133,23 @@ struct TemplateRendererTests {
         """
 
         let truthy = TemplateRenderer.render(template: template, variables: ["hasLocalCache": "true"])
-        #expect(truthy.contains("let cache = Cache()"))
+        XCTAssertTrue(truthy.contains("let cache = Cache()"))
 
         let falsy = TemplateRenderer.render(template: template, variables: ["hasLocalCache": "false"])
-        #expect(!falsy.contains("let cache = Cache()"))
+        XCTAssertFalse(falsy.contains("let cache = Cache()"))
     }
 
-    @Test func renderConditionalUndefinedVariableIsFalse() {
+    func testRenderConditionalUndefinedVariableIsFalse() {
         let template = """
         {{#if missingVar}}
         NeverShown()
         {{/if}}
         """
         let rendered = TemplateRenderer.render(template: template, variables: ["other": "1"])
-        #expect(!rendered.contains("NeverShown()"))
+        XCTAssertFalse(rendered.contains("NeverShown()"))
     }
 
-    @Test func renderConditionalNestedBlocks() {
+    func testRenderConditionalNestedBlocks() {
         let template = """
         {{#if strategy == 'offline-first'}}
         {{#if hasLocalCache}}
@@ -167,16 +166,16 @@ struct TemplateRendererTests {
             template: template,
             variables: ["strategy": "offline-first", "hasLocalCache": "true"]
         )
-        #expect(offline.contains("cacheLayer()"))
-        #expect(!offline.contains("cacheFallback()"))
-        #expect(!offline.contains("remoteOnly()"))
+        XCTAssertTrue(offline.contains("cacheLayer()"))
+        XCTAssertFalse(offline.contains("cacheFallback()"))
+        XCTAssertFalse(offline.contains("remoteOnly()"))
 
         let remote = TemplateRenderer.render(template: template, variables: ["strategy": "remote-only"])
-        #expect(remote.contains("remoteOnly()"))
-        #expect(!remote.contains("cacheLayer()"))
+        XCTAssertTrue(remote.contains("remoteOnly()"))
+        XCTAssertFalse(remote.contains("cacheLayer()"))
     }
 
-    @Test func renderConditionalWithoutElseBranch() {
+    func testRenderConditionalWithoutElseBranch() {
         let template = """
         {{#if stateStyle == 'observable'}}
         import Observation
@@ -185,15 +184,15 @@ struct TemplateRendererTests {
         """
 
         let rendered = TemplateRenderer.render(template: template, variables: ["stateStyle": "observable"])
-        #expect(rendered.contains("import Observation"))
-        #expect(rendered.contains("import Foundation"))
+        XCTAssertTrue(rendered.contains("import Observation"))
+        XCTAssertTrue(rendered.contains("import Foundation"))
 
         let combine = TemplateRenderer.render(template: template, variables: ["stateStyle": "combine"])
-        #expect(!combine.contains("import Observation"))
-        #expect(combine.contains("import Foundation"))
+        XCTAssertFalse(combine.contains("import Observation"))
+        XCTAssertTrue(combine.contains("import Foundation"))
     }
 
-    @Test func renderConditionalEvaluatesVariableToVariableComparison() {
+    func testRenderConditionalEvaluatesVariableToVariableComparison() {
         let template = """
         {{#if mode == expectedMode}}
         Match()
@@ -205,18 +204,18 @@ struct TemplateRendererTests {
             template: template,
             variables: ["mode": "fast", "expectedMode": "fast"]
         )
-        #expect(rendered.contains("Match()"))
-        #expect(!rendered.contains("NoMatch()"))
+        XCTAssertTrue(rendered.contains("Match()"))
+        XCTAssertFalse(rendered.contains("NoMatch()"))
 
         let mismatch = TemplateRenderer.render(
             template: template,
             variables: ["mode": "fast", "expectedMode": "slow"]
         )
-        #expect(!mismatch.contains("\nMatch()\n"))
-        #expect(mismatch.contains("NoMatch()"))
+        XCTAssertFalse(mismatch.contains("\nMatch()\n"))
+        XCTAssertTrue(mismatch.contains("NoMatch()"))
     }
 
-    @Test func renderConditionalPreservesContentOutsideBlocks() {
+    func testRenderConditionalPreservesContentOutsideBlocks() {
         let template = """
         import SwiftUI
         {{#if stateStyle == 'combine'}}
@@ -226,8 +225,8 @@ struct TemplateRendererTests {
         """
 
         let rendered = TemplateRenderer.render(template: template, variables: [:])
-        #expect(rendered.contains("import SwiftUI"))
-        #expect(rendered.contains("public struct MyView: View { }"))
-        #expect(!rendered.contains("@StateObject"))
+        XCTAssertTrue(rendered.contains("import SwiftUI"))
+        XCTAssertTrue(rendered.contains("public struct MyView: View { }"))
+        XCTAssertFalse(rendered.contains("@StateObject"))
     }
 }

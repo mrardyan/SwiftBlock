@@ -1,29 +1,28 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct CompletionGeneratorTests {
-
-    @Test func generateZshCompletion() {
+final class CompletionGeneratorTests: XCTestCase {
+    func testGenerateZshCompletion() {
         let script = CompletionGenerator.generate(for: .zsh)
-        #expect(script.contains("#compdef swiftblock"))
-        #expect(script.contains("snap:Snap a foundation"))
-        #expect(script.contains("--flavor="))
-        #expect(script.contains("--with-optional="))
-        #expect(script.contains("clean-feature"))
+        XCTAssertTrue(script.contains("#compdef swiftblock"))
+        XCTAssertTrue(script.contains("snap:Snap a foundation"))
+        XCTAssertTrue(script.contains("--flavor="))
+        XCTAssertTrue(script.contains("--with-optional="))
+        XCTAssertTrue(script.contains("clean-feature"))
     }
 
-    @Test func generateBashCompletion() {
+    func testGenerateBashCompletion() {
         let script = CompletionGenerator.generate(for: .bash)
-        #expect(script.contains("# bash completion for swiftblock"))
-        #expect(script.contains("complete -F _swiftblock_completions swiftblock"))
-        #expect(script.contains("snap"))
+        XCTAssertTrue(script.contains("# bash completion for swiftblock"))
+        XCTAssertTrue(script.contains("complete -F _swiftblock_completions swiftblock"))
+        XCTAssertTrue(script.contains("snap"))
     }
 
-    @Test func generateFishCompletion() {
+    func testGenerateFishCompletion() {
         let script = CompletionGenerator.generate(for: .fish)
-        #expect(script.contains("# fish completion for swiftblock"))
-        #expect(script.contains("complete -c swiftblock"))
-        #expect(script.contains("-l flavor"))
+        XCTAssertTrue(script.contains("# fish completion for swiftblock"))
+        XCTAssertTrue(script.contains("complete -c swiftblock"))
+        XCTAssertTrue(script.contains("-l flavor"))
     }
 }

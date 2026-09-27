@@ -16,7 +16,7 @@ public struct InjectionSpec {
     }
 }
 
-public struct CodeInjector {
+public enum CodeInjector {
     public static func inject(
         spec: InjectionSpec,
         variables: [String: String] = [:],
@@ -118,7 +118,7 @@ public struct CodeInjector {
                     inLineComment = false
                 }
 
-                for i in scopeIndex..<lines.count {
+                for i in scopeIndex ..< lines.count {
                     let line = lines[i]
                     resetState()
                     var j = 0
@@ -159,7 +159,7 @@ public struct CodeInjector {
                         }
                         j += 1
                     }
-                    if foundOpenBrace && braceCount == 0 {
+                    if foundOpenBrace, braceCount == 0 {
                         closingBraceIndex = i
                         break
                     }
@@ -235,10 +235,8 @@ public struct CodeInjector {
 
 private extension Array {
     func rIndex(where predicate: (Element) -> Bool) -> Int? {
-        for index in stride(from: count - 1, through: 0, by: -1) {
-            if predicate(self[index]) {
-                return index
-            }
+        for index in stride(from: count - 1, through: 0, by: -1) where predicate(self[index]) {
+            return index
         }
         return nil
     }

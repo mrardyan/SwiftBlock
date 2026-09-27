@@ -15,7 +15,7 @@ struct SwiftBlock: ParsableCommand {
             DoctorCommand.self,
             IDECommand.self,
             RenameCommand.self,
-            CompletionCommand.self
+            CompletionCommand.self,
         ],
         defaultSubcommand: DoctorCommand.self
     )
@@ -32,35 +32,47 @@ struct BaseplateCommand: ParsableCommand {
     var projectName: String?
 
     @Option(name: [.customShort("p"), .customLong("bundle-prefix"), .customLong("prefix")], help: "Bundle identifier prefix (default: com.company)")
-    var bundlePrefix: String = "com.company"
+    var bundlePrefix = "com.company"
 
-    @Option(name: [.customShort("b"), .customLong("baseplate"), .customLong("template-name")], help: "Baseplate starter template: swiftui or vapor (default: swiftui)")
-    var baseplate: String = "swiftui"
+    @Option(
+        name: [.customShort("b"), .customLong("baseplate"), .customLong("template-name")],
+        help: "Baseplate starter template: swiftui or vapor (default: swiftui)"
+    )
+    var baseplate = "swiftui"
 
     @Option(name: [.customShort("t"), .long], help: "Custom project template path")
     var templatePath: String?
 
     @Option(name: .long, help: "Build tool generator: tuist or xcodegen (default: tuist)")
-    var tool: String = "tuist"
+    var tool = "tuist"
 
     @Option(name: .long, help: "Unit test framework: swift-testing or xctest (default: swift-testing)")
-    var testFramework: String = "swift-testing"
+    var testFramework = "swift-testing"
 
     @Flag(name: .long, help: "Simulate project generation without writing to disk")
-    var dryRun: Bool = false
+    var dryRun = false
 
     @Flag(name: [.customShort("v"), .long], help: "Enable verbose step-by-step log output")
-    var verbose: Bool = false
+    var verbose = false
 
     func run() throws {
-        if let projectName = projectName, !projectName.isEmpty {
+        if let projectName, !projectName.isEmpty {
             guard ProjectRefactoringEngine.isValidProjectName(projectName) else {
                 print("❌ Invalid project name '\(projectName)'. Project name must start with a letter and contain only alphanumeric characters or underscores.")
                 throw ExitCode.failure
             }
             let toolEnum = ProjectGeneratorTool(rawValue: tool.lowercased()) ?? .tuist
             let tfEnum = TestFramework(rawValue: testFramework.lowercased()) ?? .swiftTesting
-            try executeInitProject(projectName: projectName, bundlePrefix: bundlePrefix, baseplateName: baseplate, templatePath: templatePath, generatorTool: toolEnum, testFramework: tfEnum, isDryRun: dryRun, isVerbose: verbose)
+            try executeInitProject(
+                projectName: projectName,
+                bundlePrefix: bundlePrefix,
+                baseplateName: baseplate,
+                templatePath: templatePath,
+                generatorTool: toolEnum,
+                testFramework: tfEnum,
+                isDryRun: dryRun,
+                isVerbose: verbose
+            )
         } else {
             let options = try InteractiveWizard.runProjectWizard(defaultTemplatePath: templatePath ?? "")
             var finalOptions = options
@@ -94,10 +106,10 @@ struct SnapCommand: ParsableCommand {
     var withOptional: String?
 
     @Flag(name: .customLong("all-optional"), help: "Snap all optional dependencies")
-    var allOptional: Bool = false
+    var allOptional = false
 
     @Flag(name: .customLong("no-deps"), help: "Skip automatic resolution of mandatory dependencies")
-    var noDeps: Bool = false
+    var noDeps = false
 
     @Option(name: .customLong("flavor"), help: "Key-value flavor selection (e.g. --flavor concurrency=async-await)")
     var flavor: [String] = []
@@ -106,7 +118,7 @@ struct SnapCommand: ParsableCommand {
     var testFramework: String?
 
     @Flag(name: .long, help: "Simulate brick generation without writing to disk")
-    var dryRun: Bool = false
+    var dryRun = false
 
     private func parseVariables() -> [String: String] {
         var dict: [String: String] = [:]
@@ -172,7 +184,7 @@ struct SnapCommand: ParsableCommand {
         let baseDir = templatePath ?? FileManager.default.currentDirectoryPath
         let discoveryEngine = BrickDiscoveryEngine()
         let depResolver = DependencyResolverEngine(discoveryEngine: discoveryEngine)
-        
+
         guard let brickInput = brick else {
             // Interactive wizard when no arguments provided
             let options = try InteractiveWizard.runModuleWizard(defaultTemplatePath: baseDir)
@@ -181,7 +193,7 @@ struct SnapCommand: ParsableCommand {
             try executeAddModuleWithOptions(options: finalOptions)
             return
         }
-        
+
         let normalizedBrick = brickInput.lowercased()
         var resolvedVars = parseVariables()
 
@@ -203,11 +215,10 @@ struct SnapCommand: ParsableCommand {
 
             let discovered = boxManager.discoverMonorepoBricks(at: targetPath)
             if !discovered.isEmpty {
-                let selected: (relativePath: String, manifest: BrickManifest)
-                if discovered.count == 1 {
-                    selected = discovered[0]
+                let selected: (relativePath: String, manifest: BrickManifest) = if discovered.count == 1 {
+                    discovered[0]
                 } else {
-                    selected = try InteractiveWizard.runMonorepoSelectionWizard(bricks: discovered)
+                    try InteractiveWizard.runMonorepoSelectionWizard(bricks: discovered)
                 }
                 let selectedPath = "\(targetPath)/\(selected.relativePath)"
                 if !selected.manifest.variables.isEmpty {
@@ -219,17 +230,17 @@ struct SnapCommand: ParsableCommand {
                 return
             }
         }
-        
+
         // Smart Namespace Resolution & Structured Composing
         if let resolvedPath = discoveryEngine.resolveBrickPath(named: brickInput, in: baseDir),
-           let manifest = BrickManifest.load(fromPath: resolvedPath) {
-            
+           let manifest = BrickManifest.load(fromPath: resolvedPath)
+        {
             if !manifest.variables.isEmpty {
                 resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
             }
 
             var flavorSelections = parseFlavorSelections()
-            if isatty(STDIN_FILENO) != 0 && !manifest.flavors.isEmpty {
+            if isatty(STDIN_FILENO) != 0, !manifest.flavors.isEmpty {
                 flavorSelections = try InteractiveWizard.runBrickFlavorsWizard(manifest: manifest, providedSelections: flavorSelections)
             }
 
@@ -252,7 +263,13 @@ struct SnapCommand: ParsableCommand {
                     for node in plan.executionOrder where node.name.lowercased() != manifest.name.lowercased() {
                         let depType = Brick(rawValue: (node.templatePath as NSString).lastPathComponent)
                         let depInstanceName = node.manifest.instantiation == .generative ? "Main" : node.manifest.defaultInstanceName
-                        try executeAddModule(type: depType, moduleName: depInstanceName, templatePath: node.templatePath, isDryRun: dryRun, variables: resolvedVars)
+                        try executeAddModule(
+                            type: depType,
+                            moduleName: depInstanceName,
+                            templatePath: node.templatePath,
+                            isDryRun: dryRun,
+                            variables: resolvedVars
+                        )
                         if node.autoWire {
                             print("  \(ANSIColor.greenText("⚡ Auto-wired '\(node.manifest.name)' into '\(manifest.name)'"))")
                         }
@@ -265,11 +282,11 @@ struct SnapCommand: ParsableCommand {
 
             let instanceName = name ?? (manifest.instantiation == .generative ? "Main" : manifest.defaultInstanceName)
             let moduleType = Brick(rawValue: (resolvedPath as NSString).lastPathComponent)
-            
+
             try executeAddModule(type: moduleType, moduleName: instanceName, templatePath: resolvedPath, isDryRun: dryRun, variables: resolvedVars)
             return
         }
-        
+
         // Fallback for standard module type
         let type = Brick(rawValue: normalizedBrick)
         let instanceName = name ?? "Main"
@@ -278,7 +295,7 @@ struct SnapCommand: ParsableCommand {
             return
         } catch {
             print("❌ Brick '\(brickInput)' not found in local library or registry.")
-            print("  \(ANSIColor.dimText("ℹ Available bricks:")) \(BrickRegistry.allBricks.map { $0.commandName }.joined(separator: ", "))")
+            print("  \(ANSIColor.dimText("ℹ Available bricks:")) \(BrickRegistry.allBricks.map(\.commandName).joined(separator: ", "))")
             throw ExitCode.failure
         }
     }
@@ -291,7 +308,7 @@ struct KitCommand: ParsableCommand {
         subcommands: [
             KitAdd.self,
             KitList.self,
-            KitCreate.self
+            KitCreate.self,
         ],
         defaultSubcommand: KitList.self
     )
@@ -311,7 +328,7 @@ struct KitAdd: ParsableCommand {
     var moduleName: String?
 
     @Flag(name: .long, help: "Simulate kit generation without writing to disk")
-    var dryRun: Bool = false
+    var dryRun = false
 
     func run() throws {
         let config = (try? SwiftBlockConfig.load()) ?? SwiftBlockConfig(projectName: "App")
@@ -349,7 +366,10 @@ struct KitAdd: ParsableCommand {
             isDryRun: dryRun
         )
         if !dryRun {
-            print("✔ Snapped kit '\(result.kitName)' for module '\(result.moduleName)' with bricks: \(result.generatedBricks.map { $0.rawValue }.joined(separator: ", "))")
+            print(
+                "✔ Snapped kit '\(result.kitName)' for module '\(result.moduleName)' with bricks: "
+                    + "\(result.generatedBricks.map(\.rawValue).joined(separator: ", "))"
+            )
         }
     }
 }
@@ -433,7 +453,7 @@ struct BoxCommand: ParsableCommand {
             BoxRemove.self,
             BoxUpdate.self,
             BoxValidate.self,
-            BoxPublish.self
+            BoxPublish.self,
         ],
         defaultSubcommand: BoxList.self
     )
@@ -568,10 +588,10 @@ struct BoxPublish: ParsableCommand {
     var tag: String?
 
     @Option(name: [.customShort("r"), .long], help: "Git remote target name (default: origin)")
-    var remote: String = "origin"
+    var remote = "origin"
 
     @Flag(name: .long, help: "Simulate publish workflow without pushing to remote")
-    var dryRun: Bool = false
+    var dryRun = false
 
     func run() throws {
         let targetPath = path ?? FileManager.default.currentDirectoryPath
@@ -619,10 +639,10 @@ struct IDESetup: ParsableCommand {
     )
 
     @Flag(name: .long, help: "Generate VS Code tasks")
-    var vscode: Bool = false
+    var vscode = false
 
     @Flag(name: .long, help: "Generate Xcode & Makefile shortcuts")
-    var xcode: Bool = false
+    var xcode = false
 
     func run() throws {
         let rootPath = FileManager.default.currentDirectoryPath
@@ -653,15 +673,14 @@ struct RenameCommand: ParsableCommand {
     var path: String?
 
     @Flag(name: .long, help: "Simulate project rename without writing changes to disk")
-    var dryRun: Bool = false
+    var dryRun = false
 
     func run() throws {
         let rootPath = path ?? FileManager.default.currentDirectoryPath
-        let targetName: String
-        if let name = newName, !name.isEmpty {
-            targetName = name
+        let targetName: String = if let name = newName, !name.isEmpty {
+            name
         } else {
-            targetName = try InteractiveWizard.runRenameWizard(projectPath: rootPath)
+            try InteractiveWizard.runRenameWizard(projectPath: rootPath)
         }
 
         let engine = ProjectRefactoringEngine()
@@ -688,7 +707,7 @@ struct CompletionCommand: ParsableCommand {
     )
 
     @Argument(help: "Target shell: zsh, bash, or fish (default: zsh)")
-    var shell: String = "zsh"
+    var shell = "zsh"
 
     func run() throws {
         let shellType = ShellType(rawValue: shell.lowercased()) ?? .zsh
@@ -697,16 +716,20 @@ struct CompletionCommand: ParsableCommand {
     }
 }
 
-
-
-
-
-private func executeInitProject(projectName: String, bundlePrefix: String, baseplateName: String = "swiftui", templatePath: String?, generatorTool: ProjectGeneratorTool, testFramework: TestFramework = .swiftTesting, isDryRun: Bool, isVerbose: Bool) throws {
+private func executeInitProject(
+    projectName: String,
+    bundlePrefix: String,
+    baseplateName: String = "swiftui",
+    templatePath: String?,
+    generatorTool: ProjectGeneratorTool,
+    testFramework: TestFramework = .swiftTesting,
+    isDryRun: Bool,
+    isVerbose: Bool
+) throws {
     let isVapor = baseplateName.lowercased().contains("vapor")
     let resolvedTool: ProjectGeneratorTool = isVapor ? .spm : generatorTool
-    let config: SwiftBlockConfig
-    if isVapor {
-        config = SwiftBlockConfig(
+    let config = if isVapor {
+        SwiftBlockConfig(
             projectName: projectName,
             bundlePrefix: bundlePrefix,
             packaging: PackagingConfig(feature: "monolithic", core: "monolithic"),
@@ -727,12 +750,12 @@ private func executeInitProject(projectName: String, bundlePrefix: String, basep
             gitInit: true,
             pathTemplates: [
                 "feature": "Sources/App/Features/{module}/{block}",
-                "core": "Sources/App/Core/{block}"
+                "core": "Sources/App/Core/{block}",
             ],
             testFramework: testFramework
         )
     } else {
-        config = SwiftBlockConfig(projectName: projectName, bundlePrefix: bundlePrefix, generatorTool: resolvedTool, testFramework: testFramework)
+        SwiftBlockConfig(projectName: projectName, bundlePrefix: bundlePrefix, generatorTool: resolvedTool, testFramework: testFramework)
     }
 
     let options = ProjectGeneratorOptions(
@@ -756,7 +779,7 @@ private func executeWithOptions(options: ProjectGeneratorOptions) throws {
         if !options.isDryRun {
             print("✔ Baseplate created at \(options.outputPath)")
             print("✔ Configured \(options.customConfig?.generatorTool.rawValue.capitalized ?? "Tuist") project for \(options.projectName)")
-            
+
             let dirName = (options.outputPath as NSString).lastPathComponent
             let isVapor = options.baseplateName.lowercased().contains("vapor") || (options.customConfig?.generatorTool == .spm)
             if isVapor {

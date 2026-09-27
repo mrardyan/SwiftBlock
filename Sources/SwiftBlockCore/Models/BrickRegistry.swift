@@ -33,13 +33,13 @@ public struct BrickSpec: Equatable {
     /// Whether this brick can be snapped into the given baseplate (vapor vs swiftui).
     /// Bricks without `baseplates` metadata are considered compatible with everything.
     public func isCompatible(withVapor isVapor: Bool) -> Bool {
-        guard let baseplates = baseplates, !baseplates.isEmpty else { return true }
+        guard let baseplates, !baseplates.isEmpty else { return true }
         let allowed = baseplates.map { $0.lowercased() }
         return isVapor ? allowed.contains("vapor") : allowed.contains("swiftui")
     }
 }
 
-public struct BrickRegistry {
+public enum BrickRegistry {
     /// Curated specs for the well-known bricks. Kept for stable metadata/titles; the full catalog
     /// is auto-discovered from the installed Bricks directories via `discoveredSpecs()`.
     public static let curatedSpecs: [BrickSpec] = [
@@ -245,7 +245,7 @@ public struct BrickRegistry {
             category: .core,
             defaultOutputPath: "App/Sources/Core/Notification",
             defaultTemplateSubpath: "Core/Notification"
-        )
+        ),
     ]
 
     /// Full brick catalog: curated specs merged with auto-discovered bricks from the Bricks
@@ -253,8 +253,12 @@ public struct BrickRegistry {
     public static var allBricks: [BrickSpec] {
         let discovered = discoveredSpecs()
         var merged: [String: BrickSpec] = [:]
-        for spec in discovered { merged[spec.commandName] = spec }
-        for spec in curatedSpecs { merged[spec.commandName] = spec }
+        for spec in discovered {
+            merged[spec.commandName] = spec
+        }
+        for spec in curatedSpecs {
+            merged[spec.commandName] = spec
+        }
         return merged.values.sorted { $0.commandName < $1.commandName }
     }
 
@@ -283,7 +287,8 @@ public struct BrickRegistry {
         var result: [String: BrickSpec] = [:]
         for root in roots {
             guard fileManager.fileExists(atPath: root),
-                  let enumerator = fileManager.enumerator(at: URL(fileURLWithPath: root), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else {
+                  let enumerator = fileManager.enumerator(at: URL(fileURLWithPath: root), includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])
+            else {
                 continue
             }
             for case let url as URL in enumerator {
@@ -320,14 +325,16 @@ public struct BrickRegistry {
     /// Maps a manifest `category` string to a `Brick.Category`. Used both by auto-discovery and
     /// by generation so that unregistered bricks get the correct category regardless of search roots.
     public static func category(for raw: String, defaultPath: String = "") -> Brick.Category {
-        let c = raw.lowercased()
-        if c.contains("feature") || c.contains("architecture") || c.contains("generative") {
+        let category = raw.lowercased()
+        if category.contains("feature") || category.contains("architecture") || category.contains("generative") {
             return .feature
         }
-        if c.contains("config") {
+        if category.contains("config") {
             return .config
         }
-        if c.contains("utils") || c.contains("utility") || c.contains("value") || c.contains("formatter") || c.contains("validator") || c.contains("ui") {
+        if category.contains("utils") || category.contains("utility") || category.contains("value") || category.contains("formatter") || category
+            .contains("validator") || category.contains("ui")
+        {
             return .utils
         }
         if defaultPath.lowercased().contains("feature") {
@@ -338,10 +345,10 @@ public struct BrickRegistry {
 
     private static func fallbackPath(category: Brick.Category, commandName: String) -> String {
         switch category {
-        case .feature: return "App/Sources/Features/{module}/\(commandName)"
-        case .config: return "App/Sources/Core/Config/\(commandName)"
-        case .utils: return "App/Sources/Core/\(commandName.capitalized)"
-        default: return "App/Sources/Core/\(commandName.capitalized)"
+            case .feature: "App/Sources/Features/{module}/\(commandName)"
+            case .config: "App/Sources/Core/Config/\(commandName)"
+            case .utils: "App/Sources/Core/\(commandName.capitalized)"
+            default: "App/Sources/Core/\(commandName.capitalized)"
         }
     }
 
@@ -367,7 +374,7 @@ public struct BrickRegistry {
                 let nameStr = parts[1]
                 return allBricks.first {
                     ($0.category.rawValue == categoryStr || (categoryStr == "feature" && $0.category != .core)) &&
-                    $0.commandName.lowercased() == nameStr
+                        $0.commandName.lowercased() == nameStr
                 } ?? allBricks.first { $0.commandName.lowercased() == nameStr }
             }
         }
@@ -376,8 +383,9 @@ public struct BrickRegistry {
 }
 
 // MARK: - Built-in Brick Presets Extension
-extension Brick {
-    public enum Feature {
+
+public extension Brick {
+    enum Feature {
         public static let scene: Brick = "scene"
         public static let usecase: Brick = "usecase"
         public static let repository: Brick = "repository"
@@ -389,7 +397,7 @@ extension Brick {
         public static let validator: Brick = "validator"
     }
 
-    public enum Core {
+    enum Core {
         public static let storage: Brick = "storage"
         public static let network: Brick = "network"
         public static let logger: Brick = "logger"
@@ -407,52 +415,53 @@ extension Brick {
     }
 
     // Conveniences
-    public static let scene = Feature.scene
-    public static let usecase = Feature.usecase
-    public static let repository = Feature.repository
-    public static let service = Feature.service
-    public static let entity = Feature.entity
-    public static let coordinator = Feature.coordinator
-    public static let component = Feature.component
-    public static let mapper = Feature.mapper
-    public static let validator = Feature.validator
+    static let scene = Feature.scene
+    static let usecase = Feature.usecase
+    static let repository = Feature.repository
+    static let service = Feature.service
+    static let entity = Feature.entity
+    static let coordinator = Feature.coordinator
+    static let component = Feature.component
+    static let mapper = Feature.mapper
+    static let validator = Feature.validator
 
-    public static let storage = Core.storage
-    public static let network = Core.network
-    public static let logger = Core.logger
-    public static let analytics = Core.analytics
-    public static let config = Core.config
-    public static let auth = Core.auth
-    public static let vaporauth = Core.vaporauth
-    public static let featureflag = Core.featureflag
-    public static let biometrics = Core.biometrics
-    public static let deeplink = Core.deeplink
-    public static let permissions = Core.permissions
-    public static let location = Core.location
-    public static let notification = Core.notification
+    static let storage = Core.storage
+    static let network = Core.network
+    static let logger = Core.logger
+    static let analytics = Core.analytics
+    static let config = Core.config
+    static let auth = Core.auth
+    static let vaporauth = Core.vaporauth
+    static let featureflag = Core.featureflag
+    static let biometrics = Core.biometrics
+    static let deeplink = Core.deeplink
+    static let permissions = Core.permissions
+    static let location = Core.location
+    static let notification = Core.notification
 
-    public static var allCases: [Brick] {
+    static var allCases: [Brick] {
         [
             Feature.scene, Feature.usecase, Feature.repository, Feature.service, Feature.entity,
             Feature.coordinator, Feature.component, Feature.mapper, Feature.validator,
             Core.storage, Core.network, Core.logger, Core.analytics, Core.config, Core.auth, Core.vaporauth, Core.featureflag,
-            Core.biometrics, Core.deeplink, Core.permissions, Core.location, Core.notification
+            Core.biometrics, Core.deeplink, Core.permissions, Core.location, Core.notification,
         ]
     }
 }
 
 // MARK: - Built-in Brick.Category Presets Extension
-extension Brick.Category {
-    public static let feature: Brick.Category = "feature"
-    public static let core: Brick.Category = "core"
-    public static let config: Brick.Category = "config"
-    public static let utils: Brick.Category = "utils"
-    public static let ui: Brick.Category = "ui"
-    public static let domain: Brick.Category = "domain"
-    public static let data: Brick.Category = "data"
-    public static let presentation: Brick.Category = "presentation"
 
-    public var isSingleton: Bool {
-        return self == .core || self == .config || self == .utils || rawValue == "infrastructure" || rawValue == "singletons"
+public extension Brick.Category {
+    static let feature: Brick.Category = "feature"
+    static let core: Brick.Category = "core"
+    static let config: Brick.Category = "config"
+    static let utils: Brick.Category = "utils"
+    static let ui: Brick.Category = "ui"
+    static let domain: Brick.Category = "domain"
+    static let data: Brick.Category = "data"
+    static let presentation: Brick.Category = "presentation"
+
+    var isSingleton: Bool {
+        self == .core || self == .config || self == .utils || rawValue == "infrastructure" || rawValue == "singletons"
     }
 }

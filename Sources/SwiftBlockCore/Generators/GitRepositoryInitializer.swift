@@ -22,13 +22,13 @@ public class GitRepositoryInitializer {
         let gitignorePath = "\(projectPath)/.gitignore"
         if !fileManager.fileExists(atPath: gitignorePath) {
             let content = """
-.DS_Store
-/*.xcodeproj
-/*.xcworkspace
-.build/
-DerivedData/
-.mise.local.toml
-"""
+            .DS_Store
+            /*.xcodeproj
+            /*.xcworkspace
+            .build/
+            DerivedData/
+            .mise.local.toml
+            """
             let trimmedContent = content.trimmingCharacters(in: .newlines) + "\n"
             try trimmedContent.write(toFile: gitignorePath, atomically: true, encoding: .utf8)
         }

@@ -23,7 +23,7 @@ public struct Brick: RawRepresentable, ExpressibleByStringLiteral, Hashable, Cod
     }
 
     public var description: String {
-        return rawValue
+        rawValue
     }
 
     public var category: Brick.Category {
@@ -31,9 +31,9 @@ public struct Brick: RawRepresentable, ExpressibleByStringLiteral, Hashable, Cod
     }
 }
 
-extension Brick {
+public extension Brick {
     /// Pure String-backed Value Object representing an architectural layer / category.
-    public struct Category: RawRepresentable, ExpressibleByStringLiteral, Hashable, Codable, CustomStringConvertible {
+    struct Category: RawRepresentable, ExpressibleByStringLiteral, Hashable, Codable, CustomStringConvertible {
         public let rawValue: String
 
         public init(rawValue: String) {
@@ -41,11 +41,11 @@ extension Brick {
         }
 
         public init(stringLiteral value: String) {
-            self.rawValue = value.lowercased()
+            rawValue = value.lowercased()
         }
 
         public var description: String {
-            return rawValue
+            rawValue
         }
     }
 }

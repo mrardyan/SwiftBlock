@@ -16,31 +16,31 @@ public class EnvironmentConfigGenerator {
         try fileManager.createDirectory(atPath: configsDir, withIntermediateDirectories: true)
 
         let devContent = """
-// Development Environment Configuration
-APP_ENVIRONMENT = development
-APP_NAME_SUFFIX =  (Dev)
-BUNDLE_ID_SUFFIX = .dev
-BASE_URL = https:/$()/dev-api.example.com
-API_KEY = dev_sample_api_key_12345
-"""
+        // Development Environment Configuration
+        APP_ENVIRONMENT = development
+        APP_NAME_SUFFIX =  (Dev)
+        BUNDLE_ID_SUFFIX = .dev
+        BASE_URL = https:/$()/dev-api.example.com
+        API_KEY = dev_sample_api_key_12345
+        """
 
         let stagingContent = """
-// Staging Environment Configuration
-APP_ENVIRONMENT = staging
-APP_NAME_SUFFIX =  (Staging)
-BUNDLE_ID_SUFFIX = .staging
-BASE_URL = https:/$()/staging-api.example.com
-API_KEY = staging_sample_api_key_67890
-"""
+        // Staging Environment Configuration
+        APP_ENVIRONMENT = staging
+        APP_NAME_SUFFIX =  (Staging)
+        BUNDLE_ID_SUFFIX = .staging
+        BASE_URL = https:/$()/staging-api.example.com
+        API_KEY = staging_sample_api_key_67890
+        """
 
         let prodContent = """
-// Production Environment Configuration
-APP_ENVIRONMENT = production
-APP_NAME_SUFFIX =
-BUNDLE_ID_SUFFIX =
-BASE_URL = https:/$()/api.example.com
-API_KEY = prod_sample_api_key_99999
-"""
+        // Production Environment Configuration
+        APP_ENVIRONMENT = production
+        APP_NAME_SUFFIX =
+        BUNDLE_ID_SUFFIX =
+        BASE_URL = https:/$()/api.example.com
+        API_KEY = prod_sample_api_key_99999
+        """
 
         try writeConfigFile(content: devContent, to: "\(configsDir)/Development.xcconfig")
         try writeConfigFile(content: stagingContent, to: "\(configsDir)/Staging.xcconfig")

@@ -1,16 +1,15 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct BrickDiscoveryEngineTests {
-
-    @Test func evaluateTokens() {
+final class BrickDiscoveryEngineTests: XCTestCase {
+    func testEvaluateTokens() {
         let template = "App/Sources/Features/{module}/{block}"
         let evaluated = BrickDiscoveryEngine.evaluateTokens(in: template, moduleName: "Auth", blockName: "UseCase")
-        #expect(evaluated == "App/Sources/Features/auth/usecase")
+        XCTAssertEqual(evaluated, "App/Sources/Features/auth/usecase")
     }
 
-    @Test func discoverBlocksInDirectory() throws {
+    func testDiscoverBlocksInDirectory() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -34,11 +33,11 @@ struct BrickDiscoveryEngineTests {
         let engine = BrickDiscoveryEngine()
         let discovered = engine.discoverBricks(in: tempDir.path, category: .feature)
 
-        #expect(!discovered.isEmpty)
-        #expect(discovered.contains { $0.commandName == "customform" })
+        XCTAssertFalse(discovered.isEmpty)
+        XCTAssertTrue(discovered.contains { $0.commandName == "customform" })
     }
 
-    @Test func resolveBrickPathSmartNamespace() throws {
+    func testResolveBrickPathSmartNamespace() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -52,11 +51,11 @@ struct BrickDiscoveryEngineTests {
 
         let engine = BrickDiscoveryEngine()
         let resolvedShort = engine.resolveBrickPath(named: "network", in: tempDir.path)
-        #expect(resolvedShort != nil)
-        #expect(resolvedShort?.lowercased().hasSuffix("network") == true)
+        XCTAssertNotEqual(resolvedShort, nil)
+        XCTAssertEqual(resolvedShort?.lowercased().hasSuffix("network"), true)
     }
 
-    @Test func resolveBrickPathCategorySlashNamespace() throws {
+    func testResolveBrickPathCategorySlashNamespace() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -74,15 +73,15 @@ struct BrickDiscoveryEngineTests {
 
         let engine = BrickDiscoveryEngine()
         let resolvedCoreNetwork = engine.resolveBrickPath(named: "core/network", in: tempDir.path)
-        #expect(resolvedCoreNetwork != nil)
-        #expect(resolvedCoreNetwork?.lowercased().hasSuffix("network") == true)
+        XCTAssertNotEqual(resolvedCoreNetwork, nil)
+        XCTAssertEqual(resolvedCoreNetwork?.lowercased().hasSuffix("network"), true)
 
         let resolvedFeatureScene = engine.resolveBrickPath(named: "feature/scene", in: tempDir.path)
-        #expect(resolvedFeatureScene != nil)
-        #expect(resolvedFeatureScene?.lowercased().hasSuffix("scene") == true)
+        XCTAssertNotEqual(resolvedFeatureScene, nil)
+        XCTAssertEqual(resolvedFeatureScene?.lowercased().hasSuffix("scene"), true)
     }
 
-    @Test func resolveNestedSubpathNamespace() throws {
+    func testResolveNestedSubpathNamespace() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -100,15 +99,15 @@ struct BrickDiscoveryEngineTests {
 
         let engine = BrickDiscoveryEngine()
         let resolvedEmail = engine.resolveBrickPath(named: "utils/validator/email", in: tempDir.path)
-        #expect(resolvedEmail != nil)
-        #expect(resolvedEmail?.lowercased().hasSuffix("validator/email") == true)
+        XCTAssertNotEqual(resolvedEmail, nil)
+        XCTAssertEqual(resolvedEmail?.lowercased().hasSuffix("validator/email"), true)
 
         let resolvedCurrency = engine.resolveBrickPath(named: "utils/formatter/currency", in: tempDir.path)
-        #expect(resolvedCurrency != nil)
-        #expect(resolvedCurrency?.lowercased().hasSuffix("formatter/currency") == true)
+        XCTAssertNotEqual(resolvedCurrency, nil)
+        XCTAssertEqual(resolvedCurrency?.lowercased().hasSuffix("formatter/currency"), true)
     }
 
-    @Test func brickYmlIsNotCopiedToGeneratedProject() throws {
+    func testBrickYmlIsNotCopiedToGeneratedProject() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -139,7 +138,7 @@ struct BrickDiscoveryEngineTests {
         let generatedView = "\(generatedPath)/HomeView.swift"
         let generatedBlockYml = "\(generatedPath)/brick.yml"
 
-        #expect(FileManager.default.fileExists(atPath: generatedView))
-        #expect(!FileManager.default.fileExists(atPath: generatedBlockYml))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: generatedView))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: generatedBlockYml))
     }
 }

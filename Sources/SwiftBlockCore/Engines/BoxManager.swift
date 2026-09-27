@@ -17,12 +17,12 @@ public enum BoxManagerError: Error, LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .boxNotFound(let name):
-            return "Box '\(name)' is not registered in SwiftBlock box store."
-        case .cloneFailed(let reason):
-            return "Failed to clone Git repository: \(reason)"
-        case .invalidGitURL(let url):
-            return "Invalid Git URL provided: '\(url)'."
+            case let .boxNotFound(name):
+                "Box '\(name)' is not registered in SwiftBlock box store."
+            case let .cloneFailed(reason):
+                "Failed to clone Git repository: \(reason)"
+            case let .invalidGitURL(url):
+                "Invalid Git URL provided: '\(url)'."
         }
     }
 }
@@ -70,10 +70,10 @@ public class BoxManager {
     public static func isGitURL(_ urlString: String) -> Bool {
         let lower = urlString.lowercased()
         return lower.hasPrefix("http://") ||
-               lower.hasPrefix("https://") ||
-               lower.hasPrefix("git@") ||
-               lower.hasSuffix(".git") ||
-               urlString.contains(".git#")
+            lower.hasPrefix("https://") ||
+            lower.hasPrefix("git@") ||
+            lower.hasSuffix(".git") ||
+            urlString.contains(".git#")
     }
 
     public func addBox(name: String, gitURL: String, isVerbose: Bool = false) throws {
@@ -96,7 +96,11 @@ public class BoxManager {
         }
 
         let gitBinary = findGitExecutable()
-        let exitCode = runProcess(executable: gitBinary, arguments: ["clone", "--depth", "1", parsed.repoURL, targetBoxPath], currentDirectoryPath: boxesDirectory)
+        let exitCode = runProcess(
+            executable: gitBinary,
+            arguments: ["clone", "--depth", "1", parsed.repoURL, targetBoxPath],
+            currentDirectoryPath: boxesDirectory
+        )
         guard exitCode == 0 else {
             throw BoxManagerError.cloneFailed("git clone failed for '\(parsed.repoURL)'")
         }
@@ -121,7 +125,8 @@ public class BoxManager {
 
     public func listBoxes() -> [String: String] {
         guard fileManager.fileExists(atPath: boxesConfigFile),
-              let content = try? String(contentsOfFile: boxesConfigFile, encoding: .utf8) else {
+              let content = try? String(contentsOfFile: boxesConfigFile, encoding: .utf8)
+        else {
             return [:]
         }
         let parsed = SimpleYAMLParser.parse(content)
@@ -177,17 +182,20 @@ public class BoxManager {
             if isVerbose {
                 print("🔹 [GitCache] Fetching remote repository \(parsed.repoURL)...")
             }
-            let exitCode = runProcess(executable: gitBinary, arguments: ["clone", "--depth", "1", parsed.repoURL, targetCachePath], currentDirectoryPath: gitCacheDirectory)
+            let exitCode = runProcess(
+                executable: gitBinary,
+                arguments: ["clone", "--depth", "1", parsed.repoURL, targetCachePath],
+                currentDirectoryPath: gitCacheDirectory
+            )
             guard exitCode == 0 else {
                 throw BoxManagerError.cloneFailed("git clone failed for '\(parsed.repoURL)'")
             }
         }
 
-        let resolvedPath: String
-        if let frag = parsed.fragment {
-            resolvedPath = "\(targetCachePath)/\(frag)"
+        let resolvedPath: String = if let frag = parsed.fragment {
+            "\(targetCachePath)/\(frag)"
         } else {
-            resolvedPath = targetCachePath
+            targetCachePath
         }
 
         return (cachedPath: resolvedPath, fragment: parsed.fragment)

@@ -23,12 +23,12 @@ public enum ProjectRefactoringError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .invalidProjectName(let name):
-            return "Invalid project name '\(name)'. Project name must start with a letter and contain only alphanumeric characters."
-        case .configNotFound(let path):
-            return "No valid .swiftblock/config.yml found at '\(path)'."
-        case .refactoringFailed(let message):
-            return "Project refactoring failed: \(message)"
+            case let .invalidProjectName(name):
+                "Invalid project name '\(name)'. Project name must start with a letter and contain only alphanumeric characters."
+            case let .configNotFound(path):
+                "No valid .swiftblock/config.yml found at '\(path)'."
+            case let .refactoringFailed(message):
+                "Project refactoring failed: \(message)"
         }
     }
 }
@@ -151,7 +151,8 @@ public class ProjectRefactoringEngine {
         // 5. Refactor Makefile and CI/CD pipelines
         let makefilePath = "\(absolutePath)/Makefile"
         if fileManager.fileExists(atPath: makefilePath),
-           var content = try? String(contentsOfFile: makefilePath, encoding: .utf8) {
+           var content = try? String(contentsOfFile: makefilePath, encoding: .utf8)
+        {
             if content.contains(oldName) {
                 content = content.replacingOccurrences(of: oldName, with: sanitizedNewName)
                 try content.write(toFile: makefilePath, atomically: true, encoding: .utf8)
@@ -161,7 +162,8 @@ public class ProjectRefactoringEngine {
 
         let githubWorkflow = "\(absolutePath)/.github/workflows/ci.yml"
         if fileManager.fileExists(atPath: githubWorkflow),
-           var content = try? String(contentsOfFile: githubWorkflow, encoding: .utf8) {
+           var content = try? String(contentsOfFile: githubWorkflow, encoding: .utf8)
+        {
             if content.contains(oldName) {
                 content = content.replacingOccurrences(of: oldName, with: sanitizedNewName)
                 try content.write(toFile: githubWorkflow, atomically: true, encoding: .utf8)

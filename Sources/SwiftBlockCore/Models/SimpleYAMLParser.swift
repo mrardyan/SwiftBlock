@@ -1,6 +1,6 @@
 import Foundation
 
-public struct SimpleYAMLParser {
+public enum SimpleYAMLParser {
     public static func parse(_ yamlString: String) -> [String: Any] {
         let lines = yamlString.components(separatedBy: .newlines)
             .map(stripComments)
@@ -14,7 +14,9 @@ public struct SimpleYAMLParser {
             while idx < lines.count {
                 let (lineIndent, content) = lines[idx]
                 if lineIndent < indent { break }
-                guard let colon = content.range(of: ":") else { idx += 1; continue }
+                guard let colon = content.range(of: ":") else { idx += 1
+                    continue
+                }
 
                 let key = String(content[..<colon.lowerBound]).trimmingCharacters(in: .whitespaces)
                 let valStr = String(content[colon.upperBound...]).trimmingCharacters(in: .whitespaces)
@@ -113,11 +115,11 @@ public struct SimpleYAMLParser {
         var inDoubleQuote = false
         var inSingleQuote = false
         for char in rawLine {
-            if char == "\"" && !inSingleQuote {
+            if char == "\"", !inSingleQuote {
                 inDoubleQuote.toggle()
-            } else if char == "'" && !inDoubleQuote {
+            } else if char == "'", !inDoubleQuote {
                 inSingleQuote.toggle()
-            } else if char == "#" && !inDoubleQuote && !inSingleQuote {
+            } else if char == "#", !inDoubleQuote, !inSingleQuote {
                 break
             }
             line.append(char)

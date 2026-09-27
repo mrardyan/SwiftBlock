@@ -65,7 +65,8 @@ public struct DependencyVersionRegistry: Codable, Equatable {
         let globalConfigPath = "\(homeDir)/.swiftblock/config.json"
         if FileManager.default.fileExists(atPath: globalConfigPath),
            let data = try? Data(contentsOf: URL(fileURLWithPath: globalConfigPath)),
-           let globalDict = try? JSONDecoder().decode([String: String].self, from: data) {
+           let globalDict = try? JSONDecoder().decode([String: String].self, from: data)
+        {
             base.apply(dict: globalDict)
         }
 
@@ -76,17 +77,17 @@ public struct DependencyVersionRegistry: Codable, Equatable {
     }
 
     public mutating func apply(dict: [String: String]) {
-        if let val = dict["tuist"] { self.tuist = val }
-        if let val = dict["xcodegen"] { self.xcodegen = val }
-        if let val = dict["swiftlint"] { self.swiftlint = val }
-        if let val = dict["swiftformat"] { self.swiftformat = val }
-        if let val = dict["periphery"] { self.periphery = val }
-        if let val = dict["gitleaks"] { self.gitleaks = val }
-        if let val = dict["precommit"] { self.precommit = val }
-        if let val = dict["danger"] { self.danger = val }
-        if let val = dict["swiftgen"] { self.swiftgen = val }
-        if let val = dict["licenseplist"] { self.licenseplist = val }
-        if let val = dict["swiftToolsVersion"] ?? dict["swift"] { self.swiftToolsVersion = val }
-        if let val = dict["iOSDeploymentTarget"] ?? dict["ios"] { self.iOSDeploymentTarget = val }
+        if let val = dict["tuist"] { tuist = val }
+        if let val = dict["xcodegen"] { xcodegen = val }
+        if let val = dict["swiftlint"] { swiftlint = val }
+        if let val = dict["swiftformat"] { swiftformat = val }
+        if let val = dict["periphery"] { periphery = val }
+        if let val = dict["gitleaks"] { gitleaks = val }
+        if let val = dict["precommit"] { precommit = val }
+        if let val = dict["danger"] { danger = val }
+        if let val = dict["swiftgen"] { swiftgen = val }
+        if let val = dict["licenseplist"] { licenseplist = val }
+        if let val = dict["swiftToolsVersion"] ?? dict["swift"] { swiftToolsVersion = val }
+        if let val = dict["iOSDeploymentTarget"] ?? dict["ios"] { iOSDeploymentTarget = val }
     }
 }

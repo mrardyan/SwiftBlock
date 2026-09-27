@@ -1,10 +1,9 @@
 import Foundation
-import Testing
 @testable import SwiftBlockCore
+import XCTest
 
-struct BrickGeneratorTests {
-
-    @Test func generateSceneBrick() throws {
+final class BrickGeneratorTests: XCTestCase {
+    func testGenerateSceneBrick() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -36,12 +35,12 @@ struct BrickGeneratorTests {
         let generatedPath = try generator.generateBrick(options: options)
 
         let expectedViewPath = "\(generatedPath)/HomeView.swift"
-        #expect(FileManager.default.fileExists(atPath: expectedViewPath))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedViewPath))
         let content = try String(contentsOfFile: expectedViewPath, encoding: .utf8)
-        #expect(content == "struct HomeView {}\n")
+        XCTAssertEqual(content, "struct HomeView {}\n")
     }
 
-    @Test func generateUseCaseBrick() throws {
+    func testGenerateUseCaseBrick() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -71,10 +70,10 @@ struct BrickGeneratorTests {
         let generatedPath = try generator.generateBrick(options: options)
 
         let expectedPath = "\(generatedPath)/AuthenticateUseCase.swift"
-        #expect(FileManager.default.fileExists(atPath: expectedPath))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedPath))
     }
 
-    @Test func brickDryRunModeDoesNotWriteToDisk() throws {
+    func testBrickDryRunModeDoesNotWriteToDisk() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -101,10 +100,10 @@ struct BrickGeneratorTests {
         let generator = BrickGenerator()
         let generatedPath = try generator.generateBrick(options: options)
 
-        #expect(!FileManager.default.fileExists(atPath: generatedPath))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: generatedPath))
     }
 
-    @Test func brickGenerationFailsWithoutConfig() {
+    func testBrickGenerationFailsWithoutConfig() {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
 
@@ -115,26 +114,24 @@ struct BrickGeneratorTests {
         )
 
         let generator = BrickGenerator()
-        #expect(throws: SwiftBlockConfigError.self) {
-            try generator.generateBrick(options: options)
-        }
+        XCTAssertThrowsError(try generator.generateBrick(options: options))
     }
 
-    @Test func brickGeneratorErrorDescriptions() {
+    func testBrickGeneratorErrorDescriptions() {
         let err1 = BrickGeneratorError.templateNotFound("/path/1")
-        #expect(err1.errorDescription == "Brick template not found at /path/1")
+        XCTAssertEqual(err1.errorDescription, "Brick template not found at /path/1")
 
         let err2 = BrickGeneratorError.brickAlreadyExists("/path/2")
-        #expect(err2.errorDescription == "Brick already exists at /path/2")
+        XCTAssertEqual(err2.errorDescription, "Brick already exists at /path/2")
 
         let err3 = BrickGeneratorError.generationFailed("Failed")
-        #expect(err3.errorDescription == "Failed to generate brick: Failed")
+        XCTAssertEqual(err3.errorDescription, "Failed to generate brick: Failed")
 
         let configErr = SwiftBlockConfigError.configNotFound("/path/3")
-        #expect(configErr.errorDescription == "Not a valid SwiftBlock project root (.swiftblock not found at /path/3)")
+        XCTAssertEqual(configErr.errorDescription, "Not a valid SwiftBlock project root (.swiftblock not found at /path/3)")
     }
 
-    @Test func brickTemplateNotFoundThrows() throws {
+    func testBrickTemplateNotFoundThrows() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -157,12 +154,10 @@ struct BrickGeneratorTests {
         )
 
         let generator = BrickGenerator()
-        #expect(throws: BrickGeneratorError.self) {
-            try generator.generateBrick(options: options)
-        }
+        XCTAssertThrowsError(try generator.generateBrick(options: options))
     }
 
-    @Test func brickAlreadyExistsThrows() throws {
+    func testBrickAlreadyExistsThrows() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -190,12 +185,10 @@ struct BrickGeneratorTests {
         )
 
         let generator = BrickGenerator()
-        #expect(throws: BrickGeneratorError.self) {
-            try generator.generateBrick(options: options)
-        }
+        XCTAssertThrowsError(try generator.generateBrick(options: options))
     }
 
-    @Test func generateBrickWithNestedDirectories() throws {
+    func testGenerateBrickWithNestedDirectories() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -226,12 +219,12 @@ struct BrickGeneratorTests {
         let generatedPath = try generator.generateBrick(options: options)
 
         let expectedComponentPath = "\(generatedPath)/Components/ProfileHeader.swift"
-        #expect(FileManager.default.fileExists(atPath: expectedComponentPath))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: expectedComponentPath))
         let content = try String(contentsOfFile: expectedComponentPath, encoding: .utf8)
-        #expect(content == "struct ProfileHeader {}\n")
+        XCTAssertEqual(content, "struct ProfileHeader {}\n")
     }
 
-    @Test func generateNewBricks() throws {
+    func testGenerateNewBricks() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -252,7 +245,7 @@ struct BrickGeneratorTests {
             (.storage, "Storage"),
             (.network, "Network"),
             (.logger, "Logger"),
-            (.analytics, "Analytics")
+            (.analytics, "Analytics"),
         ]
 
         for (type, folderName) in types {
@@ -270,19 +263,19 @@ struct BrickGeneratorTests {
 
             let generator = BrickGenerator()
             let generatedPath = try generator.generateBrick(options: options)
-            #expect(FileManager.default.fileExists(atPath: "\(generatedPath)/SampleTest.swift"))
+            XCTAssertTrue(FileManager.default.fileExists(atPath: "\(generatedPath)/SampleTest.swift"))
         }
     }
 
-    @Test func defaultBrickGeneratorOptionsTemplatePaths() {
+    func testDefaultBrickGeneratorOptionsTemplatePaths() {
         let featureOpt = BrickGeneratorOptions(type: .scene, name: "Test")
-        #expect(!featureOpt.modulesTemplatePath.isEmpty)
+        XCTAssertFalse(featureOpt.modulesTemplatePath.isEmpty)
 
         let coreOpt = BrickGeneratorOptions(type: .network, name: "Test")
-        #expect(!coreOpt.modulesTemplatePath.isEmpty)
+        XCTAssertFalse(coreOpt.modulesTemplatePath.isEmpty)
     }
 
-    @Test func testComposableUnitTestsGenerationForCoreAndFeatureBricks() throws {
+    func testComposableUnitTestsGenerationForCoreAndFeatureBricks() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -310,8 +303,8 @@ struct BrickGeneratorTests {
         let generator = BrickGenerator()
         let corePath = try generator.generateBrick(options: coreOptions)
 
-        #expect(FileManager.default.fileExists(atPath: "\(corePath)/AppStorage.swift"))
-        #expect(FileManager.default.fileExists(atPath: "\(tempDir.path)/App/Tests/Core/storage/AppStorageTests.swift"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(corePath)/AppStorage.swift"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tempDir.path)/App/Tests/Core/storage/AppStorageTests.swift"))
 
         let mockModulesURL = tempDir.appendingPathComponent("MockModules")
         let mockSceneURL = mockModulesURL.appendingPathComponent("Scene")
@@ -327,11 +320,11 @@ struct BrickGeneratorTests {
         )
 
         let featurePath = try generator.generateBrick(options: featureOptions)
-        #expect(FileManager.default.fileExists(atPath: "\(featurePath)/ProfileView.swift"))
-        #expect(FileManager.default.fileExists(atPath: "\(tempDir.path)/App/Tests/Features/profile/scene/ProfileTests.swift"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(featurePath)/ProfileView.swift"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(tempDir.path)/App/Tests/Features/profile/scene/ProfileTests.swift"))
     }
 
-    @Test func brickGenerationRollbackOnFailure() throws {
+    func testBrickGenerationRollbackOnFailure() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("Rollback_\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -351,15 +344,13 @@ struct BrickGeneratorTests {
         )
 
         let generator = BrickGenerator()
-        #expect(throws: BrickGeneratorError.self) {
-            try generator.generateBrick(options: options)
-        }
+        XCTAssertThrowsError(try generator.generateBrick(options: options))
 
         let targetDir = "\(tempDir.path)/App/Sources/Features/rollbacktest"
-        #expect(!FileManager.default.fileExists(atPath: targetDir))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: targetDir))
     }
 
-    @Test func manifestDefaultPathHonoredForCustomBrick() throws {
+    func testManifestDefaultPathHonoredForCustomBrick() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("CustomBrick_\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -390,11 +381,11 @@ struct BrickGeneratorTests {
         let generator = BrickGenerator()
         let generatedPath = try generator.generateBrick(options: options)
 
-        #expect(FileManager.default.fileExists(atPath: "\(generatedPath)/Widget.swift"))
-        #expect(generatedPath.hasSuffix("App/Sources/Core/Widgets/widget"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(generatedPath)/Widget.swift"))
+        XCTAssertTrue(generatedPath.hasSuffix("App/Sources/Core/Widgets/widget"))
     }
 
-    @Test func baseplateMismatchThrows() throws {
+    func testBaseplateMismatchThrows() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("BaseplateMismatch_\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -425,12 +416,10 @@ struct BrickGeneratorTests {
         )
 
         let generator = BrickGenerator()
-        #expect(throws: BrickGeneratorError.self) {
-            try generator.generateBrick(options: options)
-        }
+        XCTAssertThrowsError(try generator.generateBrick(options: options))
     }
 
-    @Test func discoveredCoreBrickSnapsToCorePath() throws {
+    func testDiscoveredCoreBrickSnapsToCorePath() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("DiscoveredCore_\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -442,7 +431,7 @@ struct BrickGeneratorTests {
         try config.save(to: tempDir.path)
 
         // `cache` is auto-discovered (not curated): its manifest category drives categorization.
-        #expect(Brick(rawValue: "cache").category == .core)
+        XCTAssertEqual(Brick(rawValue: "cache").category, .core)
 
         let templateRoot = tempDir.appendingPathComponent("Templates", isDirectory: true)
         let cacheTemplate = templateRoot.appendingPathComponent("Cache", isDirectory: true)
@@ -465,11 +454,11 @@ struct BrickGeneratorTests {
 
         let generator = BrickGenerator()
         let generatedPath = try generator.generateBrick(options: options)
-        #expect(generatedPath.hasSuffix("App/Sources/Core/Cache"))
-        #expect(FileManager.default.fileExists(atPath: "\(generatedPath)/Cache.swift"))
+        XCTAssertTrue(generatedPath.hasSuffix("App/Sources/Core/Cache"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(generatedPath)/Cache.swift"))
     }
 
-    @Test func vaporProjectPlacesTestsUnderAppTests() throws {
+    func testVaporProjectPlacesTestsUnderAppTests() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("VaporTests_\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
@@ -483,7 +472,11 @@ struct BrickGeneratorTests {
         let sceneTemplate = tempDir.appendingPathComponent("Scene", isDirectory: true)
         try FileManager.default.createDirectory(at: sceneTemplate, withIntermediateDirectories: true)
         try "// Scene".write(toFile: sceneTemplate.appendingPathComponent("__MODULE_NAME__View.swift").path, atomically: true, encoding: .utf8)
-        try "import XCTest\n@testable import __APP_MODULE__\n".write(toFile: sceneTemplate.appendingPathComponent("__MODULE_NAME__Tests.swift").path, atomically: true, encoding: .utf8)
+        try "import XCTest\n@testable import __APP_MODULE__\n".write(
+            toFile: sceneTemplate.appendingPathComponent("__MODULE_NAME__Tests.swift").path,
+            atomically: true,
+            encoding: .utf8
+        )
 
         let options = BrickGeneratorOptions(
             type: .scene,
@@ -496,8 +489,8 @@ struct BrickGeneratorTests {
         try generator.generateBrick(options: options)
 
         let vaporTestPath = "\(tempDir.path)/Tests/AppTests/Features/order/scene/OrderTests.swift"
-        #expect(FileManager.default.fileExists(atPath: vaporTestPath))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: vaporTestPath))
         let content = try String(contentsOfFile: vaporTestPath, encoding: .utf8)
-        #expect(content.contains("@testable import App"))
+        XCTAssertTrue(content.contains("@testable import App"))
     }
 }
