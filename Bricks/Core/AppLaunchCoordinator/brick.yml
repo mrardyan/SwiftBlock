@@ -1,0 +1,33 @@
+name: app_launch_coordinator
+category: core
+instantiation: singleton
+description: "Actor-isolated dependency injection container with multi-phase async task group launch orchestrator"
+defaultPath: "App/Sources/Core/Launch"
+requiresNameArgument: false
+
+dependencies:
+  optional:
+    - name: logger
+      description: "Structured diagnostic logger for launch lifecycle and task metrics"
+    - name: app_state
+      description: "App lifecycle state observer integration"
+
+flavors:
+  concurrency:
+    prompt: "Select concurrency execution mode"
+    default: strict-actor
+    options:
+      - id: strict-actor
+        title: "Swift 6 Strict Concurrency"
+        description: "Pure Actor-isolated container with Sendable task pipeline"
+      - id: hybrid
+        title: "Hybrid Lock Resolution"
+        description: "Synchronous lock resolution helper for legacy property wrapper access"
+
+injections:
+  - target: "App/Sources/App.swift"
+    marker: "// MARK: - SwiftBlock App Launch Hook"
+    content: |
+      .task {
+          await {{moduleName}}.shared.launch()
+      }
