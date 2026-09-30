@@ -218,4 +218,45 @@ final class InteractiveWizardTests: XCTestCase {
         )
         XCTAssertEqual(result["strategy"], "local-only")
     }
+
+    func testRunBrickFlavorsWizardDynamicallyForAllDiscoveredBricks() throws {
+        let projectRoot = FileManager.default.currentDirectoryPath
+        let bricksRootDir = "\(projectRoot)/Bricks"
+
+        guard FileManager.default.fileExists(atPath: bricksRootDir),
+              let enumerator = FileManager.default.enumerator(
+                  at: URL(fileURLWithPath: bricksRootDir),
+                  includingPropertiesForKeys: nil,
+                  options: [.skipsHiddenFiles]
+              )
+        else {
+            return XCTFail("Bricks directory not found at: \(bricksRootDir)")
+        }
+
+        for case let url as URL in enumerator {
+            let lastComponent = url.lastPathComponent
+            if lastComponent == "brick.yml" || lastComponent == "brick.yaml" || lastComponent == "block.json" {
+                let brickFolder = url.deletingLastPathComponent()
+                guard let manifest = BrickManifest.load(fromPath: brickFolder.path) else {
+                    continue
+                }
+
+                // Simulate user pressing "1" for every flavor prompt in this brick
+                var inputs = Array(repeating: "1", count: manifest.flavors.count + 2)
+                let wizardResult = try InteractiveWizard.runBrickFlavorsWizard(
+                    manifest: manifest,
+                    providedSelections: [:],
+                    readLine: { inputs.isEmpty ? "1" : inputs.removeFirst() }
+                )
+
+                // Verify every flavor has a resolved value from wizard interaction
+                for (flavorKey, _) in manifest.flavors {
+                    XCTAssertNotNil(
+                        wizardResult[flavorKey] ?? wizardResult[flavorKey.lowercased()],
+                        "Interactive wizard should resolve flavor '\(flavorKey)' for brick '\(manifest.name)'"
+                    )
+                }
+            }
+        }
+    }
 }

@@ -117,4 +117,48 @@ final class FlavorResolverTests: XCTestCase {
         XCTAssertTrue(FlavorResolver.validateSelection(manifest: manifest, flavorKey: "stateStyle", selectedValue: "bad")?
             .contains("Unknown option 'bad'") == true)
     }
+
+    func testAllDiscoveredBricksFlavorAndDependencyManifestsAreValid() throws {
+        let projectRoot = FileManager.default.currentDirectoryPath
+        let bricksRootDir = "\(projectRoot)/Bricks"
+
+        guard FileManager.default.fileExists(atPath: bricksRootDir),
+              let enumerator = FileManager.default.enumerator(
+                  at: URL(fileURLWithPath: bricksRootDir),
+                  includingPropertiesForKeys: nil,
+                  options: [.skipsHiddenFiles]
+              )
+        else {
+            return XCTFail("Bricks directory not found at: \(bricksRootDir)")
+        }
+
+        var manifestCount = 0
+        for case let url as URL in enumerator {
+            let lastComponent = url.lastPathComponent
+            if lastComponent == "brick.yml" || lastComponent == "brick.yaml" || lastComponent == "block.json" {
+                let brickFolder = url.deletingLastPathComponent()
+                guard let manifest = BrickManifest.load(fromPath: brickFolder.path) else {
+                    XCTFail("Failed to load manifest at \(url.path)")
+                    continue
+                }
+
+                manifestCount += 1
+                XCTAssertFalse(manifest.name.isEmpty, "Manifest name should not be empty in \(url.path)")
+
+                // Verify default flavor resolution runs cleanly for every brick
+                let defaultResolution = FlavorResolver.resolve(manifest: manifest, selections: [:])
+                XCTAssertNotNil(defaultResolution.variables, "Default flavor variables should resolve for \(manifest.name)")
+
+                // If flavors exist, verify each option can be resolved
+                for (flavorKey, flavorSpec) in manifest.flavors {
+                    for option in flavorSpec.options {
+                        let result = FlavorResolver.resolve(manifest: manifest, selections: [flavorKey: option.id])
+                        XCTAssertEqual(result.variables[flavorKey], option.id, "Failed resolving flavor \(flavorKey)=\(option.id) for \(manifest.name)")
+                    }
+                }
+            }
+        }
+
+        XCTAssertGreaterThanOrEqual(manifestCount, 25, "Expected at least 25 brick manifests to be dynamically tested")
+    }
 }

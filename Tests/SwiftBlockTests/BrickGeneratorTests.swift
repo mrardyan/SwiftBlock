@@ -493,4 +493,125 @@ final class BrickGeneratorTests: XCTestCase {
         let content = try String(contentsOfFile: vaporTestPath, encoding: .utf8)
         XCTAssertTrue(content.contains("@testable import App"))
     }
+
+    func testAllDiscoveredBricksInRepositoryAreGeneratableAndValid() throws {
+        let projectRoot = FileManager.default.currentDirectoryPath
+        let bricksRootDir = "\(projectRoot)/Bricks"
+
+        guard FileManager.default.fileExists(atPath: bricksRootDir),
+              let enumerator = FileManager.default.enumerator(
+                  at: URL(fileURLWithPath: bricksRootDir),
+                  includingPropertiesForKeys: nil,
+                  options: [.skipsHiddenFiles]
+              )
+        else {
+            return XCTFail("Bricks directory not found at: \(bricksRootDir)")
+        }
+
+        var brickFolders: [URL] = []
+        for case let url as URL in enumerator {
+            let lastComponent = url.lastPathComponent
+            if lastComponent == "brick.yml" || lastComponent == "brick.yaml" || lastComponent == "block.json" {
+                brickFolders.append(url.deletingLastPathComponent())
+            }
+        }
+
+        XCTAssertFalse(brickFolders.isEmpty, "Should discover at least one brick in repository")
+
+        let generator = BrickGenerator()
+
+        for brickFolder in brickFolders {
+            guard let manifest = BrickManifest.load(fromPath: brickFolder.path) else {
+                XCTFail("Failed to parse manifest in \(brickFolder.path)")
+                continue
+            }
+
+            let isVaporOnly = manifest.baseplates?.count == 1 && manifest.baseplates?.first?.lowercased() == "vapor"
+            let moduleName = "SampleModule"
+            let brickType = Brick(rawValue: manifest.name)
+
+            // Compute full Cartesian Product Matrix across all flavor keys and options
+            var flavorMatrix: [[String: String]] = [[:]]
+            for (flavorKey, flavorSpec) in manifest.flavors.sorted(by: { $0.key < $1.key }) {
+                guard !flavorSpec.options.isEmpty else { continue }
+                var nextMatrix: [[String: String]] = []
+                for currentCombo in flavorMatrix {
+                    for option in flavorSpec.options {
+                        var updated = currentCombo
+                        updated[flavorKey] = option.id
+                        nextMatrix.append(updated)
+                    }
+                }
+                flavorMatrix = nextMatrix
+            }
+
+            // Always ensure the default empty selection is also verified
+            if !flavorMatrix.contains(where: \.isEmpty) {
+                flavorMatrix.insert([:], at: 0)
+            }
+
+            for flavorSelection in flavorMatrix {
+                let tempDir = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("AllBricksTest_\(UUID().uuidString)", isDirectory: true)
+                try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+                defer { try? FileManager.default.removeItem(at: tempDir) }
+
+                let config = SwiftBlockConfig(
+                    projectName: "DynamicApp",
+                    generatorTool: isVaporOnly ? .spm : .tuist,
+                    testFramework: .xctest
+                )
+                try config.save(to: tempDir.path)
+
+                let flavorResult = FlavorResolver.resolve(manifest: manifest, selections: flavorSelection)
+
+                let options = BrickGeneratorOptions(
+                    type: brickType,
+                    name: moduleName,
+                    projectRootPath: tempDir.path,
+                    modulesTemplatePath: brickFolder.path,
+                    variables: flavorResult.variables
+                )
+
+                let generatedPath = try generator.generateBrick(options: options)
+                XCTAssertTrue(
+                    FileManager.default.fileExists(atPath: generatedPath),
+                    "Generated path should exist for \(manifest.name) with flavor \(flavorSelection)"
+                )
+
+                let templateFiles = try FileManager.default.contentsOfDirectory(atPath: brickFolder.path)
+                    .filter { !$0.hasPrefix(".") && !$0.hasSuffix(".yml") && !$0.hasSuffix(".yaml") && !$0.hasSuffix(".json") }
+
+                let isSingleton = (manifest.instantiation == .singleton) || brickType.category.isSingleton
+                let testCategoryFolder = isSingleton ? "Core" : "Features/\(moduleName.lowercased())"
+                let testRootFolder = isVaporOnly ? "\(tempDir.path)/Tests/AppTests" : "\(tempDir.path)/App/Tests"
+
+                for templateFile in templateFiles {
+                    let renderedFileName = templateFile.replacingOccurrences(of: "__MODULE_NAME__", with: moduleName)
+                    let isTestFile = renderedFileName.hasSuffix("Tests.swift")
+                    let expectedPath = isTestFile
+                        ? "\(testRootFolder)/\(testCategoryFolder)/\(manifest.name.lowercased())/\(renderedFileName)"
+                        : "\(generatedPath)/\(renderedFileName)"
+
+                    let fileExists = FileManager.default.fileExists(atPath: expectedPath) ||
+                        FileManager.default.fileExists(atPath: "\(generatedPath)/\(renderedFileName)")
+                    XCTAssertTrue(
+                        fileExists,
+                        "Template '\(templateFile)' of brick '\(manifest.name)' (flavor: \(flavorSelection)) was not generated at: \(expectedPath)"
+                    )
+
+                    let finalPath = FileManager.default.fileExists(atPath: expectedPath)
+                        ? expectedPath
+                        : "\(generatedPath)/\(renderedFileName)"
+
+                    if let content = try? String(contentsOfFile: finalPath, encoding: .utf8) {
+                        XCTAssertFalse(content.contains("__MODULE_NAME__"), "File \(renderedFileName) in '\(manifest.name)' contains raw __MODULE_NAME__")
+                        XCTAssertFalse(content.contains("{{moduleName}}"), "File \(renderedFileName) in '\(manifest.name)' contains raw {{moduleName}}")
+                        XCTAssertFalse(content.contains("{% if"), "File \(renderedFileName) in '\(manifest.name)' contains unrendered conditional block")
+                        XCTAssertFalse(content.contains("{% else"), "File \(renderedFileName) in '\(manifest.name)' contains unrendered conditional block")
+                    }
+                }
+            }
+        }
+    }
 }
