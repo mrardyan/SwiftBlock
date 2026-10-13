@@ -5,7 +5,7 @@ run_scenario_12() {
 
     # 1. Initialize project with SPM Core package & full Core blocks
     log_info "Sub-test 12.1: Generating project with full Core & Feature blocks..."
-    printf "1\nTestProjectWithTests\ncom.company.testproj\n1\n2\n1\n1\ny\n1\n1\ny\ny\n" | "$SWIFTBLOCK_BIN" init --template-path "$TEMPLATE_PATH" > /dev/null 2>&1
+    printf "1\nTestProjectWithTests\ncom.company.testproj\n1\n2\n1\n\n\ny\n1\n1\ny\ny\n" | "$SWIFTBLOCK_BIN" init --template-path "$TEMPLATE_PATH" > /dev/null 2>&1
 
     assert_dir_exists "TestProjectWithTests" "TestProjectWithTests directory created"
 
@@ -23,8 +23,8 @@ run_scenario_12() {
 
     # 4. Add a Feature Block (Scene) and verify its composable test file
     log_info "Sub-test 12.2: Adding Feature block 'Profile'..."
-    "$SWIFTBLOCK_BIN" snap scene Profile > /dev/null 2>&1
-    assert_file_exists "App/Tests/Features/profile/scene/ProfileTests.swift" "Feature block Profile unit test file present"
+    "$SWIFTBLOCK_BIN" snap scene Profile
+    assert_file_exists "App/Tests/Features/profile/scene/ProfileSceneTests.swift" "Feature block Profile unit test file present"
 
     # 5. Verify Core SPM package compiles cleanly
     log_info "Sub-test 12.3: Compiling Core SPM package in temporary project..."

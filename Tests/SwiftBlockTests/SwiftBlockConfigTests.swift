@@ -108,4 +108,25 @@ final class SwiftBlockConfigTests: XCTestCase {
         XCTAssertEqual(loaded.gitInit, false)
         XCTAssertEqual(loaded.testFramework, .xctest)
     }
+
+    func testYamlListWithColons() {
+        let yamlContent = """
+        hooks:
+          post_snap:
+            - "echo 'HookExecuted: {{moduleName}}' > hook_output.txt"
+            - echo 'colon: inside'
+            - https://example.com/item
+        """
+        let parsed = SimpleYAMLParser.parse(yamlContent)
+        guard let hooks = parsed["hooks"] as? [String: Any],
+              let postSnap = hooks["post_snap"] as? [Any]
+        else {
+            XCTFail("Failed to parse hooks.post_snap list")
+            return
+        }
+        XCTAssertEqual(postSnap.count, 3)
+        XCTAssertEqual(postSnap[0] as? String, "echo 'HookExecuted: {{moduleName}}' > hook_output.txt")
+        XCTAssertEqual(postSnap[1] as? String, "echo 'colon: inside'")
+        XCTAssertEqual(postSnap[2] as? String, "https://example.com/item")
+    }
 }

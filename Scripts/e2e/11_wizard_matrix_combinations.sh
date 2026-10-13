@@ -19,7 +19,7 @@ run_scenario_11() {
 
     # 3. Test Technical-First Organization Layout (Org Option 2)
     log_info "Sub-test 11.3: Technical-First Organization Layout..."
-    printf "1\nTestTechFirstApp\ncom.company.techfirst\n1\n1\n1\n2\ny\n1\n1\ny\ny\n" | "$SWIFTBLOCK_BIN" init --template-path "$TEMPLATE_PATH" > /dev/null 2>&1
+    printf "1\nTestTechFirstApp\ncom.company.techfirst\n1\n1\n2\n1\ny\n1\n1\ny\ny\n" | "$SWIFTBLOCK_BIN" init --template-path "$TEMPLATE_PATH" > /dev/null 2>&1
 
     assert_dir_exists "TestTechFirstApp" "TestTechFirstApp directory created"
     assert_file_exists "TestTechFirstApp/.swiftblock/config.yml" ".swiftblock/config.yml exists"

@@ -28,7 +28,11 @@ public enum TestFrameworkConverter {
         var result = content
 
         // 1. Framework import
-        result = result.replacingOccurrences(of: "import XCTest", with: "import Testing")
+        if !result.contains("import Foundation") {
+            result = result.replacingOccurrences(of: "import XCTest", with: "import Foundation\nimport Testing")
+        } else {
+            result = result.replacingOccurrences(of: "import XCTest", with: "import Testing")
+        }
 
         // 2. Test class declaration -> @Suite struct declaration
         let classRegexPattern = #"final\s+class\s+(\w+)\s*:\s*XCTestCase"#

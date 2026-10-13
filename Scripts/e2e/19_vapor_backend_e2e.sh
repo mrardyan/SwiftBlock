@@ -30,20 +30,20 @@ run_scenario_19() {
 
     # 4. Snap additional feature service brick
     log_info "Sub-test 19.2: Snapping service brick 'OrderService' into Vapor project..."
-    "$SWIFTBLOCK_BIN" snap service OrderService > /dev/null 2>&1
+    "$SWIFTBLOCK_BIN" snap service OrderService < /dev/null > /dev/null 2>&1
     assert_file_exists "Sources/App/Features/orderservice/service/OrderServiceService.swift" "Snapped OrderService brick into Vapor feature layer"
 
     # 5. Verify Vapor backend project SPM build
     log_info "Sub-test 19.3: Compiling Vapor backend project via Swift Package Manager..."
     if [[ -f "Package.swift" ]]; then
-        swift build > /dev/null 2>&1
+        swift build
         log_success "Vapor backend project compiled successfully via Swift Package Manager"
     fi
 
     # 6. Verify Vapor backend project unit tests execution via XCTVapor
     log_info "Sub-test 19.4: Executing unit tests in generated Vapor project..."
     if [[ -f "Package.swift" ]]; then
-        swift test > /dev/null 2>&1
+        swift test
         log_success "Vapor backend unit tests (XCTVapor) executed successfully"
     fi
 

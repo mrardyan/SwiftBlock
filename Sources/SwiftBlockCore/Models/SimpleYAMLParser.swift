@@ -14,12 +14,13 @@ public enum SimpleYAMLParser {
             while idx < lines.count {
                 let (lineIndent, content) = lines[idx]
                 if lineIndent < indent { break }
-                guard let colon = content.range(of: ":") else { idx += 1
+                guard let colon = findMappingColon(in: content) else {
+                    idx += 1
                     continue
                 }
 
-                let key = String(content[..<colon.lowerBound]).trimmingCharacters(in: .whitespaces)
-                let valStr = String(content[colon.upperBound...]).trimmingCharacters(in: .whitespaces)
+                let key = String(content[..<colon]).trimmingCharacters(in: .whitespaces)
+                let valStr = String(content[content.index(after: colon)...]).trimmingCharacters(in: .whitespaces)
                 idx += 1
 
                 if valStr.isEmpty {
@@ -49,10 +50,13 @@ public enum SimpleYAMLParser {
                 let itemStr = String(content.dropFirst(2)).trimmingCharacters(in: .whitespaces)
                 let itemIndent = lineIndent
 
-                if let colon = itemStr.range(of: ":") {
+                let isQuoted = (itemStr.hasPrefix("\"") && itemStr.hasSuffix("\"")) ||
+                    (itemStr.hasPrefix("'") && itemStr.hasSuffix("'"))
+
+                if !isQuoted, let colon = findMappingColon(in: itemStr) {
                     // Dict-style list item (possibly with continuation attributes)
-                    let key = String(itemStr[..<colon.lowerBound]).trimmingCharacters(in: .whitespaces)
-                    let valStr = String(itemStr[colon.upperBound...]).trimmingCharacters(in: .whitespaces)
+                    let key = String(itemStr[..<colon]).trimmingCharacters(in: .whitespaces)
+                    let valStr = String(itemStr[itemStr.index(after: colon)...]).trimmingCharacters(in: .whitespaces)
                     var item: [String: Any] = [:]
                     idx += 1
 
@@ -75,9 +79,9 @@ public enum SimpleYAMLParser {
                     while idx < lines.count, lines[idx].indent > itemIndent {
                         let (contIndent, contContent) = lines[idx]
                         guard contContent.hasPrefix("- ") == false,
-                              let contColon = contContent.range(of: ":") else { break }
-                        let contKey = String(contContent[..<contColon.lowerBound]).trimmingCharacters(in: .whitespaces)
-                        let contVal = String(contContent[contColon.upperBound...]).trimmingCharacters(in: .whitespaces)
+                              let contColon = findMappingColon(in: contContent) else { break }
+                        let contKey = String(contContent[..<contColon]).trimmingCharacters(in: .whitespaces)
+                        let contVal = String(contContent[contContent.index(after: contColon)...]).trimmingCharacters(in: .whitespaces)
                         idx += 1
 
                         if contVal.isEmpty {
@@ -107,6 +111,29 @@ public enum SimpleYAMLParser {
         }
 
         return parseDict(at: 0)
+    }
+
+    /// Finds the colon separating a key and value in a YAML line, ignoring colons inside quotes
+    /// and ensuring the colon is followed by a space or is at the end of the line.
+    private static func findMappingColon(in str: String) -> String.Index? {
+        var inDoubleQuote = false
+        var inSingleQuote = false
+        var i = str.startIndex
+        while i < str.endIndex {
+            let ch = str[i]
+            if ch == "\"", !inSingleQuote {
+                inDoubleQuote.toggle()
+            } else if ch == "'", !inDoubleQuote {
+                inSingleQuote.toggle()
+            } else if ch == ":", !inDoubleQuote, !inSingleQuote {
+                let next = str.index(after: i)
+                if next == str.endIndex || str[next] == " " {
+                    return i
+                }
+            }
+            i = str.index(after: i)
+        }
+        return nil
     }
 
     /// Strips `#` comments while preserving them inside single or double quotes.

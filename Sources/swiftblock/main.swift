@@ -12,6 +12,7 @@ struct SwiftBlock: ParsableCommand {
             SnapCommand.self,
             KitCommand.self,
             BoxCommand.self,
+            AgentCommand.self,
             DoctorCommand.self,
             IDECommand.self,
             RenameCommand.self,
@@ -656,6 +657,58 @@ struct IDESetup: ParsableCommand {
         if xcode || (!vscode && !xcode) {
             try generator.updateMakefileShortcuts(projectPath: rootPath)
             print("✔ Updated Makefile shortcuts")
+        }
+    }
+}
+
+struct AgentCommand: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "agent",
+        abstract: "Manage AI agent skills and configuration for developer assistants",
+        subcommands: [AgentSetup.self],
+        defaultSubcommand: AgentSetup.self
+    )
+}
+
+struct AgentSetup: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "setup",
+        abstract: "Embed SwiftBlock skill (.agents/skills/swiftblock) and agent rules (AGENTS.md) into project"
+    )
+
+    @Option(name: [.customShort("p"), .long], help: "Path to project root directory (default: current directory)")
+    var path: String?
+
+    @Option(
+        name: [.customShort("t"), .long],
+        help: "Target AI assistant: all, antigravity, cursor, claude, copilot (comma-separated, default: all)"
+    )
+    var target = "all"
+
+    @Flag(name: .customLong("no-cursor"), help: "Skip generating Cursor rule (.cursor/rules/swiftblock.mdc)")
+    var noCursor = false
+
+    func run() throws {
+        let rootPath = path ?? FileManager.default.currentDirectoryPath
+        let generator = AgentSkillGenerator()
+
+        let parsedTargets: [AgentTarget]
+        if target.lowercased() == "all" {
+            var all: [AgentTarget] = [.all]
+            if noCursor {
+                all = [.antigravity, .claude, .copilot]
+            }
+            parsedTargets = all
+        } else {
+            let rawTargets = target.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
+            let resolved = rawTargets.compactMap { AgentTarget(rawValue: $0) }
+            parsedTargets = resolved.isEmpty ? [.all] : resolved
+        }
+
+        let createdFiles = try generator.generate(projectPath: rootPath, targets: parsedTargets)
+        for file in createdFiles {
+            let relativePath = file.replacingOccurrences(of: "\(rootPath)/", with: "")
+            print("✔ Generated \(relativePath)")
         }
     }
 }

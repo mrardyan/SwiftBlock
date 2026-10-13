@@ -226,10 +226,17 @@ public final class DependencyResolverEngine {
     private func isAlreadyInstalled(manifest: BrickManifest, templatePath: String, in projectRootPath: String) -> Bool {
         guard !manifest.defaultPath.isEmpty else { return false }
 
-        let baseDir = "\(projectRootPath)/\(manifest.defaultPath)"
-        guard fileManager.fileExists(atPath: baseDir) else { return false }
-
+        let resolvedPath: String
         let moduleName = manifest.instantiation == .generative ? "Main" : manifest.defaultInstanceName
+        if let config = try? SwiftBlockConfig.load(from: projectRootPath) {
+            let type = Brick(rawValue: manifest.name.lowercased())
+            resolvedPath = config.resolveOutputPath(for: type, moduleName: moduleName, manifestDefaultPath: manifest.defaultPath)
+        } else {
+            resolvedPath = manifest.defaultPath
+        }
+
+        let baseDir = "\(projectRootPath)/\(resolvedPath)"
+        guard fileManager.fileExists(atPath: baseDir) else { return false }
 
         // Enumerate template files (skip metadata) to derive concrete output file names.
         guard let items = try? fileManager.contentsOfDirectory(atPath: templatePath) else {
@@ -254,6 +261,15 @@ public final class DependencyResolverEngine {
                 return true
             }
         }
+
+        // Check if directory contains brick files matching name prefix (e.g. NetworkClient.swift)
+        if let filesInBase = try? fileManager.contentsOfDirectory(atPath: baseDir) {
+            let prefix = manifest.name.lowercased()
+            if filesInBase.contains(where: { $0.lowercased().hasPrefix(prefix) && $0.hasSuffix(".swift") }) {
+                return true
+            }
+        }
+
         return false
     }
 }

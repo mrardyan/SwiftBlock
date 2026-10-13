@@ -102,6 +102,9 @@ public class IDEConfigGenerator {
 
             doctor:
             	swiftblock doctor
+
+            agent-setup:
+            	swiftblock agent setup
             """
             content += shortcuts
             try content.write(toFile: makefilePath, atomically: true, encoding: .utf8)
@@ -111,5 +114,7 @@ public class IDEConfigGenerator {
     public func setupAll(projectPath: String, config: SwiftBlockConfig) throws {
         try generateVSCodeTasks(projectPath: projectPath, config: config)
         try updateMakefileShortcuts(projectPath: projectPath)
+        let agentGen = AgentSkillGenerator(fileManager: fileManager)
+        try agentGen.generateAll(projectPath: projectPath)
     }
 }
