@@ -1,0 +1,13 @@
+---
+description: SwiftBlock architectural scaffolding and brick generation guidelines
+globs: **/*.swift
+alwaysApply: true
+---
+
+# SwiftBlock Rules
+
+- This project is managed by SwiftBlock CLI.
+- When creating new features, screens, or architectural layers, run `swiftblock snap <brick> <Name>` or `swiftblock kit add <kit> <Name>`.
+- Available feature bricks: `scene`, `usecase`, `repository`, `service`, `entity`, `coordinator`.
+- Available core bricks: `network`, `storage`, `keychain`, `auth`, `logger`, `config`, `featureflag`, `deeplink`.
+- Verify project health using `swiftblock doctor`.
