@@ -1,0 +1,7 @@
+name: Transforming
+description: Transforming protocol for unidirectional/bidirectional mappers and piped transformer chains.
+type: singleton
+category: core/protocols/transforming
+options:
+  name: Transforming
+defaultPath: "App/Sources/Core/Protocols"

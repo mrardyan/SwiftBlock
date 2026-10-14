@@ -1,0 +1,7 @@
+name: LRUCache
+description: Thread-safe O(1) Least Recently Used in-memory cache data structure with eviction notifications.
+type: singleton
+category: utils/algorithm/lrucache
+options:
+  name: LRUCache
+defaultPath: "App/Sources/Core/Algorithms/LRUCache"

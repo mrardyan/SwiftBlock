@@ -1,0 +1,13 @@
+name: app_middleware
+category: infrastructure
+instantiation: singleton
+description: "Server middleware stack configuration (error handling, CORS, security headers)"
+defaultPath: "Sources/App/Core/Middleware"
+baseplates:
+  - vapor
+requiresNameArgument: false
+
+injections:
+  - target: "Sources/App/configure.swift"
+    marker: "// MARK: - SwiftBlock Middleware Configuration Marker"
+    content: "{{moduleName}}.configure(app)"

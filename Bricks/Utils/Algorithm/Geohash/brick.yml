@@ -1,0 +1,7 @@
+name: Geohash
+description: Geohash encoding, decoding, bounding box, and 8-neighbor proximity spatial index calculation.
+type: singleton
+category: utils/algorithm/geohash
+options:
+  name: Geohash
+defaultPath: "App/Sources/Core/Algorithms/Geohash"

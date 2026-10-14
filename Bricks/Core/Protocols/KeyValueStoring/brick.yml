@@ -1,0 +1,7 @@
+name: KeyValueStoring
+description: Universal KeyValueStoring protocol for memory, disk, keychain, and multi-tier composite stores.
+type: singleton
+category: core/protocols/keyvaluestoring
+options:
+  name: KeyValueStoring
+defaultPath: "App/Sources/Core/Protocols"

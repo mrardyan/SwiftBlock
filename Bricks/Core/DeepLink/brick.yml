@@ -1,0 +1,12 @@
+name: DeepLinkRouter
+description: URL Scheme and Universal Link deep link parsing and routing manager.
+type: singleton
+category: core/deeplink
+options:
+  name: DeepLinkRouter
+defaultPath: "App/Sources/Core/DeepLink"
+
+dependencies:
+  optional:
+    - name: logger
+      description: "Deep link route resolution diagnostics"

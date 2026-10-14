@@ -1,0 +1,6 @@
+name: app_state
+category: infrastructure
+instantiation: singleton
+description: "Application lifecycle observer tracking active, background, and inactive states"
+defaultPath: "App/Sources/Core/AppState"
+requiresNameArgument: false

@@ -1,0 +1,11 @@
+name: PhoneValidator
+description: E.164 and international phone number validation utility.
+type: singleton
+category: core/validator/phone
+options:
+  name: PhoneValidator
+defaultPath: "App/Sources/Core/Validators/Phone"
+dependencies:
+  mandatory:
+    - name: validating
+      reason: "PhoneValidator requires Validating protocol contract"

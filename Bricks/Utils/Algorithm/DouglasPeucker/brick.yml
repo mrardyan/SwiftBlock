@@ -1,0 +1,7 @@
+name: DouglasPeucker
+description: Ramer-Douglas-Peucker polyline simplification algorithm for decimation of GPS tracking routes.
+type: singleton
+category: utils/algorithm/douglaspeucker
+options:
+  name: DouglasPeucker
+defaultPath: "App/Sources/Core/Algorithms/DouglasPeucker"

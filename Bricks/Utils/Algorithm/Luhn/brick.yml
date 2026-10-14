@@ -1,0 +1,7 @@
+name: Luhn
+description: Luhn Modulo 10 checksum algorithm for credit card, IMEI, and identifier validation.
+type: singleton
+category: utils/algorithm/luhn
+options:
+  name: Luhn
+defaultPath: "App/Sources/Core/Algorithms/Luhn"

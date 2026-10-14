@@ -1,0 +1,3 @@
+projectName: __PROJECT_NAME__
+bundlePrefix: __BUNDLE_PREFIX__
+generatorTool: spm

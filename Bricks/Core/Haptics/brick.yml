@@ -1,0 +1,6 @@
+name: haptics
+category: infrastructure
+instantiation: singleton
+description: "Unified haptic feedback engine wrapping UIFeedbackGenerator"
+defaultPath: "App/Sources/Core/Haptics"
+requiresNameArgument: false

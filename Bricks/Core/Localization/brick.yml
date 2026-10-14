@@ -1,0 +1,6 @@
+name: localization
+category: infrastructure
+instantiation: singleton
+description: "Localized string, pluralization, and language helpers backed by .strings catalogs"
+defaultPath: "App/Sources/Core/Localization"
+requiresNameArgument: false

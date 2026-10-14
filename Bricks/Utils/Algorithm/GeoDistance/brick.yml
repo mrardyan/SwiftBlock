@@ -1,0 +1,7 @@
+name: GeoDistance
+description: Geodesic calculations including Haversine distance, initial/final bearing, and destination point.
+type: singleton
+category: utils/algorithm/geodistance
+options:
+  name: GeoDistance
+defaultPath: "App/Sources/Core/Algorithms/GeoDistance"

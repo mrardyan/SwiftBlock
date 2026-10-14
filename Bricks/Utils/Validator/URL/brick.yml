@@ -1,0 +1,11 @@
+name: URLValidator
+description: RFC 3986 compliant URL validator with customizable scheme and HTTPS rules.
+type: singleton
+category: core/validator/url
+options:
+  name: URLValidator
+defaultPath: "App/Sources/Core/Validators/URL"
+dependencies:
+  mandatory:
+    - name: validating
+      reason: "URLValidator requires Validating protocol contract"

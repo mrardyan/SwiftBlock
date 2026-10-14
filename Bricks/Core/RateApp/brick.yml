@@ -1,0 +1,6 @@
+name: rate_app
+category: infrastructure
+instantiation: singleton
+description: "StoreKit rating prompt and App Store link helpers"
+defaultPath: "App/Sources/Core/RateApp"
+requiresNameArgument: false

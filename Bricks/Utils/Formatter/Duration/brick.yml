@@ -1,0 +1,11 @@
+name: DurationFormatter
+description: Thread-safe media and time period duration formatter singleton using DateComponentsFormatter.
+type: singleton
+category: core/formatter/duration
+options:
+  name: DurationFormatter
+defaultPath: "App/Sources/Core/Formatters/Duration"
+dependencies:
+  mandatory:
+    - name: valueformatting
+      reason: "DurationFormatter requires ValueFormatting protocol contract"

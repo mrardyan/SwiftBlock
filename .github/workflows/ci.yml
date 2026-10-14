@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Test Suite
+    runs-on: macos-14
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Show Swift Toolchain Version
+        run: swift --version
+
+      - name: Compile SwiftBlock CLI
+        run: swift build -c release
+
+      - name: Run Unit Tests
+        run: swift test --parallel
+
+      - name: Run Template Validation Tests
+        run: ./Scripts/test_templates.sh
+
+      - name: Run Linter Checks
+        run: |
+          if command -v swiftlint >/dev/null 2>&1; then
+            swiftlint lint --strict Sources Tests
+          else
+            echo "SwiftLint not pre-installed on runner; installing via brew..."
+            brew install swiftlint
+            swiftlint lint --strict Sources Tests
+          fi

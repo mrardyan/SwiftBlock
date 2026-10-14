@@ -1,0 +1,10 @@
+import Foundation
+
+/// Default implementation of `__MODULE_NAME__UseCase`.
+public final class Default__MODULE_NAME__UseCase: __MODULE_NAME__UseCase {
+    public init() {}
+
+    public func execute() async throws {
+        // Implementation logic here
+    }
+}

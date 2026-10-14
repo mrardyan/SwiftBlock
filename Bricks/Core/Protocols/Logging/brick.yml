@@ -1,0 +1,7 @@
+name: Logging
+description: Abstract Logging protocol decoupling application components from concrete loggers.
+type: singleton
+category: core/protocols/logging
+options:
+  name: Logging
+defaultPath: "App/Sources/Core/Protocols"

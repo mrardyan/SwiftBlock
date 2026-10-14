@@ -1,0 +1,7 @@
+name: OrderedDictionary
+description: Key-value dictionary that preserves insertion order with fast O(1) key lookups.
+type: singleton
+category: utils/datastructure/ordereddictionary
+options:
+  name: OrderedDictionary
+defaultPath: "App/Sources/Core/DataStructures/OrderedDictionary"

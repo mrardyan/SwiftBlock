@@ -1,0 +1,10 @@
+name: iban_validator
+category: validator
+instantiation: singleton
+description: "International Bank Account Number (IBAN) validator using MOD 97 check-digit algorithm"
+defaultPath: "App/Sources/Core/Validator/IBAN"
+requiresNameArgument: false
+dependencies:
+  mandatory:
+    - name: validating
+      reason: "IBANValidator requires Validating protocol contract"

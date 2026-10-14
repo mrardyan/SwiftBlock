@@ -1,0 +1,7 @@
+name: ValueFormatting
+description: Composable ValueFormatting protocol for string formatting and optional fallback pipelines.
+type: singleton
+category: utils/protocols/valueformatting
+options:
+  name: ValueFormatting
+defaultPath: "App/Sources/Core/Protocols"

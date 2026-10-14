@@ -1,0 +1,7 @@
+name: Throttle
+description: Thread-safe throttler ensuring actions execute at most once within a given time window.
+type: singleton
+category: utils/algorithm/throttle
+options:
+  name: Throttle
+defaultPath: "App/Sources/Core/Algorithms/Throttle"

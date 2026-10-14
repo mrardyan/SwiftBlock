@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 SwiftBlock Documentation
+    url: https://github.com/mrardyan/SwiftBlock/tree/main/Docs
+    about: Read the official guides, baseplate walkthroughs, and CLI reference.
+  - name: 💬 Community Discussions
+    url: https://github.com/mrardyan/SwiftBlock/discussions
+    about: Ask questions, share ideas, and connect with other SwiftBlock developers.

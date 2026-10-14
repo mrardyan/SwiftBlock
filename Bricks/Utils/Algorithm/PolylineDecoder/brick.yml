@@ -1,0 +1,7 @@
+name: PolylineDecoder
+description: Google / Mapbox Encoded Polyline algorithm for encoding and decoding compressed GPS route strings.
+type: singleton
+category: utils/algorithm/polylinedecoder
+options:
+  name: PolylineDecoder
+defaultPath: "App/Sources/Core/Algorithms/PolylineDecoder"

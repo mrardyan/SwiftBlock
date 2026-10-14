@@ -1,0 +1,7 @@
+name: FuzzySearch
+description: Subsequence and prefix scoring fuzzy search algorithm for fast in-app autocompletion and filtering.
+type: singleton
+category: utils/algorithm/fuzzysearch
+options:
+  name: FuzzySearch
+defaultPath: "App/Sources/Core/Algorithms/FuzzySearch"

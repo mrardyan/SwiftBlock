@@ -1,0 +1,11 @@
+name: DateFormatter
+description: Thread-safe, cached DateFormatter utility for high performance date string operations.
+type: singleton
+category: core/formatter/date
+options:
+  name: DateFormatter
+defaultPath: "App/Sources/Core/Formatters/Date"
+dependencies:
+  mandatory:
+    - name: valueformatting
+      reason: "DateFormatter requires ValueFormatting protocol contract"

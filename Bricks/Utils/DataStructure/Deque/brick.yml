@@ -1,0 +1,7 @@
+name: Deque
+description: Double-ended queue data structure supporting O(1) push and pop operations at both ends.
+type: singleton
+category: utils/datastructure/deque
+options:
+  name: Deque
+defaultPath: "App/Sources/Core/DataStructures/Deque"

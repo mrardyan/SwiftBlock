@@ -1,0 +1,7 @@
+name: PriorityQueue
+description: Binary heap based priority queue data structure with configurable sorting order.
+type: singleton
+category: utils/algorithm/priorityqueue
+options:
+  name: PriorityQueue
+defaultPath: "App/Sources/Core/Algorithms/PriorityQueue"

@@ -1,0 +1,39 @@
+import XCTest
+#if canImport(Core)
+@testable import Core
+#endif
+@testable import __APP_MODULE__
+
+@available(macOS 11.0, iOS 14.0, watchOS 7.0, tvOS 14.0, *)
+final class __MODULE_NAME__Tests: XCTestCase {
+    private var manager: __MODULE_NAME__!
+
+    override func setUp() {
+        super.setUp()
+        manager = __MODULE_NAME__()
+    }
+
+    override func tearDown() {
+        manager = nil
+        super.tearDown()
+    }
+
+    func testSystemPermissionTypes() {
+        XCTAssertEqual(SystemPermissionType.allCases.count, 5)
+        XCTAssertEqual(PermissionStatus.authorized.rawValue, "Authorized")
+    }
+
+    func testStatusDoesNotCrash() {
+        for permission in SystemPermissionType.allCases {
+            let status = manager.status(for: permission)
+            XCTAssertFalse(status.rawValue.isEmpty)
+        }
+    }
+
+    func testBatchRequestDoesNotCrash() async {
+        let mockManager = __MODULE_NAME__(mockHandler: { _ in .authorized })
+        let results = await mockManager.requestPermissions([.camera, .microphone])
+        XCTAssertEqual(results[.camera], .authorized)
+        XCTAssertEqual(results[.microphone], .authorized)
+    }
+}

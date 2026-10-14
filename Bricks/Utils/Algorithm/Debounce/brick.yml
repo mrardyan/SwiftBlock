@@ -1,0 +1,7 @@
+name: Debounce
+description: Thread-safe debounce utility to delay task execution until an idle interval has passed.
+type: singleton
+category: utils/algorithm/debounce
+options:
+  name: Debounce
+defaultPath: "App/Sources/Core/Algorithms/Debounce"

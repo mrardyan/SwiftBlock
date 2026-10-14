@@ -1,0 +1,510 @@
+import Foundation
+
+public struct SwiftBlockConfig: Codable, Equatable {
+    public static let defaultKits: [String: [String]] = [
+        "clean-feature": ["scene", "usecase", "repository", "service"],
+        "feature": ["scene", "usecase", "repository", "mapper"],
+        "simple": ["scene", "service"],
+        "data": ["repository", "service", "entity"],
+    ]
+
+    public var projectName: String
+    public var bundlePrefix: String
+    public var packaging: PackagingConfig
+    public var organization: String
+    public var generatorTool: ProjectGeneratorTool
+    public var guardrails: GuardrailsConfig
+    public var cicd: CICDConfig
+    public var toolVersions: [String: String]
+    public var coreBlocks: [Brick]
+    public var gitInit: Bool
+    public var pathTemplates: [String: String]
+    public var overrides: [String: String]
+    public var paths: ModulePaths
+    public var kits: [String: [String]]
+    public var testFramework: TestFramework
+
+    enum CodingKeys: String, CodingKey {
+        case projectName
+        case bundlePrefix
+        case packaging
+        case organization
+        case generatorTool
+        case guardrails
+        case cicd
+        case toolVersions
+        case coreBlocks
+        case gitInit
+        case pathTemplates
+        case overrides
+        case paths
+        case kits
+        case testFramework
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        projectName = try container.decode(String.self, forKey: .projectName)
+        bundlePrefix = (try? container.decode(String.self, forKey: .bundlePrefix)) ?? "com.company"
+        packaging = (try? container.decode(PackagingConfig.self, forKey: .packaging)) ?? PackagingConfig()
+        let decodedOrg = (try? container.decode(String.self, forKey: .organization)) ?? "feature-first"
+        organization = (decodedOrg == "business-first") ? "feature-first" : decodedOrg
+        generatorTool = (try? container.decode(ProjectGeneratorTool.self, forKey: .generatorTool)) ?? .tuist
+        guardrails = (try? container.decode(GuardrailsConfig.self, forKey: .guardrails)) ?? GuardrailsConfig.all
+        cicd = (try? container.decode(CICDConfig.self, forKey: .cicd)) ?? CICDConfig()
+        toolVersions = (try? container.decode([String: String].self, forKey: .toolVersions)) ?? [:]
+        coreBlocks = (try? container.decode([Brick].self, forKey: .coreBlocks)) ?? [.storage, .network, .logger, .config]
+        gitInit = (try? container.decode(Bool.self, forKey: .gitInit)) ?? true
+        pathTemplates = (try? container.decode([String: String].self, forKey: .pathTemplates)) ?? [
+            "feature": "App/Sources/Features/{module}/{block}",
+            "core": "Packages/Core/Sources/Core/{block}",
+        ]
+        overrides = (try? container.decode([String: String].self, forKey: .overrides)) ?? [:]
+        paths = (try? container.decode(ModulePaths.self, forKey: .paths)) ?? ModulePaths()
+        kits = (try? container.decode([String: [String]].self, forKey: .kits)) ?? SwiftBlockConfig.defaultKits
+        testFramework = (try? container.decode(TestFramework.self, forKey: .testFramework)) ?? .swiftTesting
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(projectName, forKey: .projectName)
+        try container.encode(bundlePrefix, forKey: .bundlePrefix)
+        try container.encode(packaging, forKey: .packaging)
+        try container.encode(organization, forKey: .organization)
+        try container.encode(generatorTool, forKey: .generatorTool)
+        try container.encode(guardrails, forKey: .guardrails)
+        try container.encode(cicd, forKey: .cicd)
+        try container.encode(toolVersions, forKey: .toolVersions)
+        try container.encode(coreBlocks, forKey: .coreBlocks)
+        try container.encode(gitInit, forKey: .gitInit)
+        try container.encode(pathTemplates, forKey: .pathTemplates)
+        try container.encode(overrides, forKey: .overrides)
+        try container.encode(paths, forKey: .paths)
+        try container.encode(kits, forKey: .kits)
+        try container.encode(testFramework, forKey: .testFramework)
+    }
+
+    public struct ModulePaths: Codable, Equatable {
+        private var customPaths: [String: String]
+
+        public var allCustomPaths: [String: String] {
+            customPaths
+        }
+
+        public init(customPaths: [String: String] = [:]) {
+            self.customPaths = customPaths
+        }
+
+        public init(from decoder: Decoder) throws {
+            if let singleContainer = try? decoder.singleValueContainer(),
+               let dict = try? singleContainer.decode([String: String].self)
+            {
+                customPaths = dict
+            } else if let container = try? decoder.container(keyedBy: DynamicCodingKeys.self) {
+                var dict: [String: String] = [:]
+                for key in container.allKeys {
+                    if let val = try? container.decode(String.self, forKey: key) {
+                        dict[key.stringValue] = val
+                    }
+                }
+                customPaths = dict
+            } else {
+                customPaths = [:]
+            }
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(customPaths)
+        }
+
+        public func path(for type: Brick) -> String {
+            if let custom = customPaths[type.rawValue] {
+                return custom
+            }
+            return BrickRegistry.spec(for: type)?.defaultOutputPath ?? "App/Sources/\(type.rawValue.capitalized)"
+        }
+
+        public mutating func setPath(_ path: String, for type: Brick) {
+            customPaths[type.rawValue] = path
+        }
+
+        public subscript(type: Brick) -> String {
+            get { path(for: type) }
+            set { setPath(newValue, for: type) }
+        }
+    }
+
+    public typealias BrickPaths = ModulePaths
+
+    public init(
+        projectName: String,
+        bundlePrefix: String = "com.company",
+        packaging: PackagingConfig = PackagingConfig(),
+        organization: String = "feature-first",
+        generatorTool: ProjectGeneratorTool = .tuist,
+        guardrails: GuardrailsConfig = .all,
+        cicd: CICDConfig = CICDConfig(),
+        toolVersions: [String: String] = [:],
+        coreBlocks: [Brick] = [.storage, .network, .logger, .config],
+        gitInit: Bool = true,
+        pathTemplates: [String: String] = [
+            "feature": "App/Sources/Features/{module}/{block}",
+            "core": "Packages/Core/Sources/Core/{block}",
+        ],
+        overrides: [String: String] = [:],
+        paths: ModulePaths = ModulePaths(),
+        kits: [String: [String]] = SwiftBlockConfig.defaultKits,
+        testFramework: TestFramework = .swiftTesting
+    ) {
+        self.projectName = projectName
+        self.bundlePrefix = bundlePrefix
+        self.packaging = packaging
+        self.organization = organization
+        self.generatorTool = generatorTool
+        self.guardrails = guardrails
+        self.cicd = cicd
+        self.toolVersions = toolVersions
+        self.coreBlocks = coreBlocks
+        self.gitInit = gitInit
+        self.pathTemplates = pathTemplates
+        self.overrides = overrides
+        self.paths = paths
+        self.kits = kits
+        self.testFramework = testFramework
+    }
+
+    /// Name of the main application module used by generated tests (`@testable import`).
+    /// Vapor/SPM projects expose a fixed `App` module; other projects use the project name.
+    public var appModuleName: String {
+        generatorTool == .spm ? "App" : projectName
+    }
+
+    public func resolveOutputPath(for type: Brick, moduleName: String, manifestDefaultPath: String? = nil, category: Brick.Category? = nil) -> String {
+        let blockName = type.rawValue.lowercased()
+
+        // Priority 1: Check overrides in .swiftblock
+        if let overridePath = overrides[blockName] {
+            return BrickDiscoveryEngine.evaluateTokens(in: overridePath, moduleName: moduleName, blockName: blockName)
+        }
+
+        let typeCategory = category ?? type.category
+        let spec = BrickRegistry.curatedSpec(for: type)
+        let categoryKey = pathTemplates[typeCategory.rawValue] != nil ? typeCategory.rawValue : (typeCategory.isSingleton ? "core" : "feature")
+
+        // Priority 2: Project pathTemplates describe the user's chosen layout strategy.
+        // They take precedence for known (registry) bricks. Custom bricks use the author's
+        // declared defaultPath instead, since the project feature/core templates are meaningless for them.
+        if let template = pathTemplates[categoryKey], spec != nil || manifestDefaultPath == nil {
+            return BrickDiscoveryEngine.evaluateTokens(in: template, moduleName: moduleName, blockName: blockName)
+        }
+
+        // Priority 3: Brick author's declared default output path
+        if let manifestPath = manifestDefaultPath, !manifestPath.isEmpty {
+            return BrickDiscoveryEngine.evaluateTokens(in: manifestPath, moduleName: moduleName, blockName: blockName)
+        }
+
+        // Priority 4: Project feature/core layout as a fallback for custom bricks without defaultPath
+        if let template = pathTemplates[categoryKey] {
+            return BrickDiscoveryEngine.evaluateTokens(in: template, moduleName: moduleName, blockName: blockName)
+        }
+
+        // Priority 5: Check block.json metadata or fallback
+        if let defaultPath = spec?.defaultOutputPath {
+            return BrickDiscoveryEngine.evaluateTokens(in: defaultPath, moduleName: moduleName, blockName: blockName)
+        }
+
+        // Priority 6: Standard engine fallback
+        return paths.path(for: type)
+    }
+
+    public static func findProjectRoot(from startPath: String = FileManager.default.currentDirectoryPath) -> String? {
+        let fileManager = FileManager.default
+        var current = (startPath as NSString).standardizingPath
+
+        while !current.isEmpty, current != "/" {
+            let yml = "\(current)/.swiftblock/config.yml"
+            let yaml = "\(current)/.swiftblock/config.yaml"
+            let dotConfig = "\(current)/.swiftblock"
+            if fileManager.fileExists(atPath: yml) || fileManager.fileExists(atPath: yaml) || fileManager.fileExists(atPath: dotConfig) {
+                return current
+            }
+            let parent = (current as NSString).deletingLastPathComponent
+            if parent == current { break }
+            current = parent
+        }
+        return nil
+    }
+
+    public static func load(from directoryPath: String = FileManager.default.currentDirectoryPath) throws -> SwiftBlockConfig {
+        let fileManager = FileManager.default
+        let resolvedDirectory = findProjectRoot(from: directoryPath) ?? directoryPath
+        let ymlConfigPath = "\(resolvedDirectory)/.swiftblock/config.yml"
+        let yamlConfigPath = "\(resolvedDirectory)/.swiftblock/config.yaml"
+        let rootConfigPath = "\(resolvedDirectory)/.swiftblock"
+
+        var targetPath: String?
+        if fileManager.fileExists(atPath: ymlConfigPath) {
+            targetPath = ymlConfigPath
+        } else if fileManager.fileExists(atPath: yamlConfigPath) {
+            targetPath = yamlConfigPath
+        } else if fileManager.fileExists(atPath: rootConfigPath) {
+            var isDir: ObjCBool = false
+            if fileManager.fileExists(atPath: rootConfigPath, isDirectory: &isDir), isDir.boolValue {
+                // `.swiftblock` exists as a directory but contains no config file.
+                throw SwiftBlockConfigError.configNotFound("\(resolvedDirectory)/.swiftblock/config.yml")
+            }
+            targetPath = rootConfigPath
+        }
+
+        guard let finalPath = targetPath else {
+            throw SwiftBlockConfigError.configNotFound("\(directoryPath)/.swiftblock/config.yml")
+        }
+
+        let data = try Data(contentsOf: URL(fileURLWithPath: finalPath))
+        if let config = try? JSONDecoder().decode(SwiftBlockConfig.self, from: data) {
+            return config
+        }
+
+        if let content = String(data: data, encoding: .utf8) {
+            let parsed = SimpleYAMLParser.parse(content)
+            let name = (parsed["projectName"] as? String) ?? "App"
+            let prefix = (parsed["bundlePrefix"] as? String) ?? "com.company"
+            let toolStr = (parsed["generatorTool"] as? String) ?? "tuist"
+            let tool = ProjectGeneratorTool(rawValue: toolStr.lowercased()) ?? .tuist
+            let org = (parsed["organization"] as? String) ?? "feature-first"
+            let normalizedOrg = (org == "business-first") ? "feature-first" : org
+
+            var pkg = PackagingConfig()
+            if let pkgDict = parsed["packaging"] as? [String: Any] {
+                pkg.feature = (pkgDict["feature"] as? String) ?? "monolithic"
+                pkg.core = (pkgDict["core"] as? String) ?? "spm"
+            }
+
+            var cicdCfg = CICDConfig()
+            if let cicdDict = parsed["cicd"] as? [String: Any],
+               let providerStr = cicdDict["provider"] as? String,
+               let prov = CICDProvider(rawValue: providerStr)
+            {
+                cicdCfg.provider = prov
+            }
+
+            var customPaths: [String: String] = [:]
+            if let pathsDict = parsed["paths"] as? [String: Any] {
+                for (k, v) in pathsDict {
+                    if let str = v as? String { customPaths[k] = str }
+                }
+            }
+
+            var overridesDict: [String: String] = [:]
+            if let ovDict = parsed["overrides"] as? [String: Any] {
+                for (k, v) in ovDict {
+                    if let str = v as? String { overridesDict[k] = str }
+                }
+            }
+
+            var pathTemplatesDict: [String: String] = [:]
+            if let ptDict = parsed["pathTemplates"] as? [String: Any] {
+                for (k, v) in ptDict {
+                    if let str = v as? String { pathTemplatesDict[k] = str }
+                }
+            }
+            if pathTemplatesDict.isEmpty {
+                pathTemplatesDict = [
+                    "feature": "App/Sources/Features/{module}/{block}",
+                    "core": "Packages/Core/Sources/Core/{block}",
+                ]
+            }
+
+            var kitsDict: [String: [String]] = SwiftBlockConfig.defaultKits
+            if let kDict = parsed["kits"] as? [String: [String]] {
+                kitsDict = kDict
+            }
+
+            let testFramework = (parsed["testFramework"] as? String).flatMap(TestFramework.init(rawValue:)) ?? .swiftTesting
+            let gitInit = (parsed["gitInit"] as? Bool) ?? true
+
+            var guardrails = GuardrailsConfig.all
+            if let gDict = parsed["guardrails"] as? [String: Any] {
+                guardrails = GuardrailsConfig(
+                    swiftlint: (gDict["swiftlint"] as? Bool) ?? true,
+                    swiftformat: (gDict["swiftformat"] as? Bool) ?? true,
+                    precommit: (gDict["precommit"] as? Bool) ?? true,
+                    periphery: (gDict["periphery"] as? Bool) ?? true,
+                    gitleaks: (gDict["gitleaks"] as? Bool) ?? true,
+                    danger: (gDict["danger"] as? Bool) ?? true,
+                    swiftgen: (gDict["swiftgen"] as? Bool) ?? true,
+                    licenseplist: (gDict["licenseplist"] as? Bool) ?? true
+                )
+            }
+
+            var toolVersionsDict: [String: String] = [:]
+            if let tvDict = parsed["toolVersions"] as? [String: Any] {
+                for (k, v) in tvDict {
+                    if let str = v as? String { toolVersionsDict[k] = str }
+                }
+            }
+
+            var coreBlocks: [Brick] = [.storage, .network, .logger, .config]
+            if let blockList = parsed["coreBlocks"] as? [Any] {
+                let blocks = blockList.compactMap { ($0 as? String).map { Brick(rawValue: $0) } }
+                if !blocks.isEmpty {
+                    coreBlocks = blocks
+                }
+            }
+
+            return SwiftBlockConfig(
+                projectName: name,
+                bundlePrefix: prefix,
+                packaging: pkg,
+                organization: normalizedOrg,
+                generatorTool: tool,
+                guardrails: guardrails,
+                cicd: cicdCfg,
+                toolVersions: toolVersionsDict,
+                coreBlocks: coreBlocks,
+                gitInit: gitInit,
+                pathTemplates: pathTemplatesDict,
+                overrides: overridesDict,
+                paths: ModulePaths(customPaths: customPaths),
+                kits: kitsDict,
+                testFramework: testFramework
+            )
+        }
+
+        throw SwiftBlockConfigError.configNotFound(finalPath)
+    }
+
+    public func save(to directoryPath: String = FileManager.default.currentDirectoryPath) throws {
+        let fileManager = FileManager.default
+        let folderPath = "\(directoryPath)/.swiftblock"
+        var isDir: ObjCBool = false
+        if fileManager.fileExists(atPath: folderPath, isDirectory: &isDir) {
+            if !isDir.boolValue {
+                try? fileManager.removeItem(atPath: folderPath)
+                try fileManager.createDirectory(atPath: folderPath, withIntermediateDirectories: true)
+            }
+        } else {
+            try fileManager.createDirectory(atPath: folderPath, withIntermediateDirectories: true)
+        }
+
+        let configFilePath = "\(folderPath)/config.yml"
+
+        var yaml = """
+        # SwiftBlock Project Configuration (.swiftblock/config.yml)
+        projectName: \(Self.yamlScalar(projectName))
+        bundlePrefix: \(Self.yamlScalar(bundlePrefix))
+        organization: \(Self.yamlScalar(organization))
+        generatorTool: \(generatorTool.rawValue)
+        testFramework: \(testFramework.rawValue)
+        gitInit: \(gitInit ? "true" : "false")
+
+        packaging:
+          feature: \(Self.yamlScalar(packaging.feature))
+          core: \(Self.yamlScalar(packaging.core))
+
+        guardrails:
+          swiftlint: \(guardrails.swiftlint ? "true" : "false")
+          swiftformat: \(guardrails.swiftformat ? "true" : "false")
+          precommit: \(guardrails.precommit ? "true" : "false")
+          periphery: \(guardrails.periphery ? "true" : "false")
+          gitleaks: \(guardrails.gitleaks ? "true" : "false")
+          danger: \(guardrails.danger ? "true" : "false")
+          swiftgen: \(guardrails.swiftgen ? "true" : "false")
+          licenseplist: \(guardrails.licenseplist ? "true" : "false")
+
+        cicd:
+          provider: \(cicd.provider.rawValue)
+
+        coreBlocks:
+        """
+        for block in coreBlocks {
+            yaml += "\n  - \(block.rawValue)"
+        }
+
+        if !toolVersions.isEmpty {
+            yaml += "\n\ntoolVersions:"
+            for (key, val) in toolVersions.sorted(by: { $0.key < $1.key }) {
+                yaml += "\n  \(Self.yamlScalar(key)): \(Self.yamlScalar(val))"
+            }
+        }
+
+        yaml += "\n\npaths:"
+        let allPaths = paths.allCustomPaths
+        if allPaths.isEmpty {
+            yaml += "\n  scene: App/Sources/Features\n  network: App/Sources/Core/Network"
+        } else {
+            for (key, val) in allPaths.sorted(by: { $0.key < $1.key }) {
+                yaml += "\n  \(Self.yamlScalar(key)): \(Self.yamlScalar(val))"
+            }
+        }
+
+        if !pathTemplates.isEmpty {
+            yaml += "\n\npathTemplates:"
+            for (key, val) in pathTemplates.sorted(by: { $0.key < $1.key }) {
+                yaml += "\n  \(Self.yamlScalar(key)): \(Self.yamlScalar(val))"
+            }
+        }
+
+        if !overrides.isEmpty {
+            yaml += "\n\noverrides:"
+            for (key, val) in overrides.sorted(by: { $0.key < $1.key }) {
+                yaml += "\n  \(Self.yamlScalar(key)): \(Self.yamlScalar(val))"
+            }
+        }
+
+        yaml += "\n\nkits:"
+        for (kitName, bricksList) in kits.sorted(by: { $0.key < $1.key }) {
+            yaml += "\n  \(kitName):"
+            for brick in bricksList {
+                yaml += "\n    - \(brick)"
+            }
+        }
+
+        yaml += "\n"
+        try yaml.write(toFile: configFilePath, atomically: true, encoding: .utf8)
+    }
+
+    private static func yamlScalar(_ value: String) -> String {
+        let needsQuotes = value.isEmpty ||
+            value.hasPrefix(" ") || value.hasSuffix(" ") ||
+            value.contains(":") || value.contains("#") ||
+            value.hasPrefix("- ") || value.hasPrefix("?") ||
+            value.hasPrefix("[") || value.hasPrefix("{") ||
+            ["true", "false", "null", "~", "yes", "no", "on", "off"].contains(value.lowercased())
+        guard needsQuotes else { return value }
+        let escaped = value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        return "\"\(escaped)\""
+    }
+}
+
+private struct DynamicCodingKeys: CodingKey {
+    var stringValue: String
+    var intValue: Int?
+
+    init?(stringValue: String) {
+        self.stringValue = stringValue
+        intValue = nil
+    }
+
+    init?(intValue: Int) {
+        stringValue = String(intValue)
+        self.intValue = intValue
+    }
+}
+
+public enum SwiftBlockConfigError: Error, LocalizedError {
+    case configNotFound(String)
+    case encodingFailed
+
+    public var errorDescription: String? {
+        switch self {
+            case let .configNotFound(path):
+                "Not a valid SwiftBlock project root (.swiftblock not found at \(path))"
+            case .encodingFailed:
+                "Failed to encode SwiftBlock configuration to JSON."
+        }
+    }
+}

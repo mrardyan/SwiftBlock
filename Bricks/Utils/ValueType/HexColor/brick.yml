@@ -1,0 +1,11 @@
+name: hex_color
+category: value_type
+instantiation: singleton
+description: "Type-safe representation of colors from hex strings with RGBA component extraction"
+defaultPath: "App/Sources/Core/ValueTypes/HexColor"
+requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: domainvaluetype
+      reason: "HexColor adheres to DomainValueType protocol contract"

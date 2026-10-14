@@ -1,0 +1,36 @@
+name: token_refresher
+category: core
+instantiation: singleton
+description: "Actor-isolated single-flight OAuth2/JWT token refresh manager and HTTP request interceptor"
+defaultPath: "App/Sources/Core/Auth"
+baseplates:
+  - swiftui
+requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: keychain
+      reason: "Token refresher requires Keychain for encrypted token credential persistence"
+  optional:
+    - name: network
+      description: "HTTP transport engine for remote token exchange and request retry interceptor"
+    - name: logger
+      description: "Structured logging for token refresh lifecycle and expiration events"
+
+flavors:
+  storageStrategy:
+    prompt: "Select secure credential storage strategy"
+    default: keychain
+    options:
+      - id: keychain
+        title: Keychain Services
+        description: "Native Apple Keychain with kSecAttrAccessibleAfterFirstUnlock"
+      - id: memory
+        title: In-Memory (Ephemeral)
+        description: "In-memory token cache for testing or temporary sessions"
+
+injections:
+  - target: "App/Sources/Core/Network/NetworkService.swift"
+    marker: "// MARK: - SwiftBlock Network Interceptor Hook"
+    content: |
+      request = await {{moduleName}}.shared.adapt(request)

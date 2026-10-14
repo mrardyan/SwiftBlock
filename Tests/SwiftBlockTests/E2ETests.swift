@@ -1,0 +1,604 @@
+import Foundation
+@testable import SwiftBlockCore
+import XCTest
+
+final class E2ETests: XCTestCase {
+    func testE2ETuistSPMCoreAndSPMFeatureMatrix() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("E2E_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let projectPath = tempDir.appendingPathComponent("TuistSPMApp").path
+
+        let config = SwiftBlockConfig(
+            projectName: "TuistSPMApp",
+            bundlePrefix: "com.mycompany",
+            packaging: PackagingConfig(feature: "spm", core: "spm"),
+            organization: "feature-first",
+            generatorTool: .tuist,
+            guardrails: GuardrailsConfig.all,
+            cicd: CICDConfig(provider: .githubActions),
+            gitInit: true
+        )
+
+        let options = ProjectGeneratorOptions(
+            projectName: "TuistSPMApp",
+            bundlePrefix: "com.mycompany",
+            templatePath: "/usr/local/share/swiftblock/Blocks/Projects/BaseProject-SwiftUI",
+            outputPath: projectPath,
+            customConfig: config
+        )
+
+        // 1. Generate Base Project
+        let projectGen = ProjectGenerator()
+
+        // Prepare mock template if share directory does not exist in unit test runner environment
+        let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+        try "// Main App".write(toFile: "\(mockTemplate)/App/Sources/Main.swift", atomically: true, encoding: .utf8)
+
+        var finalOptions = options
+        finalOptions.templatePath = mockTemplate
+
+        try projectGen.generateProject(options: finalOptions)
+
+        // 2. Validate Core SPM package is created with non-empty Swift source
+        let corePackageFile = "\(projectPath)/Packages/Core/Package.swift"
+        let coreSwiftFile = "\(projectPath)/Packages/Core/Sources/Core/Core.swift"
+        XCTAssertTrue(FileManager.default.fileExists(atPath: corePackageFile))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: coreSwiftFile))
+
+        let coreSwiftContent = try String(contentsOfFile: coreSwiftFile, encoding: .utf8)
+        XCTAssertTrue(coreSwiftContent.contains("public struct CoreModule"))
+
+        // 3. Validate Tuist Project.swift manifest
+        let manifestFile = "\(projectPath)/Project.swift"
+        XCTAssertTrue(FileManager.default.fileExists(atPath: manifestFile))
+        let manifestContent = try String(contentsOfFile: manifestFile, encoding: .utf8)
+        XCTAssertTrue(manifestContent.contains("name: \"TuistSPMApp\""))
+        XCTAssertTrue(manifestContent.contains("bundleId: \"com.mycompany.TuistSPMApp\""))
+        XCTAssertTrue(manifestContent.contains("Packages/Core"))
+
+        // 4. Validate Environment Setup Files
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/Makefile"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.mise.toml"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/Scripts/setup.sh"))
+
+        // 5. Validate Guardrail configs
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.swiftlint.yml"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.swiftformat"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.pre-commit-config.yaml"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.periphery.yml"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/Dangerfile.swift"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/swiftgen.yml"))
+
+        // 6. Validate CI/CD pipeline
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.github/workflows/ci.yml"))
+
+        // 7. Validate Git repository
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.git"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.gitignore"))
+
+        // 8. Test adding a Feature Brick (Scene)
+        let brickGen = BrickGenerator()
+
+        let mockModuleTemplate = tempDir.appendingPathComponent("MockModuleTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockModuleTemplate)/Scene", withIntermediateDirectories: true)
+        try "// Scene View".write(toFile: "\(mockModuleTemplate)/Scene/__MODULE_NAME__View.swift", atomically: true, encoding: .utf8)
+
+        let brickOptions = BrickGeneratorOptions(
+            type: .scene,
+            name: "Home",
+            projectRootPath: projectPath,
+            modulesTemplatePath: mockModuleTemplate
+        )
+        let generatedBrickPath = try brickGen.generateBrick(options: brickOptions)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: generatedBrickPath))
+
+        // Validate SPM feature package if SPM strategy selected
+        let pkgGen = LocalPackageGenerator()
+        try pkgGen.generateFeaturePackage(moduleName: "Home", in: projectPath, config: config)
+        let featureSwiftFile = "\(projectPath)/Packages/HomeFeature/Sources/HomeFeature/HomeFeature.swift"
+        XCTAssertTrue(FileManager.default.fileExists(atPath: featureSwiftFile))
+    }
+
+    func testE2EXcodeGenMonolithicMatrix() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("E2E_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let projectPath = tempDir.appendingPathComponent("XcodeGenMonoApp").path
+
+        let config = SwiftBlockConfig(
+            projectName: "XcodeGenMonoApp",
+            bundlePrefix: "com.testorg",
+            packaging: PackagingConfig(feature: "monolithic", core: "monolithic"),
+            organization: "technical-first",
+            generatorTool: .xcodegen,
+            guardrails: GuardrailsConfig(
+                swiftlint: true,
+                swiftformat: true,
+                precommit: false,
+                periphery: false,
+                gitleaks: false,
+                danger: false,
+                swiftgen: false,
+                licenseplist: false
+            ),
+            cicd: CICDConfig(provider: .xcodeCloud),
+            gitInit: false
+        )
+
+        let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+        try "// Main App".write(toFile: "\(mockTemplate)/App/Sources/Main.swift", atomically: true, encoding: .utf8)
+
+        let options = ProjectGeneratorOptions(
+            projectName: "XcodeGenMonoApp",
+            bundlePrefix: "com.testorg",
+            templatePath: mockTemplate,
+            outputPath: projectPath,
+            customConfig: config
+        )
+
+        let projectGen = ProjectGenerator()
+        try projectGen.generateProject(options: options)
+
+        // 1. Validate XcodeGen project.yml
+        let projectYml = "\(projectPath)/project.yml"
+        XCTAssertTrue(FileManager.default.fileExists(atPath: projectYml))
+        let content = try String(contentsOfFile: projectYml, encoding: .utf8)
+        XCTAssertTrue(content.contains("name: XcodeGenMonoApp"))
+        XCTAssertTrue(content.contains("bundleIdPrefix: com.testorg"))
+
+        // 2. Validate Xcode Cloud CI script
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/ci_scripts/ci_post_clone.sh"))
+
+        // 3. Validate selective guardrails (.swiftlint.yml present, Dangerfile.swift absent)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.swiftlint.yml"))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: "\(projectPath)/Dangerfile.swift"))
+
+        // 4. Validate gitInit == false
+        XCTAssertFalse(FileManager.default.fileExists(atPath: "\(projectPath)/.git"))
+    }
+
+    func testE2EKitCreationAndExecutionMatrix() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("E2E_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let projectPath = tempDir.appendingPathComponent("KitApp").path
+
+        // 1. Initialize project & config
+        var config = SwiftBlockConfig(
+            projectName: "KitApp",
+            bundlePrefix: "com.testorg",
+            packaging: PackagingConfig(feature: "monolithic", core: "monolithic"),
+            organization: "feature-first",
+            generatorTool: .tuist
+        )
+
+        let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+        try "// Main App".write(toFile: "\(mockTemplate)/App/Sources/Main.swift", atomically: true, encoding: .utf8)
+
+        let mockModuleTemplate = tempDir.appendingPathComponent("MockModuleTemplate").path
+        let blockTypes = ["Scene", "Usecase", "Repository", "Service", "Mapper"]
+        for block in blockTypes {
+            try FileManager.default.createDirectory(atPath: "\(mockModuleTemplate)/\(block)", withIntermediateDirectories: true)
+            try "// \(block)".write(toFile: "\(mockModuleTemplate)/\(block)/__MODULE_NAME__\(block).swift", atomically: true, encoding: .utf8)
+        }
+
+        let options = ProjectGeneratorOptions(
+            projectName: "KitApp",
+            bundlePrefix: "com.testorg",
+            templatePath: mockTemplate,
+            outputPath: projectPath,
+            customConfig: config
+        )
+
+        let projectGen = ProjectGenerator()
+        try projectGen.generateProject(options: options)
+
+        // 2. Add and save a custom kit to .swiftblock
+        config.kits["custom_auth"] = ["scene", "usecase", "service"]
+        try config.save(to: projectPath)
+
+        let loadedConfig = try SwiftBlockConfig.load(from: projectPath)
+        XCTAssertEqual(loadedConfig.kits["custom_auth"], ["scene", "usecase", "service"])
+        XCTAssertEqual(loadedConfig.kits["feature"], ["scene", "usecase", "repository", "mapper"])
+
+        // 3. Execute custom kit 'custom_auth' for module 'Auth'
+        let engine = KitEngine()
+        let resultAuth = try engine.executeKit(
+            name: "custom_auth",
+            moduleName: "Auth",
+            config: loadedConfig,
+            templatePath: mockModuleTemplate,
+            projectPath: projectPath
+        )
+
+        XCTAssertEqual(resultAuth.kitName, "custom_auth")
+        XCTAssertEqual(resultAuth.moduleName, "Auth")
+        XCTAssertEqual(resultAuth.generatedBricks, [.scene, .usecase, .service])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/auth/scene/AuthScene.swift"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/auth/usecase/AuthUsecase.swift"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/auth/service/AuthService.swift"))
+
+        // 4. Execute built-in kit 'feature' for module 'Settings'
+        let resultSettings = try engine.executeKit(
+            name: "feature",
+            moduleName: "Settings",
+            config: loadedConfig,
+            templatePath: mockModuleTemplate,
+            projectPath: projectPath
+        )
+
+        XCTAssertEqual(resultSettings.kitName, "feature")
+        XCTAssertEqual(resultSettings.moduleName, "Settings")
+        XCTAssertEqual(resultSettings.generatedBricks, [.scene, .usecase, .repository, .mapper])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/scene/SettingsScene.swift"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/usecase/SettingsUsecase.swift"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/repository/SettingsRepository.swift"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/App/Sources/Features/settings/mapper/SettingsMapper.swift"))
+    }
+
+    func testE2EWizardMatrixFullPermutations() throws {
+        let ciProviders: [CICDProvider] = [.githubActions, .gitlabCI, .bitrise, .xcodeCloud, .none]
+        let buildTools: [ProjectGeneratorTool] = [.tuist, .xcodegen]
+        let orgStrategies = ["feature-first", "technical-first"]
+
+        for tool in buildTools {
+            for provider in ciProviders {
+                for org in orgStrategies {
+                    let tempDir = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("E2E_Matrix_\(UUID().uuidString)", isDirectory: true)
+                    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+                    defer {
+                        try? FileManager.default.removeItem(at: tempDir)
+                    }
+
+                    let projName = "MatrixApp"
+                    let projectPath = tempDir.appendingPathComponent(projName).path
+
+                    let config = SwiftBlockConfig(
+                        projectName: projName,
+                        bundlePrefix: "com.matrix",
+                        packaging: PackagingConfig(feature: "spm", core: "spm"),
+                        organization: org,
+                        generatorTool: tool,
+                        guardrails: GuardrailsConfig.all,
+                        cicd: CICDConfig(provider: provider),
+                        gitInit: true
+                    )
+
+                    let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+                    try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+                    try "// Main App".write(toFile: "\(mockTemplate)/App/Sources/Main.swift", atomically: true, encoding: .utf8)
+                    try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Tests", withIntermediateDirectories: true)
+                    try "// Test".write(toFile: "\(mockTemplate)/App/Tests/__PROJECT_NAME__Tests.swift", atomically: true, encoding: .utf8)
+
+                    let options = ProjectGeneratorOptions(
+                        projectName: projName,
+                        bundlePrefix: "com.matrix",
+                        templatePath: mockTemplate,
+                        outputPath: projectPath,
+                        customConfig: config
+                    )
+
+                    let projectGen = ProjectGenerator()
+                    try projectGen.generateProject(options: options)
+
+                    // 1. Verify Manifest
+                    if tool == .tuist {
+                        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/Project.swift"))
+                    } else {
+                        XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/project.yml"))
+                    }
+
+                    // 2. Verify CI/CD
+                    switch provider {
+                        case .githubActions:
+                            XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.github/workflows/ci.yml"))
+                        case .gitlabCI:
+                            XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/.gitlab-ci.yml"))
+                        case .bitrise:
+                            XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/bitrise.yml"))
+                        case .xcodeCloud:
+                            XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/ci_scripts/ci_post_clone.sh"))
+                        case .none:
+                            XCTAssertFalse(FileManager.default.fileExists(atPath: "\(projectPath)/.github/workflows/ci.yml"))
+                            XCTAssertFalse(FileManager.default.fileExists(atPath: "\(projectPath)/.gitlab-ci.yml"))
+                            XCTAssertFalse(FileManager.default.fileExists(atPath: "\(projectPath)/bitrise.yml"))
+                            XCTAssertFalse(FileManager.default.fileExists(atPath: "\(projectPath)/ci_scripts/ci_post_clone.sh"))
+                    }
+
+                    // 3. Verify .swiftblock config
+                    let loaded = try SwiftBlockConfig.load(from: projectPath)
+                    XCTAssertEqual(loaded.projectName, projName)
+                    XCTAssertEqual(loaded.generatorTool, tool)
+                    XCTAssertEqual(loaded.cicd.provider, provider)
+                    XCTAssertEqual(loaded.organization, org)
+
+                    // 4. Verify starter unit test file
+                    XCTAssertTrue(FileManager.default.fileExists(atPath: "\(projectPath)/App/Tests/MatrixAppTests.swift"))
+                }
+            }
+        }
+    }
+
+    func testE2ENewWizardAndTestFrameworkTranspilation() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("E2E_Wizard_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        // 1. Run InteractiveWizard with Swift Testing option (choice '2' for Swift Testing)
+        var inputsSwiftTesting = ["1", "SwiftTestingApp", "com.test", "1", "1", "1", "1", "y", "1", "2", "y", "y"]
+        let optionsSwiftTesting = try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
+            inputsSwiftTesting.isEmpty ? nil : inputsSwiftTesting.removeFirst()
+        })
+        XCTAssertEqual(optionsSwiftTesting.customConfig?.testFramework, .swiftTesting)
+
+        // 2. Run InteractiveWizard with XCTest option (choice '1' for XCTest)
+        var inputsXCTest = ["1", "XCTestApp", "com.test", "1", "1", "1", "1", "y", "1", "1", "y", "y"]
+        let optionsXCTest = try InteractiveWizard.runProjectWizard(defaultTemplatePath: "/tmp/template", readLine: {
+            inputsXCTest.isEmpty ? nil : inputsXCTest.removeFirst()
+        })
+        XCTAssertEqual(optionsXCTest.customConfig?.testFramework, .xctest)
+
+        // 3. Test Brick Generation with Swift Testing transpilation
+        let projectPath = tempDir.appendingPathComponent("SwiftTestingApp").path
+        let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+        try "// Main App".write(toFile: "\(mockTemplate)/App/Sources/Main.swift", atomically: true, encoding: .utf8)
+
+        var projOpts = optionsSwiftTesting
+        projOpts.templatePath = mockTemplate
+        projOpts.outputPath = projectPath
+
+        let projectGen = ProjectGenerator()
+        try projectGen.generateProject(options: projOpts)
+
+        // Snap a brick into SwiftTestingApp
+        let mockModuleTemplate = tempDir.appendingPathComponent("MockModuleTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockModuleTemplate)/Scene", withIntermediateDirectories: true)
+        try "// Scene View".write(toFile: "\(mockModuleTemplate)/Scene/__MODULE_NAME__View.swift", atomically: true, encoding: .utf8)
+        let sampleTestContent = """
+        import XCTest
+        @testable import App
+
+        final class __MODULE_NAME__Tests: XCTestCase {
+            func testExample() {
+                XCTAssertEqual(1, 1)
+            }
+        }
+        """
+        try sampleTestContent.write(toFile: "\(mockModuleTemplate)/Scene/__MODULE_NAME__Tests.swift", atomically: true, encoding: .utf8)
+
+        let brickGen = BrickGenerator()
+        let brickOptions = BrickGeneratorOptions(
+            type: .scene,
+            name: "Profile",
+            projectRootPath: projectPath,
+            modulesTemplatePath: mockModuleTemplate
+        )
+        try brickGen.generateBrick(options: brickOptions)
+
+        let generatedTestPath = "\(projectPath)/App/Tests/Features/profile/scene/ProfileTests.swift"
+        XCTAssertTrue(FileManager.default.fileExists(atPath: generatedTestPath))
+
+        let testContent = try String(contentsOfFile: generatedTestPath, encoding: .utf8)
+        XCTAssertTrue(testContent.contains("import Testing"))
+        XCTAssertTrue(testContent.contains("@Suite struct ProfileTests"))
+        XCTAssertTrue(testContent.contains("@Test func testExample()"))
+        XCTAssertTrue(testContent.contains("#expect(1 == 1)"))
+    }
+
+    func testE2EAutoIntegrationInjectedIntoContainerAndCoordinator() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("E2E_Injection_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let projectPath = tempDir.appendingPathComponent("InjectionApp").path
+        let config = SwiftBlockConfig(projectName: "InjectionApp", bundlePrefix: "com.test", coreBlocks: [])
+
+        let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+
+        let depContainerContent = """
+        import SwiftUI
+
+        public final class DependencyContainer {
+            public func setupDependencies() {
+                // MARK: - SwiftBlock Dependency Injection Marker
+            }
+        }
+        """
+        try depContainerContent.write(toFile: "\(mockTemplate)/App/Sources/DependencyContainer.swift", atomically: true, encoding: .utf8)
+
+        let appCoordinatorContent = """
+        import SwiftUI
+
+        public enum AppRoute: Hashable {
+            // MARK: - SwiftBlock Route Enum Marker
+            case home
+        }
+        """
+        try appCoordinatorContent.write(toFile: "\(mockTemplate)/App/Sources/AppCoordinator.swift", atomically: true, encoding: .utf8)
+
+        let projOpts = ProjectGeneratorOptions(
+            projectName: "InjectionApp",
+            bundlePrefix: "com.test",
+            templatePath: mockTemplate,
+            outputPath: projectPath,
+            customConfig: config
+        )
+        let projectGen = ProjectGenerator()
+        try projectGen.generateProject(options: projOpts)
+
+        // Snap Scene brick (which has injections configured in brick.yml)
+        let brickGen = BrickGenerator()
+        let brickOptions = BrickGeneratorOptions(
+            type: .scene,
+            name: "Checkout",
+            projectRootPath: projectPath,
+            modulesTemplatePath: "\(FileManager.default.currentDirectoryPath)/Bricks/Feature/Scene"
+        )
+        try brickGen.generateBrick(options: brickOptions)
+
+        let updatedContainer = try String(contentsOfFile: "\(projectPath)/App/Sources/DependencyContainer.swift", encoding: .utf8)
+        let updatedCoordinator = try String(contentsOfFile: "\(projectPath)/App/Sources/AppCoordinator.swift", encoding: .utf8)
+
+        XCTAssertTrue(updatedContainer.contains("register(CheckoutViewModel.self)"))
+        XCTAssertTrue(updatedCoordinator.contains("case checkout"))
+    }
+
+    func testE2EConditionalCodegenAndFlavorResolution() throws {
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("E2E_Flavor_\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer {
+            try? FileManager.default.removeItem(at: tempDir)
+        }
+
+        let projectPath = tempDir.appendingPathComponent("FlavorApp").path
+        let config = SwiftBlockConfig(projectName: "FlavorApp", bundlePrefix: "com.test", coreBlocks: [])
+        let mockTemplate = tempDir.appendingPathComponent("MockTemplate").path
+        try FileManager.default.createDirectory(atPath: "\(mockTemplate)/App/Sources", withIntermediateDirectories: true)
+        try "// Main App".write(toFile: "\(mockTemplate)/App/Sources/Main.swift", atomically: true, encoding: .utf8)
+
+        let projOpts = ProjectGeneratorOptions(
+            projectName: "FlavorApp",
+            bundlePrefix: "com.test",
+            templatePath: mockTemplate,
+            outputPath: projectPath,
+            customConfig: config
+        )
+        let projectGen = ProjectGenerator()
+        try projectGen.generateProject(options: projOpts)
+
+        // Create a flavored brick template with conditional blocks and protocol dependencies
+        let sceneTemplate = tempDir.appendingPathComponent("FlavoredScene", isDirectory: true).path
+        try FileManager.default.createDirectory(atPath: sceneTemplate, withIntermediateDirectories: true)
+
+        let manifest = """
+        name: flavoredscene
+        category: feature
+        instantiation: generative
+        defaultPath: App/Sources/Features
+        dependencies:
+          mandatory:
+            - name: transforming
+              reason: "FlavoredScene requires Transforming protocol"
+          optional:
+            - name: logger
+              description: "Scene logging"
+        flavors:
+          stateStyle:
+            prompt: Select state style
+            default: observable
+            options:
+              - id: observable
+                title: @Observable
+                variables:
+                  usesObservation: true
+              - id: combine
+                title: ObservableObject
+                variables:
+                  usesObservation: false
+        """
+        try manifest.write(toFile: "\(sceneTemplate)/brick.yml", atomically: true, encoding: .utf8)
+
+        let viewModelTemplate = """
+        import Foundation
+        {{#if stateStyle == 'observable'}}
+        import Observation
+        @Observable
+        public final class __MODULE_NAME__ViewModel {
+            public private(set) var state: Int = 0
+        }
+        {{else}}
+        import Combine
+        public final class __MODULE_NAME__ViewModel: ObservableObject {
+            @Published public private(set) var state: Int = 0
+        }
+        {{/if}}
+        """
+        try viewModelTemplate.write(toFile: "\(sceneTemplate)/__MODULE_NAME__ViewModel.swift", atomically: true, encoding: .utf8)
+
+        // Create the transforming dependency template it requires
+        let transformingTemplate = tempDir.appendingPathComponent("Transforming", isDirectory: true).path
+        try FileManager.default.createDirectory(atPath: transformingTemplate, withIntermediateDirectories: true)
+        let transformingManifest = """
+        name: transforming
+        category: core
+        instantiation: singleton
+        defaultPath: App/Sources/Core/Protocols
+        """
+        try transformingManifest.write(toFile: "\(transformingTemplate)/brick.yml", atomically: true, encoding: .utf8)
+        try "public protocol Transforming<Source, Target> {}".write(toFile: "\(transformingTemplate)/__MODULE_NAME__.swift", atomically: true, encoding: .utf8)
+
+        // Resolve flavor through the resolver
+        let discovery = BrickDiscoveryEngine()
+        let resolvedPath = discovery.resolveBrickPath(named: "flavoredscene", in: tempDir.path)
+        XCTAssertNotNil(resolvedPath)
+        let manifestLoaded = BrickManifest.load(fromPath: resolvedPath!)
+        XCTAssertNotNil(manifestLoaded)
+
+        let flavorResult = FlavorResolver.resolve(
+            manifest: manifestLoaded!,
+            selections: ["stateStyle": "combine"]
+        )
+        XCTAssertEqual(flavorResult.variables["stateStyle"], "combine")
+        XCTAssertEqual(flavorResult.variables["usesObservation"], "false")
+
+        // Generate the brick with resolved flavor variables
+        let brickGen = BrickGenerator()
+        let brickOptions = BrickGeneratorOptions(
+            type: Brick(rawValue: "flavoredscene"),
+            name: "Profile",
+            projectRootPath: projectPath,
+            modulesTemplatePath: resolvedPath!,
+            isDryRun: false,
+            variables: flavorResult.variables
+        )
+        _ = try brickGen.generateBrick(options: brickOptions)
+
+        let generatedVM = try String(contentsOfFile: "\(projectPath)/App/Sources/Features/Profile/ProfileViewModel.swift", encoding: .utf8)
+        XCTAssertTrue(generatedVM.contains("import Combine"))
+        XCTAssertTrue(generatedVM.contains("ObservableObject"))
+        XCTAssertFalse(generatedVM.contains("@Observable"))
+
+        // Default flavor resolution (no selection) produces @Observable variant
+        let defaultResult = FlavorResolver.resolve(manifest: manifestLoaded!, selections: [:])
+        let defaultOptions = BrickGeneratorOptions(
+            type: Brick(rawValue: "flavoredscene"),
+            name: "Settings",
+            projectRootPath: projectPath,
+            modulesTemplatePath: resolvedPath!,
+            isDryRun: false,
+            variables: defaultResult.variables
+        )
+        _ = try brickGen.generateBrick(options: defaultOptions)
+
+        let generatedDefaultVM = try String(contentsOfFile: "\(projectPath)/App/Sources/Features/Settings/SettingsViewModel.swift", encoding: .utf8)
+        XCTAssertTrue(generatedDefaultVM.contains("import Observation"))
+        XCTAssertTrue(generatedDefaultVM.contains("@Observable"))
+        XCTAssertFalse(generatedDefaultVM.contains("ObservableObject"))
+    }
+}

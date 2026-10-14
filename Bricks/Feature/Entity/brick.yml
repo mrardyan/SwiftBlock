@@ -1,0 +1,6 @@
+name: entity
+category: architecture
+instantiation: generative
+description: "Domain Entity model / DTO"
+defaultPath: "App/Sources/Features"
+requiresNameArgument: true

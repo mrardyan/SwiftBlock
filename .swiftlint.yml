@@ -1,0 +1,80 @@
+# SwiftLint configuration for SwiftBlock
+# Run: swiftlint lint  |  swiftlint --fix
+
+included:
+  - Sources
+  - Tests
+
+excluded:
+  - .build
+  - Baseplates
+  - Bricks
+  - .swiftpm
+
+# Project uses a 160-character line budget in generators and templates.
+line_length:
+  warning: 160
+  error: 200
+  ignores_urls: true
+  ignores_comments: true
+
+# CLI generator/parser/wizard functions are inherently long; set generous limits so
+# the whole codebase passes without inline `swiftlint:disable` opt-outs.
+function_body_length:
+  warning: 160
+  error: 250
+
+cyclomatic_complexity:
+  warning: 30
+  error: 45
+
+type_name:
+  min_length: 3
+  max_length:
+    warning: 60
+    error: 80
+
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  max_length:
+    warning: 60
+    error: 80
+  excluded:
+    - id
+    - x
+    - y
+    - z
+    - t
+    - i
+    - j
+    - k
+    - v
+
+opt_in_rules:
+  - empty_count
+  - closure_end_indentation
+  - empty_string
+  - sorted_imports
+  - unused_optional_binding
+  - redundant_nil_coalescing
+  - contains_over_filter_count
+  - first_where
+
+disabled_rules:
+  - trailing_whitespace
+  - vertical_whitespace
+  - nesting
+  - force_cast
+  - force_try
+  - type_body_length
+  - file_length
+  - function_parameter_count
+  - private_outlet
+  # Project consistently indents `case` under `switch`.
+  - switch_case_alignment
+  # SwiftFormat owns formatting (trailing commas, brace placement); keep SwiftLint
+  # focused on correctness rules rather than fighting the formatter.
+  - trailing_comma
+  - opening_brace

@@ -1,0 +1,71 @@
+import Foundation
+
+/// Application build environment.
+public enum AppEnvironment: String, CaseIterable {
+    case development
+    case staging
+    case production
+
+    /// Active environment resolved from Info.plist (`APP_ENVIRONMENT`) or compiler flags.
+    public static var current: AppEnvironment {
+        guard let envString = Bundle.main.object(forInfoDictionaryKey: "APP_ENVIRONMENT") as? String,
+              let env = AppEnvironment(rawValue: envString.lowercased()) else {
+            #if DEBUG
+            return .development
+            #else
+            return .production
+            #endif
+        }
+        return env
+    }
+}
+
+/// Interface for accessing application configuration values.
+public protocol Configuring {
+    var environment: AppEnvironment { get }
+    var baseURL: URL { get }
+    var apiKey: String { get }
+    func isFeatureEnabled(_ key: String) -> Bool
+    func value(for key: String) -> String?
+}
+
+/// Configuration manager that reads settings from `Bundle.main` and `.xcconfig`.
+public final class __MODULE_NAME__: Configuring {
+    public let environment: AppEnvironment
+    private let bundle: Bundle
+    private var featureFlags: [String: Bool]
+
+    public init(
+        environment: AppEnvironment = AppEnvironment.current,
+        bundle: Bundle = .main,
+        featureFlags: [String: Bool] = [:]
+    ) {
+        self.environment = environment
+        self.bundle = bundle
+        self.featureFlags = featureFlags
+    }
+
+    public var baseURL: URL {
+        guard let urlString = value(for: "BASE_URL"), let url = URL(string: urlString) else {
+            switch environment {
+            case .development: return URL(string: "https://dev-api.example.com")!
+            case .staging:     return URL(string: "https://staging-api.example.com")!
+            case .production:  return URL(string: "https://api.example.com")!
+            }
+        }
+        return url
+    }
+
+    public var apiKey: String {
+        value(for: "API_KEY") ?? ""
+    }
+
+    public func isFeatureEnabled(_ key: String) -> Bool {
+        featureFlags[key] ?? false
+    }
+
+    public func value(for key: String) -> String? {
+        guard let object = bundle.object(forInfoDictionaryKey: key) else { return nil }
+        return (object as? String)?.replacingOccurrences(of: "\\", with: "")
+    }
+}

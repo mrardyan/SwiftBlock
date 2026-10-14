@@ -1,0 +1,7 @@
+name: Stack
+description: Last-In-First-Out (LIFO) stack data structure with push, pop, and peek operations.
+type: singleton
+category: utils/datastructure/stack
+options:
+  name: Stack
+defaultPath: "App/Sources/Core/DataStructures/Stack"

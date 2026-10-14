@@ -1,0 +1,7 @@
+name: CircuitBreaker
+description: 3-state (Closed, Open, HalfOpen) circuit breaker pattern for remote service fault tolerance.
+type: singleton
+category: utils/algorithm/circuitbreaker
+options:
+  name: CircuitBreaker
+defaultPath: "App/Sources/Core/Algorithms/CircuitBreaker"
