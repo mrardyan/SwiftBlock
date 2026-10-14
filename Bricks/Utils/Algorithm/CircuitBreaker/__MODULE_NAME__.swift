@@ -28,6 +28,7 @@ public final class __MODULE_NAME__: @unchecked Sendable {
     private var state: State = .closed
     private var failureCount = 0
     private var successCount = 0
+    private var activeProbes = 0
     private var lastStateChangeTimestamp: TimeInterval
     private let lock = NSLock()
 
@@ -55,16 +56,27 @@ public final class __MODULE_NAME__: @unchecked Sendable {
         return state
     }
 
-    private func canExecute() -> Bool {
+    private func tryAcquireExecution() -> Bool {
         lock.lock()
         defer { lock.unlock() }
         evaluateStateTransition()
-        return state != .open
+        switch state {
+        case .closed:
+            return true
+        case .open:
+            return false
+        case .halfOpen:
+            if activeProbes < halfOpenSuccessThreshold {
+                activeProbes += 1
+                return true
+            }
+            return false
+        }
     }
 
     /// Runs a throwing async operation protected by the circuit breaker.
     public func execute<T: Sendable>(_ operation: @Sendable () async throws -> T) async throws -> T {
-        guard canExecute() else {
+        guard tryAcquireExecution() else {
             throw CircuitBreakerError.circuitOpen
         }
 
@@ -73,7 +85,7 @@ public final class __MODULE_NAME__: @unchecked Sendable {
             onSuccess()
             return result
         } catch {
-            onFailure()
+            onFailure(error: error)
             throw error
         }
     }
@@ -84,6 +96,7 @@ public final class __MODULE_NAME__: @unchecked Sendable {
             if now - lastStateChangeTimestamp >= resetTimeout {
                 state = .halfOpen
                 successCount = 0
+                activeProbes = 0
                 lastStateChangeTimestamp = now
             }
         }
@@ -94,11 +107,13 @@ public final class __MODULE_NAME__: @unchecked Sendable {
         defer { lock.unlock() }
 
         if state == .halfOpen {
+            activeProbes = max(0, activeProbes - 1)
             successCount += 1
             if successCount >= halfOpenSuccessThreshold {
                 state = .closed
                 failureCount = 0
                 successCount = 0
+                activeProbes = 0
                 lastStateChangeTimestamp = ProcessInfo.processInfo.systemUptime
             }
         } else if state == .closed {
@@ -106,11 +121,21 @@ public final class __MODULE_NAME__: @unchecked Sendable {
         }
     }
 
-    private func onFailure() {
+    private func onFailure(error: Error) {
+        if error is CancellationError {
+            lock.lock()
+            defer { lock.unlock() }
+            if state == .halfOpen {
+                activeProbes = max(0, activeProbes - 1)
+            }
+            return
+        }
+
         lock.lock()
         defer { lock.unlock() }
 
         if state == .halfOpen {
+            activeProbes = 0
             state = .open
             lastStateChangeTimestamp = ProcessInfo.processInfo.systemUptime
         } else if state == .closed {
@@ -129,6 +154,7 @@ public final class __MODULE_NAME__: @unchecked Sendable {
         state = .closed
         failureCount = 0
         successCount = 0
+        activeProbes = 0
         lastStateChangeTimestamp = ProcessInfo.processInfo.systemUptime
     }
 }

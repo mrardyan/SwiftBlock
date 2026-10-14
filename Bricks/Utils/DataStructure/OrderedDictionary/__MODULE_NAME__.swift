@@ -85,3 +85,16 @@ public struct __MODULE_NAME__<Key: Hashable & Sendable, Value: Sendable>: Sendab
         return pairs.makeIterator()
     }
 }
+
+// MARK: - Equatable Conformance
+extension __MODULE_NAME__: Equatable where Value: Equatable {
+    public static func == (lhs: __MODULE_NAME__, rhs: __MODULE_NAME__) -> Bool {
+        guard lhs.orderedKeys == rhs.orderedKeys else { return false }
+        for key in lhs.orderedKeys {
+            if lhs.values[key] != rhs.values[key] {
+                return false
+            }
+        }
+        return true
+    }
+}

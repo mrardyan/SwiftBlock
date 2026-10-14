@@ -23,6 +23,14 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, CustomStr
         var cleaned = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if cleaned.hasPrefix("#") { cleaned.removeFirst() }
 
+        if cleaned.count == 3 {
+            let chars = Array(cleaned)
+            cleaned = String([chars[0], chars[0], chars[1], chars[1], chars[2], chars[2]])
+        } else if cleaned.count == 4 {
+            let chars = Array(cleaned)
+            cleaned = String([chars[0], chars[0], chars[1], chars[1], chars[2], chars[2], chars[3], chars[3]])
+        }
+
         var hexValue: UInt64 = 0
         guard Scanner(string: cleaned).scanHexInt64(&hexValue) else {
             throw HexColorError.invalidHexString(hex)
@@ -50,11 +58,11 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, CustomStr
 
     /// Hex string representation (e.g. "#FF5733").
     public var hexString: String {
-        let r = Int(red * 255)
-        let g = Int(green * 255)
-        let b = Int(blue * 255)
+        let r = Int((red * 255.0).rounded())
+        let g = Int((green * 255.0).rounded())
+        let b = Int((blue * 255.0).rounded())
         if alpha < 1.0 {
-            let a = Int(alpha * 255)
+            let a = Int((alpha * 255.0).rounded())
             return String(format: "#%02X%02X%02X%02X", r, g, b, a)
         }
         return String(format: "#%02X%02X%02X", r, g, b)
@@ -66,6 +74,6 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, CustomStr
 
     /// RGB integer tuple (0-255).
     public var rgb: (r: Int, g: Int, b: Int) {
-        (Int(red * 255), Int(green * 255), Int(blue * 255))
+        (Int((red * 255.0).rounded()), Int((green * 255.0).rounded()), Int((blue * 255.0).rounded()))
     }
 }

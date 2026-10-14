@@ -24,6 +24,10 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, Comparabl
         self.bytes = max(0, Int64(megabytes * 1_048_576.0))
     }
 
+    public init(clampedBytes: Int64) {
+        self.bytes = max(0, clampedBytes)
+    }
+
     public init(integerLiteral value: Int) {
         self.bytes = max(0, Int64(value))
     }
@@ -48,7 +52,8 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, Comparabl
     }
 
     public static func + (lhs: __MODULE_NAME__, rhs: __MODULE_NAME__) -> __MODULE_NAME__ {
-        __MODULE_NAME__(integerLiteral: Int(lhs.bytes + rhs.bytes))
+        let sum = lhs.bytes.addingReportingOverflow(rhs.bytes)
+        return __MODULE_NAME__(clampedBytes: sum.overflow ? Int64.max : sum.partialValue)
     }
 
     public static func - (lhs: __MODULE_NAME__, rhs: __MODULE_NAME__) throws -> __MODULE_NAME__ {

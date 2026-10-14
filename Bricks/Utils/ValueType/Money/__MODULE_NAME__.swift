@@ -57,7 +57,9 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, Comparabl
     }
 
     public static func < (lhs: __MODULE_NAME__, rhs: __MODULE_NAME__) -> Bool {
-        guard lhs.currency == rhs.currency else { return false }
+        if lhs.currency != rhs.currency {
+            return lhs.currency < rhs.currency
+        }
         return lhs.amount < rhs.amount
     }
 }

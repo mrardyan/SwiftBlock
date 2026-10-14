@@ -25,7 +25,8 @@ public enum __MODULE_NAME__: Sendable {
                 cos(lat1Rad) * cos(lat2Rad) *
                 sin(deltaLonRad / 2.0) * sin(deltaLonRad / 2.0)
 
-        let c = 2.0 * atan2(sqrt(a), sqrt(1.0 - a))
+        let clampedA = min(1.0, max(0.0, a))
+        let c = 2.0 * atan2(sqrt(clampedA), sqrt(1.0 - clampedA))
         return earthRadiusMeters * c
     }
 
@@ -40,13 +41,13 @@ public enum __MODULE_NAME__: Sendable {
         let radians = atan2(y, x)
         let degrees = radians * 180.0 / .pi
 
-        return fmod((degrees + 360.0), 360.0)
+        return fmod(fmod(degrees, 360.0) + 360.0, 360.0)
     }
 
     /// Converts a numerical bearing in degrees to a standard 8-wind or 16-wind compass direction (e.g. "N", "NE", "SSW").
     public static func compassHeading(forBearing degrees: Double) -> String {
         let directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
-        let normalized = fmod((degrees + 360.0), 360.0)
+        let normalized = fmod(fmod(degrees, 360.0) + 360.0, 360.0)
         let index = Int(round(normalized / 22.5)) % 16
         return directions[index]
     }

@@ -20,6 +20,25 @@ public struct __MODULE_NAME__<Value: Numeric & Comparable & Hashable & Codable &
         self.value = max(0, value)
     }
 
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let val = try container.decode(Value.self)
+        guard val >= 0 else {
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "Expected non-negative value, but found \(val)"
+                )
+            )
+        }
+        self.value = val
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(value)
+    }
+
     public static func < (lhs: __MODULE_NAME__<Value>, rhs: __MODULE_NAME__<Value>) -> Bool {
         lhs.value < rhs.value
     }

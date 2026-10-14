@@ -7,7 +7,7 @@ import Foundation
 public final class __MODULE_NAME__: @unchecked Sendable {
     private let interval: TimeInterval
     private let latestOnly: Bool
-    private var lastExecutionTime: Date?
+    private var lastExecutionUptime: TimeInterval?
     private var pendingTask: Task<Void, Never>?
     private let lock = NSLock()
 
@@ -16,7 +16,7 @@ public final class __MODULE_NAME__: @unchecked Sendable {
     ///   - interval: Minimum time between executions in seconds.
     ///   - latestOnly: If true, schedules the most recent suppressed call to execute when the interval expires.
     public init(interval: TimeInterval, latestOnly: Bool = true) {
-        self.interval = interval
+        self.interval = max(0, interval)
         self.latestOnly = latestOnly
     }
 
@@ -25,11 +25,11 @@ public final class __MODULE_NAME__: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
 
-        let now = Date()
-        let elapsed = now.timeIntervalSince(lastExecutionTime ?? .distantPast)
+        let now = ProcessInfo.processInfo.systemUptime
+        let elapsed = lastExecutionUptime.map { now - $0 } ?? interval
 
         if elapsed >= interval {
-            lastExecutionTime = now
+            lastExecutionUptime = now
             pendingTask?.cancel()
             pendingTask = nil
             Task {
@@ -37,14 +37,14 @@ public final class __MODULE_NAME__: @unchecked Sendable {
             }
         } else if latestOnly {
             pendingTask?.cancel()
-            let remaining = interval - elapsed
+            let remaining = max(0, interval - elapsed)
             let remainingNanos = UInt64(remaining * 1_000_000_000)
 
             pendingTask = Task {
                 do {
                     try await Task.sleep(nanoseconds: remainingNanos)
                     guard !Task.isCancelled else { return }
-                    self.updateLastExecutionTime(Date())
+                    self.updateLastExecutionUptime(ProcessInfo.processInfo.systemUptime)
                     await action()
                 } catch {
                     // Cancelled
@@ -60,11 +60,10 @@ public final class __MODULE_NAME__: @unchecked Sendable {
         }
     }
 
-
-    private func updateLastExecutionTime(_ date: Date) {
+    private func updateLastExecutionUptime(_ uptime: TimeInterval) {
         lock.lock()
         defer { lock.unlock() }
-        lastExecutionTime = date
+        lastExecutionUptime = uptime
     }
 
     /// Cancels any scheduled trailing action.

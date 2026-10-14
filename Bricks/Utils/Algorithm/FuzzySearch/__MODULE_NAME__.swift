@@ -40,7 +40,7 @@ public enum __MODULE_NAME__: Sendable {
                 if targetIdx == 0 {
                     charScore += 20
                 } else {
-                    let prevChar = target[target.index(target.startIndex, offsetBy: targetIdx - 1)]
+                    let prevChar = t[targetIdx - 1]
                     if prevChar == " " || prevChar == "_" || prevChar == "-" || prevChar == "/" || prevChar == "." {
                         charScore += 15
                     }
