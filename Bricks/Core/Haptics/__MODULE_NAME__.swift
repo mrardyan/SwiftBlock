@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// Kinds of haptic feedback supported by the engine.
@@ -14,6 +15,7 @@ public enum HapticFeedbackType: Sendable {
 /// Unified haptic feedback engine wrapping `UIFeedbackGenerator`.
 public enum __MODULE_NAME__ {
     public static func impact(_ type: HapticFeedbackType = .medium) {
+        #if os(iOS)
         switch type {
         case .light:
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -30,5 +32,7 @@ public enum __MODULE_NAME__ {
         case .selection:
             UISelectionFeedbackGenerator().selectionChanged()
         }
+        #endif
     }
 }
+#endif

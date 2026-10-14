@@ -1,3 +1,4 @@
+#if canImport(UIKit)
 import UIKit
 
 /// Async remote image loader with in-memory caching.
@@ -34,3 +35,4 @@ public final class __MODULE_NAME__ {
         cache.removeAllObjects()
     }
 }
+#endif

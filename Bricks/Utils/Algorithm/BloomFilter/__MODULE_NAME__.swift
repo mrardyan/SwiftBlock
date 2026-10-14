@@ -19,7 +19,7 @@ public struct __MODULE_NAME__<Element: Hashable & Sendable>: Sendable {
         let p = max(0.0001, min(0.9999, falsePositiveRate))
 
         // m = - (n * ln(p)) / (ln(2)^2)
-        let m = Int(ceil(- (n * log(p)) / pow(log(2.0), 2.0)))
+        let m = Int(ceil(-(n * log(p)) / pow(log(2.0), 2.0)))
         // k = (m / n) * ln(2)
         let k = max(1, Int(round((Double(m) / n) * log(2.0))))
 

@@ -14,7 +14,19 @@ public enum LogLevel: String, CaseIterable, Comparable, Sendable {
               let rhsIndex = order.firstIndex(of: rhs) else { return false }
         return lhsIndex < rhsIndex
     }
+
+    /// ANSI color code for console formatting.
+    public var colorCode: String {
+        switch self {
+        case .debug: return "\u{001B}[36m"   // Cyan
+        case .info: return "\u{001B}[32m"    // Green
+        case .warning: return "\u{001B}[33m" // Yellow
+        case .error: return "\u{001B}[31m"   // Red
+        case .fault: return "\u{001B}[35m"   // Magenta
+        }
+    }
 }
+
 
 /// Abstract logging protocol contract for structured logging across application layers.
 public protocol __MODULE_NAME__: Sendable {

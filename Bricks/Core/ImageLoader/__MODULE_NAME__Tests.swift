@@ -4,6 +4,7 @@ import XCTest
 #endif
 @testable import __APP_MODULE__
 
+#if canImport(UIKit)
 final class __MODULE_NAME__Tests: XCTestCase {
     func testInvalidURIReturnsNil() async {
         let loader = __MODULE_NAME__()
@@ -17,3 +18,4 @@ final class __MODULE_NAME__Tests: XCTestCase {
         loader.clearCache()
     }
 }
+#endif

@@ -55,10 +55,11 @@ public final class __MODULE_NAME__: @unchecked Sendable {
 
     /// Synchronous variant of `call`.
     public func call(action: @escaping @Sendable () -> Void) {
-        call {
+        call { () async in
             action()
         }
     }
+
 
     private func updateLastExecutionTime(_ date: Date) {
         lock.lock()

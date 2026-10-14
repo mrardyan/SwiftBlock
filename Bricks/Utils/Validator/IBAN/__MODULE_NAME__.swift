@@ -61,12 +61,13 @@ public struct __MODULE_NAME__: Sendable {
     }
 
     public func isValid(_ ibanString: String) -> Bool {
-        if case .success = validate(ibanString) {
+        if case .success = (validate(ibanString) as Result<Void, IBANValidationError>) {
             return true
         }
         return false
     }
 }
+
 
 // MARK: - Validating Protocol Conformance
 extension __MODULE_NAME__: Validating {

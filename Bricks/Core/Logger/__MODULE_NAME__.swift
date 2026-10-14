@@ -1,66 +1,9 @@
 import Foundation
 import OSLog
 
-/// Severity level of a log message.
-public enum LogLevel: String, CaseIterable, Comparable {
-    case debug = "DEBUG"
-    case info = "INFO"
-    case warning = "WARNING"
-    case error = "ERROR"
-    case fault = "FAULT"
-
-    public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
-        let order: [LogLevel] = [.debug, .info, .warning, .error, .fault]
-        guard let lhsIndex = order.firstIndex(of: lhs),
-              let rhsIndex = order.firstIndex(of: rhs) else { return false }
-        return lhsIndex < rhsIndex
-    }
-
-    /// ANSI color code for console formatting.
-    public var colorCode: String {
-        switch self {
-        case .debug: return "\u{001B}[36m"   // Cyan
-        case .info: return "\u{001B}[32m"    // Green
-        case .warning: return "\u{001B}[33m" // Yellow
-        case .error: return "\u{001B}[31m"   // Red
-        case .fault: return "\u{001B}[35m"   // Magenta
-        }
-    }
-}
-
-/// A type that logs messages with severity levels and call-site metadata.
-public protocol Logging {
-    func log(_ level: LogLevel, _ message: String, file: String, line: Int, function: String)
-}
-
-public extension Logging {
-    func log(_ level: LogLevel, _ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        log(level, message, file: file, line: line, function: function)
-    }
-
-    func debug(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        log(.debug, message, file: file, line: line, function: function)
-    }
-
-    func info(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        log(.info, message, file: file, line: line, function: function)
-    }
-
-    func warning(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        log(.warning, message, file: file, line: line, function: function)
-    }
-
-    func error(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        log(.error, message, file: file, line: line, function: function)
-    }
-
-    func fault(_ message: String, file: String = #file, line: Int = #line, function: String = #function) {
-        log(.fault, message, file: file, line: line, function: function)
-    }
-}
-
 /// Unified Apple `OSLog` logging implementation.
-public final class __MODULE_NAME__: Logging {
+public final class __MODULE_NAME__: Logging, @unchecked Sendable {
+
     private let logger: Logger
 
     /// Creates a logger configured for a specific subsystem and category.

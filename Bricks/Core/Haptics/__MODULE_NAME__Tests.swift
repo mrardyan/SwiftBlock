@@ -4,6 +4,7 @@ import XCTest
 #endif
 @testable import __APP_MODULE__
 
+#if canImport(UIKit)
 final class __MODULE_NAME__Tests: XCTestCase {
     func testFeedbackCallsDoNotThrow() {
         __MODULE_NAME__.impact(.light)
@@ -15,3 +16,4 @@ final class __MODULE_NAME__Tests: XCTestCase {
         __MODULE_NAME__.impact(.selection)
     }
 }
+#endif

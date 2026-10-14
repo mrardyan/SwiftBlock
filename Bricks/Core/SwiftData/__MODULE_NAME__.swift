@@ -33,6 +33,7 @@ public final class __MODULE_NAME__ {
         }
     }
 
+    @MainActor
     public var context: ModelContext {
         return container.mainContext
     }

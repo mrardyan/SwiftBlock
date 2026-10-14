@@ -12,9 +12,10 @@ public struct __MODULE_NAME__<Element: Sendable>: Sendable, Sequence {
 
     /// Creates a circular buffer with fixed maximum capacity.
     public init(capacity: Int) {
-        self.capacity = max(1, capacity)
+        self.capacity = Swift.max(1, capacity)
         self.buffer = Array(repeating: nil, count: self.capacity)
     }
+
 
     /// Current number of stored elements.
     public var count: Int {

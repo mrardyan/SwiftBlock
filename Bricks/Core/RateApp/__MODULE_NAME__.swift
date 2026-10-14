@@ -1,5 +1,7 @@
 import StoreKit
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// StoreKit rating prompt and App Store helpers.
 public enum __MODULE_NAME__ {

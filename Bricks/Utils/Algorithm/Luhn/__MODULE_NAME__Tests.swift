@@ -14,9 +14,10 @@ final class __MODULE_NAME__Tests: XCTestCase {
 
     func testInvalidCardNumbers() {
         XCTAssertFalse(__MODULE_NAME__.validate("49927398717"))
-        XCTAssertFalse(__MODULE_NAME__.validate("1234567812345670"))
+        XCTAssertFalse(__MODULE_NAME__.validate("1234567812345678"))
         XCTAssertFalse(__MODULE_NAME__.validate("1")) // Too short
     }
+
 
     func testCheckDigitComputation() {
         XCTAssertEqual(__MODULE_NAME__.computeCheckDigit(for: "7992739871"), 3)

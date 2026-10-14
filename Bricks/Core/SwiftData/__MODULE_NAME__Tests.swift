@@ -1,17 +1,21 @@
 import XCTest
+import SwiftData
 #if canImport(Core)
 @testable import Core
 #endif
 @testable import __APP_MODULE__
 
+
 @available(iOS 17.0, macOS 14.0, *)
 final class __MODULE_NAME__Tests: XCTestCase {
+    @MainActor
     func testInMemoryContainerIsEmpty() throws {
         let store = __MODULE_NAME__(isStoredInMemoryOnly: true)
         let items = try store.context.fetch(FetchDescriptor<__MODULE_NAME__Item>())
         XCTAssertTrue(items.isEmpty)
     }
 
+    @MainActor
     func testInsertAndFetch() throws {
         let store = __MODULE_NAME__(isStoredInMemoryOnly: true)
         let context = store.context

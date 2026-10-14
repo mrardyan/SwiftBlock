@@ -45,6 +45,7 @@ copy_brick_folder() {
                 target_name="${prefix}$(echo "$filename" | sed "s/__MODULE_NAME__//")"
                 sed -e "s/@testable import __MODULE_NAME__/@testable import SwiftBlockTemplatesTest/g" \
                     -e "s/@testable import __PROJECT_NAME__/@testable import SwiftBlockTemplatesTest/g" \
+                    -e "s/@testable import __APP_MODULE__/@testable import SwiftBlockTemplatesTest/g" \
                     -e "s/__MODULE_NAME__/${prefix}/g" "$file" > "$TEMP_DIR/Tests/SwiftBlockTemplatesTestTests/$target_name"
             else
                 target_name="${prefix}$(echo "$filename" | sed "s/__MODULE_NAME__//")"
@@ -52,7 +53,10 @@ copy_brick_folder() {
             fi
         fi
     done
+
+    # Typealiases are appended in the loop for Protocols
 }
+
 
 echo "📦 Collecting standalone brick templates (Config, Core, Utils)..."
 
@@ -70,8 +74,12 @@ for cat in Config Core Utils; do
                         sub_name="$(basename "$sub_dir")"
                         prefix="Test${category_name}${sub_name}"
                         copy_brick_folder "$sub_dir" "$prefix"
+                        if [ "$category_name" = "Protocols" ] && [ -f "$TEMP_DIR/Sources/SwiftBlockTemplatesTest/${prefix}.swift" ]; then
+                            echo "public typealias ${sub_name} = ${prefix}" >> "$TEMP_DIR/Sources/SwiftBlockTemplatesTest/${prefix}.swift"
+                        fi
                     fi
                 done
+
 
                 if [ "$has_subbricks" = false ] && [ -f "$category_dir/brick.yml" ]; then
                     prefix="Test${category_name}"

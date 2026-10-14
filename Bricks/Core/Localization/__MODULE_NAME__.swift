@@ -27,8 +27,14 @@ public enum __MODULE_NAME__ {
 
     /// The currently preferred language code (e.g. "en", "id").
     public static var currentLanguageCode: String {
-        return Locale.preferredLanguages.first
-            ?? Locale.current.language.languageCode?.identifier
-            ?? "en"
+        if #available(macOS 13, iOS 16, tvOS 16, watchOS 9, *) {
+            return Locale.preferredLanguages.first
+                ?? Locale.current.language.languageCode?.identifier
+                ?? "en"
+        } else {
+            return Locale.preferredLanguages.first
+                ?? Locale.current.languageCode
+                ?? "en"
+        }
     }
 }

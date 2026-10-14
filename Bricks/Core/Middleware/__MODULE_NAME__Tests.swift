@@ -1,3 +1,4 @@
+#if canImport(Vapor)
 import XCTest
 import Vapor
 @testable import __APP_MODULE__
@@ -9,3 +10,4 @@ final class __MODULE_NAME__Tests: XCTestCase {
         try await app.asyncShutdown()
     }
 }
+#endif

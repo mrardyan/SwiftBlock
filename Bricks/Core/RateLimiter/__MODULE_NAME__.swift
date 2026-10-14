@@ -1,3 +1,4 @@
+#if canImport(Vapor)
 import Vapor
 
 /// In-memory fixed-window rate limiting middleware keyed by remote address.
@@ -39,3 +40,4 @@ public final class __MODULE_NAME__: Middleware, @unchecked Sendable {
         return next.respond(to: request)
     }
 }
+#endif

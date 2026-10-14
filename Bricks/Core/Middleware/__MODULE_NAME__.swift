@@ -1,3 +1,4 @@
+#if canImport(Vapor)
 import Vapor
 
 /// Configures the shared server middleware stack (error handling, CORS, security headers).
@@ -13,3 +14,4 @@ public enum __MODULE_NAME__ {
         app.middleware.use(CORSMiddleware(configuration: corsConfiguration), at: .beginning)
     }
 }
+#endif
