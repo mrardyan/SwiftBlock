@@ -34,23 +34,13 @@ public enum CodeInjector {
             config: config
         )
 
-        // Path traversal guard. `standardizedFileURL`/`resolvingSymlinksInPath()` are unreliable on
-        // symlinked roots (e.g. /tmp -> /private/tmp), so use a deterministic component-based check:
-        //  - relative targets must not contain ".." components;
-        //  - absolute targets must live inside the project root.
-        let isAbsoluteTarget = (resolvedTargetPath as NSString).isAbsolutePath
-        var isSafe = true
-        if isAbsoluteTarget {
-            let target = URL(fileURLWithPath: resolvedTargetPath).standardizedFileURL.path
-            let root = URL(fileURLWithPath: projectRootPath).standardizedFileURL.path
-            isSafe = target == root || target.hasPrefix(root + "/")
-        } else {
-            isSafe = !(resolvedTargetPath as NSString).pathComponents.contains("..")
-        }
-        guard isSafe else {
+        // Path traversal guard using unified PathGuard
+        guard PathGuard.isSafe(targetPath: resolvedTargetPath, withinRoot: projectRootPath) else {
             print("⚠️ Path traversal blocked: Target path '\(resolvedTargetPath)' is outside project root '\(projectRootPath)'")
             return false
         }
+
+        let isAbsoluteTarget = (resolvedTargetPath as NSString).isAbsolutePath
 
         let rawTargetPath = isAbsoluteTarget
             ? resolvedTargetPath

@@ -81,18 +81,22 @@ public class ProjectTargetWiringEngine {
         """
 
         var lines = content.components(separatedBy: "\n")
-        if let targetsIndex = lines.firstIndex(where: { $0.contains("targets: [") }) {
+        if let targetsIndex = lines.firstIndex(where: { $0.contains("targets: [") || $0.contains("targets:[") }) {
             lines.insert(targetDeclaration, at: targetsIndex + 1)
             let newContent = lines.joined(separator: "\n")
             try newContent.write(toFile: manifestPath, atomically: true, encoding: .utf8)
             print("✔ Auto-wired Tuist target '\(moduleName)' into Project.swift")
             return true
-        } else if let lastBraceIndex = lines.rIndex(where: { $0.trimmingCharacters(in: .whitespaces) == "]" }) {
-            lines.insert(targetDeclaration, at: lastBraceIndex)
-            let newContent = lines.joined(separator: "\n")
-            try newContent.write(toFile: manifestPath, atomically: true, encoding: .utf8)
-            print("✔ Auto-wired Tuist target '\(moduleName)' into Project.swift")
-            return true
+        } else if let targetsKeyIndex = lines.firstIndex(where: { $0.contains("targets:") }) {
+            // Scope closing bracket search to the section following targets:
+            let remainingLines = lines[targetsKeyIndex...]
+            if let bracketIndex = remainingLines.firstIndex(where: { $0.trimmingCharacters(in: .whitespaces).hasPrefix("]") }) {
+                lines.insert(targetDeclaration, at: bracketIndex)
+                let newContent = lines.joined(separator: "\n")
+                try newContent.write(toFile: manifestPath, atomically: true, encoding: .utf8)
+                print("✔ Auto-wired Tuist target '\(moduleName)' into Project.swift")
+                return true
+            }
         }
 
         return false

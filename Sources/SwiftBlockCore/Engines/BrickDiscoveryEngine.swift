@@ -122,14 +122,22 @@ public struct BrickDiscoveryEngine {
         return nil
     }
 
-    private func scanDirectory(_ dir: String, targetName: String) -> String? {
+    private func scanDirectory(_ dir: String, targetName: String, depth: Int = 0, maxDepth: Int = 8) -> String? {
+        guard depth <= maxDepth else { return nil }
         guard fileManager.fileExists(atPath: dir),
               let items = try? fileManager.contentsOfDirectory(atPath: dir)
         else {
             return nil
         }
 
+        let ignoredFolders: Set<String> = [
+            ".git", ".build", "deriveddata", "pods", "node_modules", ".swiftpm", ".tuist", "build",
+        ]
+
         for item in items {
+            if item.hasPrefix(".") || ignoredFolders.contains(item.lowercased()) {
+                continue
+            }
             let fullPath = "\(dir)/\(item)"
             var isDir: ObjCBool = false
             if fileManager.fileExists(atPath: fullPath, isDirectory: &isDir), isDir.boolValue {
@@ -140,7 +148,7 @@ public struct BrickDiscoveryEngine {
                         return fullPath
                     }
                 }
-                if let subMatch = scanDirectory(fullPath, targetName: targetName) {
+                if let subMatch = scanDirectory(fullPath, targetName: targetName, depth: depth + 1, maxDepth: maxDepth) {
                     return subMatch
                 }
             }

@@ -236,12 +236,16 @@ struct SnapCommand: ParsableCommand {
         if let resolvedPath = discoveryEngine.resolveBrickPath(named: brickInput, in: baseDir),
            let manifest = BrickManifest.load(fromPath: resolvedPath)
         {
-            if !manifest.variables.isEmpty {
+            let isInteractive = isatty(STDIN_FILENO) != 0
+                && ProcessInfo.processInfo.environment["CI"] == nil
+                && ProcessInfo.processInfo.environment["SWIFTBLOCK_NON_INTERACTIVE"] != "1"
+
+            if isInteractive, !manifest.variables.isEmpty {
                 resolvedVars = try InteractiveWizard.runBrickVariablesWizard(manifest: manifest, providedValues: resolvedVars)
             }
 
             var flavorSelections = parseFlavorSelections()
-            if isatty(STDIN_FILENO) != 0, !manifest.flavors.isEmpty {
+            if isInteractive, !manifest.flavors.isEmpty {
                 flavorSelections = try InteractiveWizard.runBrickFlavorsWizard(manifest: manifest, providedSelections: flavorSelections)
             }
 
@@ -341,7 +345,7 @@ struct KitAdd: ParsableCommand {
         } else {
             let availableKits = Array(config.kits.keys.sorted())
             let choices = availableKits.map { ChoiceOption(title: $0, subtitle: config.kits[$0]?.joined(separator: ", ")) }
-            let selectedIdx = InteractiveWizard.promptChoiceWithOptions(title: "Select Composition Kit", options: choices)
+            let selectedIdx = try InteractiveWizard.promptChoiceWithOptions(title: "Select Composition Kit", options: choices)
             targetKit = availableKits[selectedIdx]
         }
 

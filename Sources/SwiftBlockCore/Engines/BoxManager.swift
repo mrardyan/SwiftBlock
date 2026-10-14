@@ -98,7 +98,7 @@ public class BoxManager {
         let gitBinary = findGitExecutable()
         let exitCode = runProcess(
             executable: gitBinary,
-            arguments: ["clone", "--depth", "1", parsed.repoURL, targetBoxPath],
+            arguments: ["clone", "--depth", "1", "--", parsed.repoURL, targetBoxPath],
             currentDirectoryPath: boxesDirectory
         )
         guard exitCode == 0 else {
@@ -184,7 +184,7 @@ public class BoxManager {
             }
             let exitCode = runProcess(
                 executable: gitBinary,
-                arguments: ["clone", "--depth", "1", parsed.repoURL, targetCachePath],
+                arguments: ["clone", "--depth", "1", "--", parsed.repoURL, targetCachePath],
                 currentDirectoryPath: gitCacheDirectory
             )
             guard exitCode == 0 else {
@@ -192,10 +192,15 @@ public class BoxManager {
             }
         }
 
-        let resolvedPath: String = if let frag = parsed.fragment {
-            "\(targetCachePath)/\(frag)"
+        let resolvedPath: String
+        if let frag = parsed.fragment {
+            let candidatePath = "\(targetCachePath)/\(frag)"
+            guard PathGuard.isSafe(targetPath: candidatePath, withinRoot: targetCachePath) else {
+                throw BoxManagerError.invalidGitURL("URL fragment '\(frag)' attempts path traversal outside repository cache")
+            }
+            resolvedPath = candidatePath
         } else {
-            targetCachePath
+            resolvedPath = targetCachePath
         }
 
         return (cachedPath: resolvedPath, fragment: parsed.fragment)

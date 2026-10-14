@@ -118,9 +118,20 @@ public enum SimpleYAMLParser {
     private static func findMappingColon(in str: String) -> String.Index? {
         var inDoubleQuote = false
         var inSingleQuote = false
+        var isEscaped = false
         var i = str.startIndex
         while i < str.endIndex {
             let ch = str[i]
+            if isEscaped {
+                isEscaped = false
+                i = str.index(after: i)
+                continue
+            }
+            if ch == "\\", inDoubleQuote || inSingleQuote {
+                isEscaped = true
+                i = str.index(after: i)
+                continue
+            }
             if ch == "\"", !inSingleQuote {
                 inDoubleQuote.toggle()
             } else if ch == "'", !inDoubleQuote {
@@ -136,12 +147,24 @@ public enum SimpleYAMLParser {
         return nil
     }
 
-    /// Strips `#` comments while preserving them inside single or double quotes.
+    /// Strips `#` comments while preserving them inside single or double quotes,
+    /// correctly handling escaped quotes.
     private static func stripComments(_ rawLine: String) -> String {
         var line = ""
         var inDoubleQuote = false
         var inSingleQuote = false
+        var isEscaped = false
         for char in rawLine {
+            if isEscaped {
+                isEscaped = false
+                line.append(char)
+                continue
+            }
+            if char == "\\", inDoubleQuote || inSingleQuote {
+                isEscaped = true
+                line.append(char)
+                continue
+            }
             if char == "\"", !inSingleQuote {
                 inDoubleQuote.toggle()
             } else if char == "'", !inDoubleQuote {

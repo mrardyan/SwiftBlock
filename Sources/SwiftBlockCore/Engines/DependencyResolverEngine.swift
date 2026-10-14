@@ -238,16 +238,17 @@ public final class DependencyResolverEngine {
         let baseDir = "\(projectRootPath)/\(resolvedPath)"
         guard fileManager.fileExists(atPath: baseDir) else { return false }
 
-        // Enumerate template files (skip metadata) to derive concrete output file names.
+        // Enumerate template files (skip metadata and hidden files) to derive concrete output file names.
         guard let items = try? fileManager.contentsOfDirectory(atPath: templatePath) else {
-            return fileManager.fileExists(atPath: baseDir)
+            return false
         }
 
         let sourceFiles = items.filter { item in
             let lower = item.lowercased()
             return !lower.hasSuffix("brick.yml") &&
                 !lower.hasSuffix("brick.yaml") &&
-                lower != "block.json"
+                lower != "block.json" &&
+                !lower.hasPrefix(".")
         }
 
         for item in sourceFiles {
@@ -257,7 +258,8 @@ public final class DependencyResolverEngine {
                 blockName: manifest.name.lowercased()
             )
             let fullPath = "\(baseDir)/\(rendered)"
-            if fileManager.fileExists(atPath: fullPath) {
+            var isDir: ObjCBool = false
+            if fileManager.fileExists(atPath: fullPath, isDirectory: &isDir), !isDir.boolValue {
                 return true
             }
         }

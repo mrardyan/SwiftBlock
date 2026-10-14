@@ -65,6 +65,16 @@ final class SwiftBlockConfigTests: XCTestCase {
         XCTAssertEqual(parsed["url"] as? String, "https://example.com/#tag")
     }
 
+    func testYamlEscapedQuotesAndHashes() {
+        let yamlContent = """
+        message: "Hello \\"world\\" #not-comment"
+        key_with_colon: "value:with:colons"
+        """
+        let parsed = SimpleYAMLParser.parse(yamlContent)
+        XCTAssertEqual(parsed["message"] as? String, "Hello \\\"world\\\" #not-comment")
+        XCTAssertEqual(parsed["key_with_colon"] as? String, "value:with:colons")
+    }
+
     func testYamlRoundtripPreservesAllFields() throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("ConfigRoundtrip_\(UUID().uuidString)", isDirectory: true)

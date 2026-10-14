@@ -83,18 +83,22 @@ public class ProjectRefactoringEngine {
         let xcodeGenManifest = "\(absolutePath)/project.yml"
 
         if fileManager.fileExists(atPath: tuistManifest) {
-            if var content = try? String(contentsOfFile: tuistManifest, encoding: .utf8) {
-                content = content.replacingOccurrences(of: oldName, with: sanitizedNewName)
-                try content.write(toFile: tuistManifest, atomically: true, encoding: .utf8)
-                modifiedFiles.append("Project.swift")
+            if let content = try? String(contentsOfFile: tuistManifest, encoding: .utf8) {
+                let updated = Self.replaceIdentifier(content, oldName: oldName, newName: sanitizedNewName)
+                if updated != content {
+                    try updated.write(toFile: tuistManifest, atomically: true, encoding: .utf8)
+                    modifiedFiles.append("Project.swift")
+                }
             }
         }
 
         if fileManager.fileExists(atPath: xcodeGenManifest) {
-            if var content = try? String(contentsOfFile: xcodeGenManifest, encoding: .utf8) {
-                content = content.replacingOccurrences(of: oldName, with: sanitizedNewName)
-                try content.write(toFile: xcodeGenManifest, atomically: true, encoding: .utf8)
-                modifiedFiles.append("project.yml")
+            if let content = try? String(contentsOfFile: xcodeGenManifest, encoding: .utf8) {
+                let updated = Self.replaceIdentifier(content, oldName: oldName, newName: sanitizedNewName)
+                if updated != content {
+                    try updated.write(toFile: xcodeGenManifest, atomically: true, encoding: .utf8)
+                    modifiedFiles.append("project.yml")
+                }
             }
         }
 
@@ -134,13 +138,10 @@ public class ProjectRefactoringEngine {
                 if file.hasPrefix(".build/") || file.hasPrefix(".git/") { continue }
                 if file.hasSuffix(".swift") {
                     let fullPath = "\(absolutePath)/\(file)"
-                    if var content = try? String(contentsOfFile: fullPath, encoding: .utf8) {
-                        if content.contains(oldName) {
-                            content = content.replacingOccurrences(of: "struct \(oldName)App", with: "struct \(sanitizedNewName)App")
-                            content = content.replacingOccurrences(of: "@testable import \(oldName)", with: "@testable import \(sanitizedNewName)")
-                            content = content.replacingOccurrences(of: "\(oldName)Tests", with: "\(sanitizedNewName)Tests")
-                            content = content.replacingOccurrences(of: oldName, with: sanitizedNewName)
-                            try content.write(toFile: fullPath, atomically: true, encoding: .utf8)
+                    if let content = try? String(contentsOfFile: fullPath, encoding: .utf8) {
+                        let updated = Self.replaceIdentifier(content, oldName: oldName, newName: sanitizedNewName)
+                        if updated != content {
+                            try updated.write(toFile: fullPath, atomically: true, encoding: .utf8)
                             modifiedFiles.append(file)
                         }
                     }
@@ -151,22 +152,22 @@ public class ProjectRefactoringEngine {
         // 5. Refactor Makefile and CI/CD pipelines
         let makefilePath = "\(absolutePath)/Makefile"
         if fileManager.fileExists(atPath: makefilePath),
-           var content = try? String(contentsOfFile: makefilePath, encoding: .utf8)
+           let content = try? String(contentsOfFile: makefilePath, encoding: .utf8)
         {
-            if content.contains(oldName) {
-                content = content.replacingOccurrences(of: oldName, with: sanitizedNewName)
-                try content.write(toFile: makefilePath, atomically: true, encoding: .utf8)
+            let updated = Self.replaceIdentifier(content, oldName: oldName, newName: sanitizedNewName)
+            if updated != content {
+                try updated.write(toFile: makefilePath, atomically: true, encoding: .utf8)
                 modifiedFiles.append("Makefile")
             }
         }
 
         let githubWorkflow = "\(absolutePath)/.github/workflows/ci.yml"
         if fileManager.fileExists(atPath: githubWorkflow),
-           var content = try? String(contentsOfFile: githubWorkflow, encoding: .utf8)
+           let content = try? String(contentsOfFile: githubWorkflow, encoding: .utf8)
         {
-            if content.contains(oldName) {
-                content = content.replacingOccurrences(of: oldName, with: sanitizedNewName)
-                try content.write(toFile: githubWorkflow, atomically: true, encoding: .utf8)
+            let updated = Self.replaceIdentifier(content, oldName: oldName, newName: sanitizedNewName)
+            if updated != content {
+                try updated.write(toFile: githubWorkflow, atomically: true, encoding: .utf8)
                 modifiedFiles.append(".github/workflows/ci.yml")
             }
         }
@@ -178,6 +179,27 @@ public class ProjectRefactoringEngine {
             renamedFiles: renamedFiles,
             isDryRun: false
         )
+    }
+
+    /// Safely replaces an identifier using word boundaries and compound camelCase recognition.
+    /// Prevents substring corruption (e.g. Renaming "App" won't corrupt "UIApplication").
+    public static func replaceIdentifier(_ content: String, oldName: String, newName: String) -> String {
+        let escapedOld = NSRegularExpression.escapedPattern(for: oldName)
+        // 1. Compound identifiers starting with oldName followed by uppercase letter or underscore (e.g. AppCoordinator, App_State)
+        let compoundPattern = "\\b\(escapedOld)(?=[A-Z_])"
+        var result = content.replacingOccurrences(
+            of: compoundPattern,
+            with: newName,
+            options: .regularExpression
+        )
+        // 2. Standalone identifiers matching exact word boundary (e.g. import App, struct App)
+        let standalonePattern = "\\b\(escapedOld)\\b"
+        result = result.replacingOccurrences(
+            of: standalonePattern,
+            with: newName,
+            options: .regularExpression
+        )
+        return result
     }
 
     /// Shared project-name validation used by both rename and project creation paths.

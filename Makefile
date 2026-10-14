@@ -6,9 +6,25 @@ SHAREDIR ?= $(PREFIX)/share/swiftblock
 CLI_NAME = swiftblock
 BUILD_PATH = .build/release/$(CLI_NAME)
 
-.PHONY: all build install uninstall test test-templates test-e2e lint format install-hooks clean
+.PHONY: all build install uninstall test test-templates test-e2e lint format install-hooks clean help
 
 all: build
+
+help:
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  build            Build SwiftBlock CLI in release mode"
+	@echo "  install          Build and install binary & templates to system ($(PREFIX))"
+	@echo "  uninstall        Remove installed binary and shared asset templates"
+	@echo "  test             Run Swift package unit tests"
+	@echo "  test-templates   Run template validation tests"
+	@echo "  test-e2e         Run full end-to-end integration test suite"
+	@echo "  lint             Lint codebase using SwiftLint"
+	@echo "  format           Format codebase using SwiftFormat and SwiftLint auto-fix"
+	@echo "  install-hooks    Install git pre-commit hooks for linting & formatting"
+	@echo "  clean            Clean build artifacts and SPM cache"
+	@echo "  help             Show this help message"
 
 build:
 	@echo "🔨 Building $(CLI_NAME) CLI in release mode..."

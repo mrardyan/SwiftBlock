@@ -49,8 +49,8 @@ public enum TemplateRenderer {
     private static func renderConditionals(template: String, variables: [String: String]) -> String {
         var result = template
 
-        // Match {{#if expr}}body{{else}}body{{/if}} or {{#if expr}}body{{/if}}
-        let ifPattern = #"\{\{#if\s+([^\}]+)\}\}([\s\S]*?)(?:\{\{else\}\}([\s\S]*?))?\{\{\/if\}\}"#
+        // Match innermost {{#if expr}}body{{else}}body{{/if}} or {{#if expr}}body{{/if}} first
+        let ifPattern = #"\{\{#if\s+([^\}]+)\}\}((?:(?!\{\{#if)[\s\S])*?)(?:\{\{else\}\}((?:(?!\{\{#if)[\s\S])*?))?\{\{\/if\}\}"#
         if let regex = try? NSRegularExpression(pattern: ifPattern, options: []) {
             var iterations = 0
             while iterations < 50, let match = regex.firstMatch(in: result, options: [], range: NSRange(location: 0, length: result.utf16.count)) {
@@ -78,8 +78,8 @@ public enum TemplateRenderer {
             }
         }
 
-        // Support {{#unless expr}}body{{/unless}}
-        let unlessPattern = #"\{\{#unless\s+([^\}]+)\}\}([\s\S]*?)\{\{\/unless\}\}"#
+        // Support innermost {{#unless expr}}body{{/unless}}
+        let unlessPattern = #"\{\{#unless\s+([^\}]+)\}\}((?:(?!\{\{#unless)[\s\S])*?)\{\{\/unless\}\}"#
         if let regex = try? NSRegularExpression(pattern: unlessPattern, options: []) {
             var iterations = 0
             while iterations < 50, let match = regex.firstMatch(in: result, options: [], range: NSRange(location: 0, length: result.utf16.count)) {

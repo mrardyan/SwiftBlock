@@ -189,17 +189,23 @@ public class InteractiveWizard {
         title: String,
         options: [String],
         readLine: () -> String? = { InteractiveWizard.readLine() }
-    ) -> Int {
+    ) throws -> Int {
         let choiceOptions = options.map { ChoiceOption(title: $0) }
-        return TerminalPrompt.selectChoice(title: title, options: choiceOptions, readLineFallback: readLine) ?? 0
+        guard let choice = TerminalPrompt.selectChoice(title: title, options: choiceOptions, readLineFallback: readLine) else {
+            throw InteractiveWizardError.cancelled
+        }
+        return choice
     }
 
     public static func promptChoiceWithOptions(
         title: String,
         options: [ChoiceOption],
         readLine: () -> String? = { InteractiveWizard.readLine() }
-    ) -> Int {
-        TerminalPrompt.selectChoice(title: title, options: options, readLineFallback: readLine) ?? 0
+    ) throws -> Int {
+        guard let choice = TerminalPrompt.selectChoice(title: title, options: options, readLineFallback: readLine) else {
+            throw InteractiveWizardError.cancelled
+        }
+        return choice
     }
 
     public static func promptConfirm(
@@ -222,7 +228,7 @@ public class InteractiveWizard {
             ChoiceOption(title: "SwiftUI App", subtitle: "Apple platform application (iOS, macOS) with Tuist or XcodeGen"),
             ChoiceOption(title: "Vapor Backend API", subtitle: "High-performance Swift backend web API service powered by Vapor & SPM"),
         ]
-        let baseplateChoiceIndex = promptChoiceWithOptions(title: "What do you want to create?", options: baseplateChoices, readLine: readLine)
+        let baseplateChoiceIndex = try promptChoiceWithOptions(title: "What do you want to create?", options: baseplateChoices, readLine: readLine)
 
         if baseplateChoiceIndex == 0 {
             return try runSwiftUIProjectWizard(defaultTemplatePath: defaultTemplatePath, readLine: readLine)
@@ -256,14 +262,14 @@ public class InteractiveWizard {
 
         let availableTools = ProjectGeneratorTool.allCases.filter { $0 != .spm }
         let toolChoices = availableTools.map { ChoiceOption(title: $0.title) }
-        let toolChoiceIndex = promptChoiceWithOptions(title: "Select Build Tool Generator", options: toolChoices, readLine: readLine)
+        let toolChoiceIndex = try promptChoiceWithOptions(title: "Select Build Tool Generator", options: toolChoices, readLine: readLine)
         let selectedTool = availableTools[toolChoiceIndex]
 
         let corePkgChoices = [
             ChoiceOption(title: "Monolithic Main Target", subtitle: "e.g. App/Sources/Core/Storage/..."),
             ChoiceOption(title: "SPM Core Package Target", subtitle: "e.g. Packages/Core/Sources/Core/Storage/..."),
         ]
-        let corePkgChoice = promptChoiceWithOptions(title: "Select Core Packaging Strategy", options: corePkgChoices, readLine: readLine)
+        let corePkgChoice = try promptChoiceWithOptions(title: "Select Core Packaging Strategy", options: corePkgChoices, readLine: readLine)
         let corePkg = corePkgChoice == 0 ? "monolithic" : "spm"
 
         // Feature code is always composed into the main app target (monolithic).
@@ -276,7 +282,7 @@ public class InteractiveWizard {
             ChoiceOption(title: "Feature-First", subtitle: "e.g. Home/Scene, Home/UseCase, Payment/Scene"),
             ChoiceOption(title: "Technical-First", subtitle: "e.g. Scenes/Home, UseCases/Home, Repositories/Payment"),
         ]
-        let orgChoice = promptChoiceWithOptions(title: "Select Code Organization Strategy", options: orgChoices, readLine: readLine)
+        let orgChoice = try promptChoiceWithOptions(title: "Select Code Organization Strategy", options: orgChoices, readLine: readLine)
         let orgStrategy = orgChoice == 0 ? "feature-first" : "technical-first"
 
         print("│")
@@ -351,13 +357,13 @@ public class InteractiveWizard {
         print("◇  \(ANSIColor.boldText("CI/CD Pipeline & Git Repository"))")
 
         let cicdChoices = CICDProvider.allCases.map { ChoiceOption(title: $0.title) }
-        let cicdChoiceIndex = promptChoiceWithOptions(title: "Select CI/CD Pipeline Provider", options: cicdChoices, readLine: readLine)
+        let cicdChoiceIndex = try promptChoiceWithOptions(title: "Select CI/CD Pipeline Provider", options: cicdChoices, readLine: readLine)
         let selectedCICD = CICDProvider.allCases[cicdChoiceIndex]
 
         print("│")
         print("◇  \(ANSIColor.boldText("Unit Testing Framework"))")
         let testChoices = TestFramework.allCases.map { ChoiceOption(title: $0.displayName) }
-        let testChoiceIndex = promptChoiceWithOptions(title: "Select Unit Test Framework", options: testChoices, readLine: readLine)
+        let testChoiceIndex = try promptChoiceWithOptions(title: "Select Unit Test Framework", options: testChoices, readLine: readLine)
         let selectedTestFramework = TestFramework.allCases[testChoiceIndex]
 
         let gitInitConfirm = promptConfirm(message: "Initialize Git repository & setup hooks?", defaultYes: true, readLine: readLine)
@@ -476,7 +482,7 @@ public class InteractiveWizard {
         print("◇  \(ANSIColor.boldText("CI/CD Pipeline & Git Repository"))")
 
         let cicdChoices = CICDProvider.allCases.filter { $0 != .xcodeCloud }.map { ChoiceOption(title: $0.title) }
-        let cicdChoiceIndex = promptChoiceWithOptions(title: "Select CI/CD Pipeline Provider", options: cicdChoices, readLine: readLine)
+        let cicdChoiceIndex = try promptChoiceWithOptions(title: "Select CI/CD Pipeline Provider", options: cicdChoices, readLine: readLine)
         let selectedCICD = CICDProvider.allCases.filter { $0 != .xcodeCloud }[cicdChoiceIndex]
 
         let gitInitConfirm = promptConfirm(message: "Initialize Git repository & setup hooks?", defaultYes: true, readLine: readLine)
@@ -524,7 +530,7 @@ public class InteractiveWizard {
         let blocks = BrickRegistry.featureBricks.filter { $0.isCompatible(withVapor: isVapor) }
         let typeChoices = blocks.map { ChoiceOption(title: $0.title, subtitle: $0.description) }
 
-        let selectedIndex = promptChoiceWithOptions(title: "Select Feature Block Type", options: typeChoices, readLine: readLine)
+        let selectedIndex = try promptChoiceWithOptions(title: "Select Feature Block Type", options: typeChoices, readLine: readLine)
         let selectedType = blocks[selectedIndex].type
 
         var moduleName = ""
@@ -553,7 +559,7 @@ public class InteractiveWizard {
         let blocks = BrickRegistry.coreBricks.filter { $0.isCompatible(withVapor: isVapor) }
         let typeChoices = blocks.map { ChoiceOption(title: $0.title, subtitle: $0.description) }
 
-        let selectedIndex = promptChoiceWithOptions(title: "Select Core Block Type", options: typeChoices, readLine: readLine)
+        let selectedIndex = try promptChoiceWithOptions(title: "Select Core Block Type", options: typeChoices, readLine: readLine)
         let selectedType = blocks[selectedIndex].type
 
         var moduleName = ""
@@ -622,7 +628,7 @@ public class InteractiveWizard {
             )
         }
 
-        let selectedIndex = promptChoiceWithOptions(title: "Select brick to snap", options: options, readLine: readLine)
+        let selectedIndex = try promptChoiceWithOptions(title: "Select brick to snap", options: options, readLine: readLine)
         return bricks[selectedIndex]
     }
 
@@ -651,7 +657,7 @@ public class InteractiveWizard {
                 resolved[variable.name] = answer ? "true" : "false"
             } else if variable.type == "select", let options = variable.options, !options.isEmpty {
                 let choices = options.map { ChoiceOption(title: $0) }
-                let idx = promptChoiceWithOptions(title: variable.prompt, options: choices, readLine: readLine)
+                let idx = try promptChoiceWithOptions(title: variable.prompt, options: choices, readLine: readLine)
                 resolved[variable.name] = options[idx]
             } else {
                 var value = ""
@@ -719,7 +725,7 @@ public class InteractiveWizard {
             }
 
             let promptTitle = flavor.prompt.isEmpty ? "Select option for \(flavorKey)" : flavor.prompt
-            let selectedIdx = promptChoiceWithOptions(title: promptTitle, options: choices, readLine: readLine)
+            let selectedIdx = try promptChoiceWithOptions(title: promptTitle, options: choices, readLine: readLine)
             resolved[flavorKey.lowercased()] = flavor.options[selectedIdx].id
         }
 

@@ -20,6 +20,9 @@ export SWIFTBLOCK_BIN="$ORIGINAL_DIR/.build/release/swiftblock"
 export TEMPLATE_PATH="$ORIGINAL_DIR/Baseplates/SwiftUI"
 export MODULES_PATH="$ORIGINAL_DIR/Bricks/Feature"
 export SWIFTBLOCK_ROOT="$ORIGINAL_DIR"
+export SWIFTBLOCK_ALLOW_HOOKS=1
+export SWIFTBLOCK_NON_INTERACTIVE=1
+export CI=true
 
 if [[ ! -f "$SWIFTBLOCK_BIN" ]]; then
     log_error "SwiftBlock binary not found at $SWIFTBLOCK_BIN"

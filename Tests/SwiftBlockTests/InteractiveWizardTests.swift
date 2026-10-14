@@ -19,12 +19,20 @@ final class InteractiveWizardTests: XCTestCase {
         XCTAssertEqual(noDefaultInput, "")
     }
 
-    func testPromptChoiceValidAndRetry() {
+    func testPromptChoiceValidAndRetry() throws {
         var inputs = ["invalid", "99", "1"]
-        let choiceIndex = InteractiveWizard.promptChoice(title: "Select Block", options: ["Scene", "UseCase"], readLine: {
+        let choiceIndex = try InteractiveWizard.promptChoice(title: "Select Block", options: ["Scene", "UseCase"], readLine: {
             inputs.isEmpty ? nil : inputs.removeFirst()
         })
         XCTAssertEqual(choiceIndex, 0)
+    }
+
+    func testPromptChoiceCancellationThrowsCancelled() {
+        XCTAssertThrowsError(
+            try InteractiveWizard.promptChoice(title: "Select Block", options: ["Scene", "UseCase"], readLine: { nil })
+        ) { error in
+            XCTAssertEqual(error as? InteractiveWizardError, .cancelled)
+        }
     }
 
     func testPromptConfirmDefaultsAndExplicit() {

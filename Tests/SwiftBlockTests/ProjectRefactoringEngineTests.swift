@@ -128,4 +128,20 @@ final class ProjectRefactoringEngineTests: XCTestCase {
         let updatedConfig = try SwiftBlockConfig.load(from: tempDir)
         XCTAssertEqual(updatedConfig.projectName, "RenamedNestedApp")
     }
+
+    func testReplaceIdentifierDoesNotCorruptUnrelatedWords() {
+        let original = """
+        import UIKit
+        import App
+        struct AppCoordinator: Coordinator {}
+        let app = UIApplication.shared
+        let appearance = UINavigationBarAppearance()
+        """
+        let refactored = ProjectRefactoringEngine.replaceIdentifier(original, oldName: "App", newName: "Shop")
+
+        XCTAssertTrue(refactored.contains("import Shop"))
+        XCTAssertTrue(refactored.contains("struct ShopCoordinator: Coordinator"))
+        XCTAssertTrue(refactored.contains("let app = UIApplication.shared"))
+        XCTAssertTrue(refactored.contains("let appearance = UINavigationBarAppearance()"))
+    }
 }

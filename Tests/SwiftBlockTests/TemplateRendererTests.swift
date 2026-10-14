@@ -175,6 +175,29 @@ final class TemplateRendererTests: XCTestCase {
         XCTAssertFalse(remote.contains("cacheLayer()"))
     }
 
+    func testRenderConditionalNestedBlocksWithSurroundingContent() {
+        let template = """
+        {{#if outer}}
+        before
+        {{#if inner}}
+        inside
+        {{/if}}
+        after
+        {{/if}}
+        """
+
+        let rendered = TemplateRenderer.render(template: template, variables: ["outer": "true", "inner": "true"])
+        XCTAssertTrue(rendered.contains("before"))
+        XCTAssertTrue(rendered.contains("inside"))
+        XCTAssertTrue(rendered.contains("after"))
+        XCTAssertFalse(rendered.contains("{{"))
+
+        let outerOnly = TemplateRenderer.render(template: template, variables: ["outer": "true", "inner": "false"])
+        XCTAssertTrue(outerOnly.contains("before"))
+        XCTAssertFalse(outerOnly.contains("inside"))
+        XCTAssertTrue(outerOnly.contains("after"))
+    }
+
     func testRenderConditionalWithoutElseBranch() {
         let template = """
         {{#if stateStyle == 'observable'}}

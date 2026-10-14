@@ -289,6 +289,10 @@ public class BrickGenerator {
                 itemTargetPath = "\(targetPath)/\(itemRelativePath)"
             }
 
+            guard PathGuard.isSafe(targetPath: itemTargetPath, withinRoot: projectRootPath) else {
+                throw BrickGeneratorError.generationFailed("Path traversal blocked: target path '\(itemTargetPath)' escapes project root '\(projectRootPath)'")
+            }
+
             var isDir: ObjCBool = false
             if fileManager.fileExists(atPath: itemSourcePath, isDirectory: &isDir) {
                 if isDir.boolValue {

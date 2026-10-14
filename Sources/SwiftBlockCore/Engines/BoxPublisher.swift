@@ -200,6 +200,17 @@ public class BoxPublisher {
             "v1.0.0"
         }
 
+        guard !remote.hasPrefix("-") else {
+            throw BoxPublisherError.validationFailed(errors: ["Invalid remote name '\(remote)': cannot start with '-'"])
+        }
+        guard !versionTag.hasPrefix("-") else {
+            throw BoxPublisherError.validationFailed(errors: ["Invalid tag name '\(versionTag)': cannot start with '-'"])
+        }
+
+        if !fileManager.fileExists(atPath: "\(absolutePath)/.gitignore") {
+            print("⚠️ Warning: No .gitignore file found at '\(absolutePath)'. Please ensure sensitive files are not published.")
+        }
+
         if isDryRun {
             print("🔍 [DRY RUN] Would validate box '\(manifest.name)' at: \(absolutePath)")
             print("🔍 [DRY RUN] Would create git tag '\(versionTag)' and push to remote '\(remote)'")
@@ -230,7 +241,7 @@ public class BoxPublisher {
         }
 
         // 4. Push tag and branch to remote
-        let pushExitCode = runProcess(executable: gitBinary, arguments: ["push", remote, versionTag], currentDirectoryPath: absolutePath)
+        let pushExitCode = runProcess(executable: gitBinary, arguments: ["push", "--", remote, versionTag], currentDirectoryPath: absolutePath)
         if pushExitCode != 0 {
             print("⚠️ Note: 'git push' exit code was non-zero (remote '\(remote)' might not be configured or unreachable).")
         }

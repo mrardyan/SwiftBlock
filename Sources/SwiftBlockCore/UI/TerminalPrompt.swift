@@ -540,7 +540,7 @@ public class TerminalPrompt {
         title: String,
         options: [ChoiceOption],
         readLine: () -> String?
-    ) -> Int {
+    ) -> Int? {
         print("\n\(title)")
         for (index, option) in options.enumerated() {
             if let sub = option.subtitle, !sub.isEmpty {
@@ -554,7 +554,7 @@ public class TerminalPrompt {
             print("Choice [1-\(options.count)]: ", terminator: "")
             fflush(stdout)
             guard let line = readLine() else {
-                return 0
+                return nil
             }
             let input = line.trimmingCharacters(in: .whitespacesAndNewlines)
             if let choice = Int(input), choice >= 1, choice <= options.count {
