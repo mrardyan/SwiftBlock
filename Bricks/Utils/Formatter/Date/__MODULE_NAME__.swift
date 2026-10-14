@@ -18,23 +18,29 @@ public final class __MODULE_NAME__: @unchecked Sendable, DateFormatterProtocol {
 
     /// Formats a `Date` into a string using the specified format string.
     public func string(from date: Date, format: String = "yyyy-MM-dd HH:mm:ss", timeZone: TimeZone = .current, locale: Locale = .current) -> String {
+        lock.lock()
+        defer { lock.unlock() }
         let fmt = cachedFormatter(format: format, timeZone: timeZone, locale: locale)
         return fmt.string(from: date)
     }
 
     /// Parses a date string into a `Date` object using the specified format string.
     public func date(from string: String, format: String = "yyyy-MM-dd HH:mm:ss", timeZone: TimeZone = .current, locale: Locale = .current) -> Date? {
+        lock.lock()
+        defer { lock.unlock() }
         let fmt = cachedFormatter(format: format, timeZone: timeZone, locale: locale)
         return fmt.date(from: string)
     }
 
     private func cachedFormatter(format: String, timeZone: TimeZone, locale: Locale) -> DateFormatter {
         let key = "\(format)_\(timeZone.identifier)_\(locale.identifier)"
-        lock.lock()
-        defer { lock.unlock() }
 
         if let existing = cache[key] {
             return existing
+        }
+
+        if cache.count >= 100 {
+            cache.removeAll()
         }
 
         let newFmt = DateFormatter()

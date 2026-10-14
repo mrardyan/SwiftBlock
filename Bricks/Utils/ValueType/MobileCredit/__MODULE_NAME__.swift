@@ -4,6 +4,7 @@ import Foundation
 public enum MobileCreditError: Error, Equatable, Sendable {
     case negativeAmount(Decimal)
     case insufficientCredit(requested: Decimal, available: Decimal)
+    case currencyMismatch(lhs: String, rhs: String)
 }
 
 /// Type-safe representation of mobile phone credit (pulsa) balance.
@@ -47,11 +48,23 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, Comparabl
     }
 
     public static func + (lhs: __MODULE_NAME__, rhs: __MODULE_NAME__) throws -> __MODULE_NAME__ {
-        try __MODULE_NAME__(amount: lhs.amount + rhs.amount, currency: lhs.currency, expiryDate: lhs.expiryDate)
+        guard lhs.currency == rhs.currency else {
+            throw MobileCreditError.currencyMismatch(lhs: lhs.currency, rhs: rhs.currency)
+        }
+        let latestExpiry: Date?
+        if let lhsExp = lhs.expiryDate, let rhsExp = rhs.expiryDate {
+            latestExpiry = max(lhsExp, rhsExp)
+        } else {
+            latestExpiry = lhs.expiryDate ?? rhs.expiryDate
+        }
+        return try __MODULE_NAME__(amount: lhs.amount + rhs.amount, currency: lhs.currency, expiryDate: latestExpiry)
     }
 
     public static func < (lhs: __MODULE_NAME__, rhs: __MODULE_NAME__) -> Bool {
-        lhs.amount < rhs.amount
+        if lhs.currency != rhs.currency {
+            return lhs.currency < rhs.currency
+        }
+        return lhs.amount < rhs.amount
     }
 }
 

@@ -21,7 +21,9 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable {
     /// Number of calendar days in the range (inclusive).
     public var numberOfDays: Int {
         let calendar = Calendar.current
-        let components = calendar.dateComponents([.day], from: startDate, to: endDate)
+        let start = calendar.startOfDay(for: startDate)
+        let end = calendar.startOfDay(for: endDate)
+        let components = calendar.dateComponents([.day], from: start, to: end)
         return (components.day ?? 0) + 1
     }
 

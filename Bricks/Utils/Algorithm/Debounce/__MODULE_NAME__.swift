@@ -11,7 +11,7 @@ public final class __MODULE_NAME__: @unchecked Sendable {
 
     /// Creates a new Debounce instance with the specified delay in seconds.
     public init(delay: TimeInterval) {
-        self.delay = delay
+        self.delay = max(0, delay)
     }
 
     /// Triggers the debounced action.
@@ -21,7 +21,7 @@ public final class __MODULE_NAME__: @unchecked Sendable {
         defer { lock.unlock() }
 
         currentTask?.cancel()
-        let delayNanos = UInt64(delay * 1_000_000_000)
+        let delayNanos = UInt64(max(0, delay) * 1_000_000_000)
 
         currentTask = Task {
             do {

@@ -6,7 +6,7 @@ SHAREDIR ?= $(PREFIX)/share/swiftblock
 CLI_NAME = swiftblock
 BUILD_PATH = .build/release/$(CLI_NAME)
 
-.PHONY: all setup dev sync verify build install uninstall test test-unit test-templates test-e2e lint format install-hooks hotfix release clean help
+.PHONY: all setup dev sync pr verify build install uninstall test test-unit test-templates test-e2e lint format install-hooks hotfix release clean help
 
 all: build
 
@@ -18,6 +18,7 @@ help:
 	@echo "  setup            Verify dependencies, install git hooks, and build CLI"
 	@echo "  dev              Start a new standardized branch (feat/*, fix/*, etc.)"
 	@echo "  sync             Rebase current development branch onto latest origin/main"
+	@echo "  pr               Run verification, push branch, and create Pull Request"
 	@echo "  verify           Run full pre-PR quality gate (format + lint + tests)"
 	@echo "  hotfix           Start an isolated patch branch from a specific release tag"
 	@echo "  release          Verify test suites, tag a new release, and update Formula"
@@ -46,6 +47,9 @@ dev:
 
 sync:
 	@./Scripts/sync.sh
+
+pr:
+	@./Scripts/pr.sh $(ARGS)
 
 verify: format lint test
 	@echo ""

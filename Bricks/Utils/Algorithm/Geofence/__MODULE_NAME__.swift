@@ -79,7 +79,8 @@ public enum __MODULE_NAME__: Sendable {
                 cos(lat1Rad) * cos(lat2Rad) *
                 sin(deltaLonRad / 2.0) * sin(deltaLonRad / 2.0)
 
-        let c = 2.0 * atan2(sqrt(a), sqrt(1.0 - a))
+        let clampedA = min(1.0, max(0.0, a))
+        let c = 2.0 * atan2(sqrt(clampedA), sqrt(1.0 - clampedA))
         return earthRadiusMeters * c
     }
 }

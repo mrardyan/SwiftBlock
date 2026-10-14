@@ -96,17 +96,19 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, CustomStr
 
     enum CodingKeys: String, CodingKey {
         case digits
+        case format
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         self.digits = try container.decode(String.self, forKey: .digits)
-        self.format = .freeform(minLength: 1, maxLength: 30)
+        self.format = try container.decodeIfPresent(TaxNumberFormat.self, forKey: .format) ?? .freeform(minLength: 1, maxLength: 30)
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(digits, forKey: .digits)
+        try container.encode(format, forKey: .format)
     }
 }
 

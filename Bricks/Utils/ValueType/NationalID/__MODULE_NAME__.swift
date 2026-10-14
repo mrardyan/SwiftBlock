@@ -19,8 +19,7 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, CustomStr
     }
 
     public init(stringLiteral value: String) {
-        let cleaned = value.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
-        self.value = cleaned
+        try! self.init(value: value)
     }
 
     public var description: String {

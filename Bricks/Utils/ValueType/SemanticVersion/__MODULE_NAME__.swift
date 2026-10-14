@@ -19,13 +19,20 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, Comparabl
 
     public init(string: String) throws {
         let cleaned = string.hasPrefix("v") ? String(string.dropFirst()) : string
-        let parts = cleaned.split(separator: ".").compactMap { Int($0) }
-        guard (2...3).contains(parts.count) else {
+        let rawParts = cleaned.split(separator: ".", omittingEmptySubsequences: false)
+        guard (2...3).contains(rawParts.count) else {
             throw SemanticVersionError.invalidFormat(string)
         }
-        self.major = parts[0]
-        self.minor = parts[1]
-        self.patch = parts.count == 3 ? parts[2] : 0
+        var intParts: [Int] = []
+        for part in rawParts {
+            guard let val = Int(part), val >= 0 else {
+                throw SemanticVersionError.invalidFormat(string)
+            }
+            intParts.append(val)
+        }
+        self.major = intParts[0]
+        self.minor = intParts[1]
+        self.patch = intParts.count == 3 ? intParts[2] : 0
     }
 
     public init(stringLiteral value: String) {

@@ -47,35 +47,33 @@ public struct __MODULE_NAME__: Codable, Equatable, Hashable, Sendable, CustomStr
     }
 
     public var isPrivate: Bool {
-        guard version == .v4 else { return false }
-        let parts = rawValue.split(separator: ".").compactMap { Int($0) }
-        guard parts.count == 4 else { return false }
-        // 10.0.0.0/8
-        if parts[0] == 10 { return true }
-        // 172.16.0.0/12
-        if parts[0] == 172 && (16...31).contains(parts[1]) { return true }
-        // 192.168.0.0/16
-        if parts[0] == 192 && parts[1] == 168 { return true }
-        return false
+        if version == .v4 {
+            let parts = rawValue.split(separator: ".").compactMap { Int($0) }
+            guard parts.count == 4 else { return false }
+            // 10.0.0.0/8
+            if parts[0] == 10 { return true }
+            // 172.16.0.0/12
+            if parts[0] == 172 && (16...31).contains(parts[1]) { return true }
+            // 192.168.0.0/16
+            if parts[0] == 192 && parts[1] == 168 { return true }
+            return false
+        } else {
+            let lower = rawValue.lowercased()
+            // IPv6 Unique Local Address: fc00::/7
+            if lower.hasPrefix("fc") || lower.hasPrefix("fd") { return true }
+            // IPv6 Link-Local: fe80::/10
+            if lower.hasPrefix("fe8") || lower.hasPrefix("fe9") || lower.hasPrefix("fea") || lower.hasPrefix("feb") { return true }
+            return false
+        }
     }
 
     private static func isValidIPv4(_ string: String) -> Bool {
-        let parts = string.split(separator: ".", omittingEmptySubsequences: false)
-        guard parts.count == 4 else { return false }
-        for part in parts {
-            guard let num = Int(part), (0...255).contains(num) else { return false }
-            if part.count > 1 && part.hasPrefix("0") { return false } // No leading zeros
-        }
-        return true
+        var sin = in_addr()
+        return string.withCString { inet_pton(AF_INET, $0, &sin) } == 1
     }
 
     private static func isValidIPv6(_ string: String) -> Bool {
-        let parts = string.split(separator: ":", omittingEmptySubsequences: false)
-        guard parts.count >= 3 && parts.count <= 8 else { return false }
-        for part in parts {
-            if part.isEmpty { continue } // zero compression ::
-            guard part.count <= 4, Int(part, radix: 16) != nil else { return false }
-        }
-        return true
+        var sin6 = in6_addr()
+        return string.withCString { inet_pton(AF_INET6, $0, &sin6) } == 1
     }
 }

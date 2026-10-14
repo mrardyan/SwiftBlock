@@ -77,3 +77,10 @@ public struct __MODULE_NAME__<Element: Hashable & Sendable>: Sendable, Expressib
         orderedElements.makeIterator()
     }
 }
+
+// MARK: - Equatable Conformance
+extension __MODULE_NAME__: Equatable {
+    public static func == (lhs: __MODULE_NAME__, rhs: __MODULE_NAME__) -> Bool {
+        lhs.orderedElements == rhs.orderedElements
+    }
+}
