@@ -17,23 +17,7 @@ echo -e "${BLUE}          SwiftBlock Pull Request Creator          ${NC}"
 echo -e "${BLUE}===================================================${NC}"
 echo ""
 
-# 1. Branch verification
-if [ "$CURRENT_BRANCH" = "main" ]; then
-    echo -e "${RED}Error: Cannot create a Pull Request directly from 'main'.${NC}"
-    echo "Please create a feature branch using 'make dev' first."
-    exit 1
-fi
-
-echo -e "Current branch: ${GREEN}${CURRENT_BRANCH}${NC}"
-
-# 2. Check uncommitted changes
-if ! git diff-index --quiet HEAD -- 2>/dev/null; then
-    echo -e "${RED}Error: You have uncommitted changes on '$CURRENT_BRANCH'.${NC}"
-    echo "Please commit or stash your changes before opening a Pull Request."
-    exit 1
-fi
-
-# 3. Parse arguments
+# 1. Parse arguments
 SKIP_VERIFY=false
 PREFER_WEB=false
 EDIT_INTERACTIVE=false
@@ -43,6 +27,18 @@ GH_EXTRA_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --help|-h)
+            echo "Usage: make pr [ARGS=\"<options>\"]"
+            echo ""
+            echo "Options:"
+            echo "  -n, --no-verify     Skip running 'make verify' before opening PR"
+            echo "  -t, --title <text>  Set a custom Pull Request title"
+            echo "  -b, --body <text>   Set a custom Pull Request body"
+            echo "  -e, --edit          Open terminal editor to review/edit before submit"
+            echo "  -w, --web           Open GitHub Pull Request comparison in browser"
+            echo "  -h, --help          Show this help message"
+            exit 0
+            ;;
         --no-verify|-n)
             SKIP_VERIFY=true
             shift
@@ -69,6 +65,22 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# 2. Branch verification
+if [ "$CURRENT_BRANCH" = "main" ]; then
+    echo -e "${RED}Error: Cannot create a Pull Request directly from 'main'.${NC}"
+    echo "Please create a feature branch using 'make dev' first."
+    exit 1
+fi
+
+echo -e "Current branch: ${GREEN}${CURRENT_BRANCH}${NC}"
+
+# 3. Check uncommitted changes
+if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+    echo -e "${RED}Error: You have uncommitted changes on '$CURRENT_BRANCH'.${NC}"
+    echo "Please commit or stash your changes before opening a Pull Request."
+    exit 1
+fi
 
 # 4. Run verification unless skipped
 if [ "$SKIP_VERIFY" = false ]; then
