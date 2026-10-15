@@ -106,7 +106,7 @@ public class DoctorEngine {
     }
 
     public func diagnose(projectRootPath: String = FileManager.default.currentDirectoryPath) -> DiagnosticsReport {
-        let tools = ["tuist", "xcodegen", "periphery", "swiftlint", "swiftformat", "git", "mise", "make"]
+        let tools = ["tuist", "xcodegen", "periphery", "swiftlint", "swiftformat", "git", "gh", "mise", "make"]
         let toolResults = tools.map { checkTool($0) }
 
         let configPath = "\(projectRootPath)/.swiftblock/config.yml"

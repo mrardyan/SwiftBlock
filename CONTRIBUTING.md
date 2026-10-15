@@ -9,10 +9,12 @@ Thank you for your interest in contributing to **SwiftBlock**! We welcome contri
 Before developing SwiftBlock locally, ensure your machine meets the following requirements:
 - **macOS**: 12.0 (Monterey) or newer (macOS 14+ recommended)
 - **Swift**: 5.10 or newer (Xcode 15+)
-- **Homebrew packages** (recommended for linters):
+- **Homebrew packages** (for linters & automated PR creation):
   ```bash
-  brew install swiftlint swiftformat
+  brew install swiftlint swiftformat gh
+  gh auth login
   ```
+  *(Note: Running `make setup` will automatically verify and install `gh` for you if Homebrew is present).*
 
 ---
 
@@ -64,6 +66,14 @@ If `main` has progressed while you are working, rebase your branch smoothly:
 
 ```bash
 make sync
+```
+
+### Pushing to Remote
+
+Push your development branch to origin with automated upstream tracking:
+
+```bash
+make push
 ```
 
 ---
@@ -124,15 +134,21 @@ Examples:
 ---
 
 ## 6. Submitting a Pull Request
+ 
+SwiftBlock automates Pull Request creation via GitHub CLI (`gh`):
 
-1. Push your branch to GitHub:
+1. Run the unified PR workflow:
    ```bash
-   git push origin feat/your-feature-name
+   make pr
    ```
-2. Open a Pull Request on GitHub targeting the `main` branch.
-3. Fill out the **Pull Request Template** checklist.
-4. Ensure all automated GitHub Actions CI checks turn green.
-5. Once reviewed and approved by maintainers, your PR will be **Squashed and Merged** into `main`.
+   This will:
+   - Run the full verification suite (`make verify`)
+   - Push your branch with tracking to GitHub
+   - Automatically compose the PR title and description checklist from your commits
+   - Create the Pull Request on GitHub and return the live PR URL
+
+2. Ensure all automated GitHub Actions CI checks turn green.
+3. Once reviewed and approved by maintainers, your PR will be **Squashed and Merged** into `main`.
 
 ---
 

@@ -108,8 +108,10 @@ Explore the complete SwiftBlock documentation guides:
 
 ## Local Development & Testing
 
+> **Prerequisites for Contributors**: macOS 12+, Swift 5.10+, and Homebrew (`swiftlint`, `swiftformat`, `gh`).
+
 ```bash
-# 1. Initial environment setup & hook installation
+# 1. Initial environment setup (auto-configures gh, linters, git hooks)
 make setup
 
 # 2. Start a new standardized branch
@@ -118,13 +120,16 @@ make dev
 # 3. Run test suites during development (default: unit + templates)
 make test
 
-# 4. Verify quality gate before opening a PR (format, lint, tests)
-make verify
+# 4. Push current branch with tracking
+make push
 
-# 5. Build release binary locally
+# 5. Verify quality gate & create Pull Request via GitHub CLI
+make pr
+
+# 6. Build release binary locally
 make build
 
-# 6. Run full integration test matrix (optional)
+# 7. Run full integration test matrix (optional)
 make test SUITE=e2e
 ```
 
