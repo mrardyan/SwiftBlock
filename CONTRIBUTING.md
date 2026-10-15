@@ -14,7 +14,7 @@ Before developing SwiftBlock locally, ensure your machine meets the following re
   brew install swiftlint swiftformat gh
   gh auth login
   ```
-  *(Note: Running `make setup` will automatically verify and install `gh` for you if Homebrew is present).*
+  *(Note: Running `make setup` will automatically verify and install development dependencies (`swiftlint`, `swiftformat`, `gh`) for you if Homebrew is present).*
 
 ---
 

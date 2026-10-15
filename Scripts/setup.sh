@@ -27,6 +27,13 @@ fi
 
 # 2. Check SwiftLint
 echo -n "Checking SwiftLint... "
+if ! command -v swiftlint >/dev/null 2>&1; then
+    echo -e "${YELLOW}Not found.${NC}"
+    if command -v brew >/dev/null 2>&1; then
+        echo -e "${BLUE}Installing SwiftLint via Homebrew...${NC}"
+        brew install swiftlint || true
+    fi
+fi
 if command -v swiftlint >/dev/null 2>&1; then
     echo -e "${GREEN}Found ($(swiftlint version))${NC}"
 else
@@ -35,6 +42,13 @@ fi
 
 # 3. Check SwiftFormat
 echo -n "Checking SwiftFormat... "
+if ! command -v swiftformat >/dev/null 2>&1; then
+    echo -e "${YELLOW}Not found.${NC}"
+    if command -v brew >/dev/null 2>&1; then
+        echo -e "${BLUE}Installing SwiftFormat via Homebrew...${NC}"
+        brew install swiftformat || true
+    fi
+fi
 if command -v swiftformat >/dev/null 2>&1; then
     echo -e "${GREEN}Found ($(swiftformat --version))${NC}"
 else
