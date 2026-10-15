@@ -1,0 +1,49 @@
+name: job_queue
+category: core
+instantiation: singleton
+description: "Actor-isolated asynchronous Job Queue with retry backoff, partition ordering, offline pausing, and persistence"
+defaultPath: "App/Sources/Core/JobQueue"
+baseplates:
+  - swiftui
+requiresNameArgument: false
+
+dependencies:
+  mandatory:
+    - name: exponentialbackoff
+      reason: "JobQueue requires ExponentialBackoff for intelligent retry and jitter delay calculations"
+  optional:
+    - name: connectivity
+      description: "Pauses job processing when device is offline and automatically resumes upon reconnect"
+    - name: storage
+      description: "Persists unfinished jobs to disk across application restarts"
+    - name: logger
+      description: "Structured logging for job lifecycle, retries, and failures"
+    - name: network
+      description: "Direct HTTP request execution for network jobs"
+
+flavors:
+  persistence:
+    prompt: "Select JobQueue persistence strategy"
+    default: memory
+    options:
+      - id: memory
+        title: "In-Memory (Ephemeral)"
+        description: "Fast in-memory RAM queue, suitable for non-critical transient jobs within a single session"
+      - id: disk
+        title: "Persistent Disk Storage"
+        description: "Persists job queue to disk via Storage brick to survive app crashes and restarts"
+        dependencies:
+          - name: storage
+
+  networkPolicy:
+    prompt: "Select network connectivity handling policy"
+    default: offlineAware
+    options:
+      - id: offlineAware
+        title: "Offline-Aware (Auto Pause/Resume)"
+        description: "Monitors network state and pauses job processing when offline, resuming upon reconnect"
+        dependencies:
+          - name: connectivity
+      - id: immediate
+        title: "Immediate (No Reachability Monitor)"
+        description: "Dispatches immediately without network reachability guards, relying on retry policies"

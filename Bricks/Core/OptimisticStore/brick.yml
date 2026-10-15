@@ -1,0 +1,43 @@
+name: optimistic_store
+category: core
+instantiation: generative
+description: "UI state manager with immediate optimistic mutations, journaled rebase rollback, and server reconciliation"
+defaultPath: "App/Sources/Core/OptimisticStore"
+baseplates:
+  - swiftui
+requiresNameArgument: true
+defaultInstanceName: "Main"
+
+dependencies:
+  optional:
+    - name: job_queue
+      description: "Delegates remote mutations to background JobQueue with persistent retries"
+    - name: exponentialbackoff
+      description: "Direct async execution with retry backoff when JobQueue is not used"
+    - name: haptics
+      description: "Haptic feedback for optimistic success or rollback events"
+
+flavors:
+  syncMode:
+    prompt: "Select remote synchronization execution mode"
+    default: direct
+    options:
+      - id: direct
+        title: "Direct Async Execution"
+        description: "Executes remote closure directly from store with exponential retry backoff"
+      - id: queued
+        title: "JobQueue Delegated"
+        description: "Delegates mutations to JobQueue for background execution and offline queuing"
+        dependencies:
+          - name: job_queue
+
+  conflictStrategy:
+    prompt: "Select server version conflict resolution strategy"
+    default: serverWins
+    options:
+      - id: serverWins
+        title: "Server Wins"
+        description: "Authoritative server state overwrites local pending mutations"
+      - id: customMerge
+        title: "Custom Merge"
+        description: "Uses custom 3-way merge closure to combine non-conflicting fields"

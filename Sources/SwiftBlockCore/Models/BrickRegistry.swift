@@ -246,6 +246,26 @@ public enum BrickRegistry {
             defaultOutputPath: "App/Sources/Core/Notification",
             defaultTemplateSubpath: "Core/Notification"
         ),
+        BrickSpec(
+            type: .jobqueue,
+            commandName: "job_queue",
+            title: "JobQueue",
+            description: "Actor-isolated asynchronous Job Queue with retry backoff and partition ordering",
+            category: .core,
+            defaultOutputPath: "App/Sources/Core/JobQueue",
+            defaultTemplateSubpath: "Core/JobQueue",
+            baseplates: ["swiftui"]
+        ),
+        BrickSpec(
+            type: .optimisticstore,
+            commandName: "optimistic_store",
+            title: "OptimisticStore",
+            description: "UI state manager with immediate optimistic mutations and journaled rebase rollback",
+            category: .core,
+            defaultOutputPath: "App/Sources/Core/OptimisticStore",
+            defaultTemplateSubpath: "Core/OptimisticStore",
+            baseplates: ["swiftui"]
+        ),
     ]
 
     /// Full brick catalog: curated specs merged with auto-discovered bricks from the Bricks
@@ -412,6 +432,8 @@ public extension Brick {
         public static let permissions: Brick = "permissions"
         public static let location: Brick = "location"
         public static let notification: Brick = "notification"
+        public static let jobqueue: Brick = "job_queue"
+        public static let optimisticstore: Brick = "optimistic_store"
     }
 
     // Conveniences
@@ -438,6 +460,8 @@ public extension Brick {
     static let permissions = Core.permissions
     static let location = Core.location
     static let notification = Core.notification
+    static let jobqueue = Core.jobqueue
+    static let optimisticstore = Core.optimisticstore
 
     static var allCases: [Brick] {
         [
@@ -445,6 +469,7 @@ public extension Brick {
             Feature.coordinator, Feature.component, Feature.mapper, Feature.validator,
             Core.storage, Core.network, Core.logger, Core.analytics, Core.config, Core.auth, Core.vaporauth, Core.featureflag,
             Core.biometrics, Core.deeplink, Core.permissions, Core.location, Core.notification,
+            Core.jobqueue, Core.optimisticstore,
         ]
     }
 }
