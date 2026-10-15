@@ -19,9 +19,9 @@ public struct AnalyticsProviderIdentifier: RawRepresentable, Hashable, Expressib
 }
 
 /// An analytics event payload.
-public protocol AnalyticsEvent {
+public protocol AnalyticsEvent: Sendable {
     var name: String { get }
-    var parameters: [String: Any]? { get }
+    var parameters: [String: any Sendable]? { get }
     var targetProviders: [AnalyticsProviderIdentifier]? { get }
 }
 
@@ -32,12 +32,12 @@ public extension AnalyticsEvent {
 /// Concrete implementation of an analytics event.
 public struct DefaultAnalyticsEvent: AnalyticsEvent {
     public let name: String
-    public let parameters: [String: Any]?
+    public let parameters: [String: any Sendable]?
     public let targetProviders: [AnalyticsProviderIdentifier]?
 
     public init(
         name: String,
-        parameters: [String: Any]? = nil,
+        parameters: [String: any Sendable]? = nil,
         targetProviders: [AnalyticsProviderIdentifier]? = nil
     ) {
         self.name = name

@@ -26,7 +26,7 @@ public final class __MODULE_NAME__: NSObject, @unchecked Sendable, LocationServi
     private let locationManager: CLLocationManager
     private let lock = NSLock()
 
-    private var oneShotContinuation: CheckedContinuation<CLLocation, Error>?
+    private var oneShotContinuations: [CheckedContinuation<CLLocation, Error>] = []
 
     public override init() {
         let manager = CLLocationManager()
@@ -49,6 +49,10 @@ public final class __MODULE_NAME__: NSObject, @unchecked Sendable, LocationServi
     /// Requests current device location asynchronously.
     /// - Returns: A `CLLocation` object representing the current location.
     public func requestOneShotLocation() async throws -> CLLocation {
+        guard CLLocationManager.locationServicesEnabled() else {
+            throw LocationError.locationDisabled
+        }
+
         let status = authorizationStatus
         guard status != .denied && status != .restricted else {
             throw LocationError.permissionDenied
@@ -56,7 +60,7 @@ public final class __MODULE_NAME__: NSObject, @unchecked Sendable, LocationServi
 
         return try await withCheckedThrowingContinuation { continuation in
             lock.lock()
-            self.oneShotContinuation = continuation
+            self.oneShotContinuations.append(continuation)
             lock.unlock()
 
             self.locationManager.requestLocation()
@@ -67,23 +71,29 @@ public final class __MODULE_NAME__: NSObject, @unchecked Sendable, LocationServi
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         lock.lock()
-        let continuation = oneShotContinuation
-        oneShotContinuation = nil
+        let continuations = oneShotContinuations
+        oneShotContinuations.removeAll()
         lock.unlock()
 
         if let location = locations.last {
-            continuation?.resume(returning: location)
+            for continuation in continuations {
+                continuation.resume(returning: location)
+            }
         } else {
-            continuation?.resume(throwing: LocationError.unknown)
+            for continuation in continuations {
+                continuation.resume(throwing: LocationError.unknown)
+            }
         }
     }
 
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         lock.lock()
-        let continuation = oneShotContinuation
-        oneShotContinuation = nil
+        let continuations = oneShotContinuations
+        oneShotContinuations.removeAll()
         lock.unlock()
 
-        continuation?.resume(throwing: error)
+        for continuation in continuations {
+            continuation.resume(throwing: error)
+        }
     }
 }

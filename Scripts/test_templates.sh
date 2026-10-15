@@ -43,14 +43,12 @@ copy_brick_folder() {
             filename="$(basename "$file")"
             if [[ "$filename" == *"Tests.swift" ]]; then
                 target_name="${prefix}$(echo "$filename" | sed "s/__MODULE_NAME__//")"
-                sed -e "s/@testable import __MODULE_NAME__/@testable import SwiftBlockTemplatesTest/g" \
-                    -e "s/@testable import __PROJECT_NAME__/@testable import SwiftBlockTemplatesTest/g" \
-                    -e "s/@testable import __APP_MODULE__/@testable import SwiftBlockTemplatesTest/g" \
-                    -e "s/__MODULE_NAME__/${prefix}/g" "$file" > "$TEMP_DIR/Tests/SwiftBlockTemplatesTestTests/$target_name"
+                dest_file="$TEMP_DIR/Tests/SwiftBlockTemplatesTestTests/$target_name"
             else
                 target_name="${prefix}$(echo "$filename" | sed "s/__MODULE_NAME__//")"
-                sed -e "s/__MODULE_NAME__/${prefix}/g" "$file" > "$TEMP_DIR/Sources/SwiftBlockTemplatesTest/$target_name"
+                dest_file="$TEMP_DIR/Sources/SwiftBlockTemplatesTest/$target_name"
             fi
+            python3 "$SCRIPT_DIR/render_template.py" "$file" "$dest_file" "$src_dir" "$prefix"
         fi
     done
 

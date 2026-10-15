@@ -61,7 +61,7 @@ public final class __MODULE_NAME__: @unchecked Sendable, StorageProtocol {
 
         case .keychain(let serviceName):
             let service = serviceName ?? Bundle.main.bundleIdentifier ?? "com.swiftblock.storage"
-            saveToKeychain(key: key, data: data, service: service)
+            try saveToKeychain(key: key, data: data, service: service)
 
         case .inMemory:
             inMemoryStore[key] = data
@@ -140,10 +140,14 @@ public final class __MODULE_NAME__: @unchecked Sendable, StorageProtocol {
         let targetLocation = location ?? defaultLocation
         switch targetLocation {
         case .userDefaults(let suiteName):
-            let defaults = suiteName.flatMap { UserDefaults(suiteName: $0) } ?? UserDefaults.standard
-            let dictionary = defaults.dictionaryRepresentation()
-            for key in dictionary.keys {
-                defaults.removeObject(forKey: key)
+            if let suite = suiteName, let defaults = UserDefaults(suiteName: suite) {
+                defaults.removePersistentDomain(forName: suite)
+            } else {
+                let defaults = UserDefaults.standard
+                let dictionary = defaults.dictionaryRepresentation()
+                for key in dictionary.keys {
+                    defaults.removeObject(forKey: key)
+                }
             }
 
         case .keychain(let serviceName):
@@ -165,7 +169,7 @@ public final class __MODULE_NAME__: @unchecked Sendable, StorageProtocol {
 
     // MARK: - Native Keychain Helpers
 
-    private func saveToKeychain(key: String, data: Data, service: String) {
+    private func saveToKeychain(key: String, data: Data, service: String) throws {
         deleteFromKeychain(key: key, service: service)
 
         let query: [String: Any] = [
@@ -175,7 +179,10 @@ public final class __MODULE_NAME__: @unchecked Sendable, StorageProtocol {
             kSecValueData as String: data,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
         ]
-        SecItemAdd(query as CFDictionary, nil)
+        let status = SecItemAdd(query as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            throw StorageError.keychainError(status: status)
+        }
     }
 
     private func loadFromKeychain(key: String, service: String) -> Data? {

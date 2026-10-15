@@ -44,7 +44,12 @@ public final class __MODULE_NAME__: @unchecked Sendable, KeychainProtocol {
 
         let status = SecItemAdd(query as CFDictionary, nil)
         if status == errSecDuplicateItem {
-            let updateStatus = SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+            let searchQuery = baseQuery(forKey: key, service: service)
+            let attributes: [String: Any] = [
+                kSecValueData as String: data,
+                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            ]
+            let updateStatus = SecItemUpdate(searchQuery as CFDictionary, attributes as CFDictionary)
             guard updateStatus == errSecSuccess else {
                 throw KeychainError.unhandledError(status: updateStatus)
             }

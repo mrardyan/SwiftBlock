@@ -1,15 +1,15 @@
 import Foundation
 
 /// An analytics provider destination.
-public protocol AnalyticsProvider {
+public protocol AnalyticsProvider: Sendable {
     var identifier: AnalyticsProviderIdentifier { get }
-    func track(_ event: AnalyticsEvent)
+    func track(_ event: any AnalyticsEvent)
     func setUserId(_ userId: String?)
     func setUserProperty(key: String, value: String?)
 }
 
 /// Debug console analytics provider.
-public final class ConsoleAnalyticsProvider: AnalyticsProvider {
+public final class ConsoleAnalyticsProvider: AnalyticsProvider, Sendable {
     public let identifier: AnalyticsProviderIdentifier = .console
 
     public init() {}

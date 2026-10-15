@@ -25,6 +25,43 @@ public struct DeepLinkRoute: Equatable, Sendable {
     }
 }
 
+{{#if concurrency == 'swift-concurrency'}}
+/// Handler block for deep link routes.
+public typealias DeepLinkHandler = @Sendable (DeepLinkRoute) async -> Void
+
+/// Defines standard interface for deep link routing.
+public protocol DeepLinkRouterProtocol: Sendable {
+    func registerHandler(forHost host: String, handler: @escaping DeepLinkHandler) async
+    func handle(_ url: URL) async -> Bool
+}
+
+/// Actor-isolated deep link router singleton.
+public actor __MODULE_NAME__: DeepLinkRouterProtocol {
+    /// Shared singleton instance.
+    public static let shared = __MODULE_NAME__()
+
+    private var handlers: [String: DeepLinkHandler] = [:]
+
+    public init() {}
+
+    /// Registers a route handler for a given host (e.g., "checkout", "product", "profile").
+    public func registerHandler(forHost host: String, handler: @escaping DeepLinkHandler) {
+        handlers[host.lowercased()] = handler
+    }
+
+    /// Parses and dispatches a deep link URL to its registered handler.
+    /// - Parameter url: The incoming deep link URL (e.g. `myapp://checkout/123?promo=SAVE10`).
+    /// - Returns: `true` if a matching handler was found and executed, `false` otherwise.
+    public func handle(_ url: URL) async -> Bool {
+        let route = DeepLinkRoute(url: url)
+        let hostKey = route.host.lowercased()
+
+        guard let handler = handlers[hostKey] else { return false }
+        await handler(route)
+        return true
+    }
+}
+{{else}}
 /// Handler block for deep link routes.
 public typealias DeepLinkHandler = @Sendable (DeepLinkRoute) -> Void
 
@@ -67,3 +104,4 @@ public final class __MODULE_NAME__: @unchecked Sendable, DeepLinkRouterProtocol 
         return true
     }
 }
+{{/if}}

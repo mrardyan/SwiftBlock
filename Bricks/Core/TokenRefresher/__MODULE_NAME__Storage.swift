@@ -46,7 +46,21 @@ public final class KeychainTokenStorage: TokenStorageProtocol {
         ]
 
         let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess || status == errSecDuplicateItem else {
+        if status == errSecDuplicateItem {
+            let searchAttributes: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: serviceName,
+                kSecAttrAccount as String: accountKey
+            ]
+            let updateAttributes: [String: Any] = [
+                kSecValueData as String: data,
+                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            ]
+            let updateStatus = SecItemUpdate(searchAttributes as CFDictionary, updateAttributes as CFDictionary)
+            guard updateStatus == errSecSuccess else {
+                throw TokenRefreshError.networkError("Failed to update tokens in Keychain (OSStatus: \(updateStatus))")
+            }
+        } else if status != errSecSuccess {
             throw TokenRefreshError.networkError("Failed to store tokens in Keychain (OSStatus: \(status))")
         }
     }

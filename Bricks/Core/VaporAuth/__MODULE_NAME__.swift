@@ -30,9 +30,14 @@ public final class __MODULE_NAME__: @unchecked Sendable, VaporAuthenticatable {
     private let lock = NSLock()
     private var activeSessions: [String: UserJWTPayload] = [:]
     private let jwtSecret: String
+    private let maxSessions: Int
 
-    public init(jwtSecret: String = ProcessInfo.processInfo.environment["JWT_SECRET"] ?? "swiftblock-vapor-auth-secret") {
+    public init(
+        jwtSecret: String = ProcessInfo.processInfo.environment["JWT_SECRET"] ?? "swiftblock-vapor-auth-secret",
+        maxSessions: Int = 10_000
+    ) {
         self.jwtSecret = jwtSecret
+        self.maxSessions = maxSessions
     }
 
     /// Generates a signed bearer session token for a given user ID.
@@ -40,8 +45,14 @@ public final class __MODULE_NAME__: @unchecked Sendable, VaporAuthenticatable {
         lock.lock()
         defer { lock.unlock() }
 
+        let now = Date()
+        if activeSessions.count >= maxSessions {
+            activeSessions = activeSessions.filter { $0.value.expiration > now }
+        }
+
         let payload = UserJWTPayload(subject: userId)
-        let token = "vpr_token_\(userId)_\(Int(payload.expiration.timeIntervalSince1970))"
+        let nonce = UUID().uuidString.replacingOccurrences(of: "-", with: "").prefix(8)
+        let token = "vpr_token_\(userId)_\(Int(payload.expiration.timeIntervalSince1970))_\(nonce)"
         activeSessions[token] = payload
         return token
     }

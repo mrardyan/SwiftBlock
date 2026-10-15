@@ -8,3 +8,5 @@ DerivedData/
 .netrc
 .vscode/
 Temp
+__pycache__/
+*.pyc

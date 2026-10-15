@@ -30,6 +30,9 @@ public struct RetryUseCaseDecorator<Base: __MODULE_NAME__>: __MODULE_NAME__ {
             do {
                 return try await base.execute(input)
             } catch {
+                if error is CancellationError {
+                    throw error
+                }
                 lastError = error
                 guard attempt < maxAttempts - 1 else { break }
                 let delay = Double(attempt + 1) * 0.1
