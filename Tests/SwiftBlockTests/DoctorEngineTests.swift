@@ -10,6 +10,12 @@ final class DoctorEngineTests: XCTestCase {
         XCTAssertEqual(result.isInstalled, true)
     }
 
+    func testToolCheckIncludesGitHubCLI() {
+        let engine = DoctorEngine()
+        let report = engine.diagnose()
+        XCTAssertTrue(report.toolChecks.contains { $0.name == "gh" })
+    }
+
     func testGlobalContextDiagnosis() {
         let engine = DoctorEngine()
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).path
