@@ -5,20 +5,58 @@ import XCTest
 @testable import __APP_MODULE__
 
 final class __MODULE_NAME__Tests: XCTestCase {
-    private var authManager: __MODULE_NAME__!
-
-    override func setUp() {
-        super.setUp()
-        authManager = __MODULE_NAME__(serviceName: "com.test.auth.\(UUID().uuidString)")
+{{#if concurrency == 'swift-concurrency'}}
+    func testInitialStateIsUnauthenticated() async {
+        let authManager = __MODULE_NAME__(serviceName: "com.test.auth.\(UUID().uuidString)")
+        let state = await authManager.currentState
+        let token = await authManager.accessToken
+        XCTAssertEqual(state, .unauthenticated)
+        XCTAssertNil(token)
     }
 
-    override func tearDown() {
-        authManager.clearSession()
-        authManager = nil
-        super.tearDown()
+    func testSetSessionPersistsInKeychain() async {
+        let testToken = "sample_jwt_access_token_123"
+        let testUserId = "user_9988"
+        let serviceName = "com.test.auth.restore.\(UUID().uuidString)"
+
+        let manager1 = __MODULE_NAME__(serviceName: serviceName)
+        await manager1.setSession(accessToken: testToken, userId: testUserId)
+
+        let state1 = await manager1.currentState
+        let token1 = await manager1.accessToken
+        XCTAssertEqual(state1, .authenticated(userId: testUserId))
+        XCTAssertEqual(token1, testToken)
+
+        let manager2 = __MODULE_NAME__(serviceName: serviceName)
+        let state2 = await manager2.currentState
+        let token2 = await manager2.accessToken
+        XCTAssertEqual(state2, .authenticated(userId: testUserId))
+        XCTAssertEqual(token2, testToken)
+
+        await manager1.clearSession()
     }
 
+    func testClearSessionRemovesKeychainData() async {
+        let serviceName = "com.test.auth.clear.\(UUID().uuidString)"
+        let manager = __MODULE_NAME__(serviceName: serviceName)
+
+        await manager.setSession(accessToken: "token", userId: "user")
+        await manager.clearSession()
+
+        let state = await manager.currentState
+        let token = await manager.accessToken
+        XCTAssertEqual(state, .unauthenticated)
+        XCTAssertNil(token)
+
+        let managerReopened = __MODULE_NAME__(serviceName: serviceName)
+        let stateReopened = await managerReopened.currentState
+        let tokenReopened = await managerReopened.accessToken
+        XCTAssertEqual(stateReopened, .unauthenticated)
+        XCTAssertNil(tokenReopened)
+    }
+{{else}}
     func testInitialStateIsUnauthenticated() {
+        let authManager = __MODULE_NAME__(serviceName: "com.test.auth.\(UUID().uuidString)")
         XCTAssertEqual(authManager.currentState, .unauthenticated)
         XCTAssertNil(authManager.accessToken)
     }
@@ -55,4 +93,5 @@ final class __MODULE_NAME__Tests: XCTestCase {
         XCTAssertEqual(managerReopened.currentState, .unauthenticated)
         XCTAssertNil(managerReopened.accessToken)
     }
+{{/if}}
 }

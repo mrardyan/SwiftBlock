@@ -82,26 +82,25 @@ public actor __MODULE_NAME__ {
             throw TokenRefreshError.networkError("TokenRefreshProvider is not configured.")
         }
 
-        // 2. Spawn single-flight task
-        let task = Task<AuthTokens, any Error> {
-            do {
-                let newTokens = try await provider.refresh(using: refreshToken)
-                return newTokens
-            } catch {
-                throw error
-            }
+        // 2. Spawn single-flight task that refreshes AND persists
+        let task = Task<AuthTokens, any Error> { [storage] in
+            let newTokens = try await provider.refresh(using: refreshToken)
+            try await storage.saveTokens(newTokens)
+            return newTokens
         }
 
         self.activeRefreshTask = task
 
         do {
             let refreshedTokens = try await task.value
-            try await updateTokens(refreshedTokens)
+            self.currentTokens = refreshedTokens
             self.activeRefreshTask = nil
             return refreshedTokens
         } catch {
             self.activeRefreshTask = nil
-            notifySessionExpired()
+            if isTerminalAuthError(error) {
+                notifySessionExpired()
+            }
             throw TokenRefreshError.refreshFailed(underlying: error)
         }
     }
@@ -134,6 +133,22 @@ public actor __MODULE_NAME__ {
             self.currentTokens = stored
         }
         self.isInitialized = true
+    }
+
+    private func isTerminalAuthError(_ error: any Error) -> Bool {
+        if error is CancellationError { return false }
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .timedOut, .notConnectedToInternet, .networkConnectionLost, .dnsLookupFailed, .cannotConnectToHost, .cancelled:
+                return false
+            default:
+                break
+            }
+        }
+        if case TokenRefreshError.networkError = error {
+            return false
+        }
+        return true
     }
 
     private func notifySessionExpired() {

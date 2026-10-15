@@ -22,6 +22,14 @@ dependencies:
     - vaporauth
 
 flavors:
+  concurrency:
+    prompt: "Select concurrency engine"
+    default: gcd
+    options:
+      - id: swift-concurrency
+        title: "Swift Concurrency (Actor & Async/Await)"
+      - id: gcd
+        title: "Grand Central Dispatch (GCD / Thread-Safe)"
   sessionStore:
     prompt: "Select session credential store"
     default: keychain

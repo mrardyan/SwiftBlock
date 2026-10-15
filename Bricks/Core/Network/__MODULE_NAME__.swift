@@ -1,7 +1,7 @@
 import Foundation
 
 /// Errors that can occur during network operations.
-public enum NetworkError: Error, LocalizedError, Equatable {
+public enum NetworkError: Error, LocalizedError, Equatable, Sendable {
     case invalidResponse(statusCode: Int, data: Data?)
     case decodingFailed(String)
     case transportError(String)
@@ -19,12 +19,12 @@ public enum NetworkError: Error, LocalizedError, Equatable {
 }
 
 /// Interface for executing HTTP network requests and decoding responses.
-public protocol Networking {
+public protocol Networking: Sendable {
     func send<T: Decodable>(_ request: HTTPRequest) async throws -> T
 }
 
 /// HTTP network client engine.
-public final class __MODULE_NAME__: Networking {
+public final class __MODULE_NAME__: Networking, @unchecked Sendable {
     private let transport: HTTPTransporting
     private let jsonDecoder: JSONDecoder
 

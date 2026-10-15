@@ -146,7 +146,8 @@ private func withThrowingTimeout<T: Sendable>(
             try await operation()
         }
         group.addTask {
-            let nanoseconds = UInt64(seconds * 1_000_000_000)
+            let clampedSeconds = max(0.001, seconds)
+            let nanoseconds = UInt64(clampedSeconds * 1_000_000_000)
             try await Task.sleep(nanoseconds: nanoseconds)
             throw LaunchTimeoutError.timedOut
         }

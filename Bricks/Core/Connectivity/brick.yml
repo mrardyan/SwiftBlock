@@ -9,3 +9,13 @@ dependencies:
   optional:
     - name: logger
       description: "Network path and interface status change logging"
+
+flavors:
+  concurrency:
+    prompt: "Select concurrency engine"
+    default: gcd
+    options:
+      - id: swift-concurrency
+        title: "Swift Concurrency (Actor & AsyncStream)"
+      - id: gcd
+        title: "Grand Central Dispatch (GCD / Thread-Safe)"

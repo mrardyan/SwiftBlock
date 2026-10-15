@@ -52,7 +52,14 @@ public final class __MODULE_NAME__: @unchecked Sendable, AppNotificationSchedule
         content.body = body
         content.sound = .default
 
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: repeats)
+        let sanitizedInterval: TimeInterval
+        if repeats {
+            sanitizedInterval = max(60.0, timeInterval)
+        } else {
+            sanitizedInterval = max(1.0, timeInterval)
+        }
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: sanitizedInterval, repeats: repeats)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
 
         try await center.add(request)

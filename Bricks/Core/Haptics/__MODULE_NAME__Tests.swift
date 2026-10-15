@@ -6,6 +6,7 @@ import XCTest
 
 #if canImport(UIKit)
 final class __MODULE_NAME__Tests: XCTestCase {
+    @MainActor
     func testFeedbackCallsDoNotThrow() {
         __MODULE_NAME__.impact(.light)
         __MODULE_NAME__.impact(.medium)

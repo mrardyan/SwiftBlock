@@ -13,6 +13,7 @@ public enum HapticFeedbackType: Sendable {
 }
 
 /// Unified haptic feedback engine wrapping `UIFeedbackGenerator`.
+@MainActor
 public enum __MODULE_NAME__ {
     public static func impact(_ type: HapticFeedbackType = .medium) {
         #if os(iOS)
