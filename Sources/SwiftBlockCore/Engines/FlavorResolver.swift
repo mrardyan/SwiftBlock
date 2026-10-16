@@ -46,6 +46,9 @@ public enum FlavorResolver {
                 resolvedVars[k] = v
             }
             if let deps = option.dependencies {
+                for dep in deps.mandatory {
+                    selected.insert(dep.name.lowercased())
+                }
                 for dep in deps.optional {
                     selected.insert(dep.name.lowercased())
                 }
@@ -64,6 +67,9 @@ public enum FlavorResolver {
                 resolvedVars[k] = v
             }
             if let deps = option.dependencies {
+                for dep in deps.mandatory {
+                    selected.insert(dep.name.lowercased())
+                }
                 for dep in deps.optional {
                     selected.insert(dep.name.lowercased())
                 }

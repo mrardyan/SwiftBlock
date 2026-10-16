@@ -100,15 +100,41 @@ final class FlavorResolverTests: XCTestCase {
               - id: offline-first
                 title: Offline First
                 dependencies:
+                  mandatory:
+                    - name: job_queue
                   optional:
                     - name: storage
                       description: Local cache
         """)
         let result = FlavorResolver.resolve(manifest: manifest, selections: ["strategy": "offline-first"])
         XCTAssertTrue(result.selectedOptionalDeps.contains("storage"))
+        XCTAssertTrue(result.selectedOptionalDeps.contains("job_queue"))
 
         let remoteResult = FlavorResolver.resolve(manifest: manifest, selections: ["strategy": "remote-only"])
         XCTAssertTrue(remoteResult.selectedOptionalDeps.isEmpty)
+    }
+
+    func testDirectArrayDependenciesInFlavorOptions() throws {
+        let manifest = try makeManifest(withFlavorYAML: """
+        flavors:
+          persistence:
+            prompt: Select persistence
+            default: disk
+            options:
+              - id: memory
+                title: Memory
+              - id: disk
+                title: Disk
+                dependencies:
+                  - name: storage
+                  - connectivity
+        """)
+        let result = FlavorResolver.resolve(manifest: manifest, selections: ["persistence": "disk"])
+        XCTAssertTrue(result.selectedOptionalDeps.contains("storage"))
+        XCTAssertTrue(result.selectedOptionalDeps.contains("connectivity"))
+
+        let memoryResult = FlavorResolver.resolve(manifest: manifest, selections: ["persistence": "memory"])
+        XCTAssertFalse(memoryResult.selectedOptionalDeps.contains("storage"))
     }
 
     func testValidateSelectionReportsUnknownOption() throws {

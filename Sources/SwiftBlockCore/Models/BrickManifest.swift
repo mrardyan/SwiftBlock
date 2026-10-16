@@ -388,6 +388,10 @@ public struct BrickManifest {
     }
 
     private static func parseFlavorDependencies(_ opt: [String: Any]) -> BrickDependenciesSpec? {
+        if let directList = opt["dependencies"] as? [Any] {
+            let mandatory = parseDependencyList(directList)
+            return BrickDependenciesSpec(mandatory: mandatory, optional: [], conflicts: [])
+        }
         guard let depsDict = opt["dependencies"] as? [String: Any] else { return nil }
         var mandatory: [DependencyItemSpec] = []
         var optional: [DependencyItemSpec] = []
