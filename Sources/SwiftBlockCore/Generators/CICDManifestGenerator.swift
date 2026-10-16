@@ -34,7 +34,7 @@ public class CICDManifestGenerator {
         var steps: [String] = [
             """
                   - name: Checkout Code
-                    uses: actions/checkout@v4
+                    uses: actions/checkout@v5
             """,
             """
                   - name: Install Tooling via mise
